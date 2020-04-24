@@ -1,0 +1,68 @@
+/* prog5.wb
+
+   Wabbit has enums. An enum represents a choice of values. 
+   Only one may be chosen.  Here is an example:
+*/
+
+enum MaybeFloat {
+     No;
+     Yes(float);
+}
+
+/* Some library functions for warmup */
+func abs(x float) float {
+    if x < 0.0 {
+        return -x;
+    } else {
+        return x;
+    }
+}
+
+func sqrt(x float) MaybeFloat {
+    if x < 0.0 {
+        return MaybeFloat::No;
+    }
+    var guess = 1.0;
+    var nextguess = 0.0;
+    while true {
+        nextguess = (guess + (x / guess)) / 2.0;
+	if (abs(nextguess-guess)/guess) < 0.000000001 {
+	    break;
+        }
+	guess = nextguess;
+    }
+    return MaybeFloat::Yes(guess);
+}
+
+// Compute a few sqrt values
+var x = sqrt(2.0);
+var y = sqrt(-2.0);
+
+// Use match to extract values
+print(match x {
+          No => 0.0;
+          Yes(val) => val;
+      });
+
+print(match y {
+          No => 0.0;
+          Yes(val) => val;
+      });
+
+
+/* Challenge. Here's a quadratic function:
+
+   f(x) = a*x**2 + b*x + c
+
+   In school, you often find one the roots using the quadratic equation.
+
+       x = (-b + sqrt(b**2 - 4*a*c))/(2*a)
+
+   Write a function that computes this using the sqrt() function above. 
+   Since there might not be a solution, have it also return a MaybeFloat.
+*/
+
+
+   
+
+
