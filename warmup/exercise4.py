@@ -21,29 +21,28 @@ assert simplify_tree(tree) == \
 
 def simplify_tree(tree):
 
-    tok_type = tree[0]
+    tok_type, *args = tree
 
-    if tok_type == 'binop':
-        # print("binop", tree)
-        arg1 = tree[2]
-        arg2 = tree[3]
-        if arg1[0] == 'num' and arg2[0] == 'num':
-            if tree[1] == '+':
-                result = arg1[1] + arg2[1]
-            elif tree[1] == '*':
-                result = arg1[1] * arg2[1]
+    if tok_type in ('num', 'name'):
+        return tree
+
+    elif tok_type == 'assign':
+        name, rest = args
+        return ('assign', name, simplify_tree(rest))
+
+    elif tok_type == 'binop':
+        op, left, right = args
+        left_type, left_value = left = simplify_tree(left)
+        right_type, right_value = right = simplify_tree(right)
+
+        if left_type == 'num' and right_type == 'num':
+            if op == '+':
+                result = left_value + right_value
+            elif op == '*':
+                result = left_value * right_value
             return ('num', result)
         else:
-            return ('binop', tree[1], simplify_tree(tree[2]),
-                    simplify_tree(tree[3]))
-
-    elif tok_type in ('num', 'name'):
-        return tree
-    elif tok_type == 'assign':
-        if isinstance(tree[2], tuple):
-            return (tree[0], tree[1], simplify_tree(tree[2]))
-        else:
-            return tree
+            return ('binop', op, left, right)
 
 
 tree = ('assign', 'spam',
@@ -51,6 +50,15 @@ tree = ('assign', 'spam',
                   ('name', 'x'),
                   ('binop', '*', ('num', 34), ('num', 567))))
 
-
 assert (simplify_tree(tree) ==
         ('assign', 'spam', ('binop', '+', ('name', 'x'), ('num', 19278))))
+
+
+# More complicated case where recursion is actually needed
+
+tree = ('assign', 'spam',
+        ('binop', '+',
+                  ('num', 3),
+                  ('binop', '*', ('num', 4), ('num', 5))))
+
+assert simplify_tree(tree) == ('assign', 'spam', ('num', 23))
