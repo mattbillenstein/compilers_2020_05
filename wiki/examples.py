@@ -45,12 +45,13 @@ def tokenize(text):
             tokens.append(('ASSIGN' if c == '=' else 'OP', c))
 
         elif c in nums:
+            # if we find a num, but we're already in a name, consider it part
+            # of the name...
             if token and type in ('NUM', 'NAME'):
                 token += c
-            elif token:
-                tokens.append((type, token))
-                type, token = 'NUM', c
             else:
+                if token:
+                    tokens.append((type, token))
                 type, token = 'NUM', c
 
         elif c in names:
@@ -83,10 +84,17 @@ structure and converts into a string representing source code:
 '''
 
 def to_source(tree):
-    pass
+    if tree[0] == 'assign':
+        return f'{tree[1]} = {to_source(tree[2])}'
+    elif tree[0] == 'binop':
+        return f'{to_source(tree[2])} {tree[1]} {to_source(tree[3])}'
+    elif tree[0] in ('name', 'num'):
+        return f'{tree[1]}'
+    else:
+        assert 0, f'Unhandled node type {tree[0]}'
 
 tree = ('assign', 'spam', 
-        ('binop', '+', 
+            ('binop', '+',
                   ('name', 'x'),
                   ('binop', '*', ('num', '34'), ('num', '567'))))
 
