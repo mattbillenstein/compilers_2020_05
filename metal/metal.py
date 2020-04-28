@@ -229,10 +229,14 @@ if __name__ == '__main__':
         #     result = mul(result,  n)
         #     n -= 1
 
-        #
-        # ... instructions here
-        #
-
+        ('CONST', 1, 'R2'),   # R2 = result
+        ('BZ', 'R1', 6),  # if n == 0, jmp
+        ('ADD', 'R1', 'R0', 'R4'),  # R4 = mul.x
+        ('ADD', 'R2', 'R0', 'R5'),  # R5 = mul.y
+        ('JMP', 'PC', 5),
+        ('ADD', 'R6', 'R0', 'R2'),  # R6 = mul.result
+        ('DEC', 'R1'),
+        ('JMP', 'PC', -7),
         # print(result)
         ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
         ('HALT',),
@@ -248,11 +252,20 @@ if __name__ == '__main__':
         #        return result
         #
         # ... instructions here
+
+        # Note: the following will also work if we replace 3*7 by 0*7
+        ('CONST', 0, 'R6'),  # R6 = mul.result
+        ('BZ', 'R4', 3),     # R4 = mul.x; if x == 0, jmp
+        ('ADD', 'R5', 'R6', 'R6'),  # R5 = mul.y
+        ('DEC', 'R4'),
+        ('JMP', 'PC', -4),
+        ('ADD', 'R6', 'R0', 'R2'),
+        ('JMP', 'PC', -11),
     ]
 
-    # print("PROGRAM 3::: Expected Output: 120")
-    # machine.run(prog3)
-    # print(":::PROGRAM 3 DONE")
+    print("PROGRAM 3::: Expected Output: 120")
+    machine.run(prog3)
+    print(":::PROGRAM 3 DONE")
 
     # ----------------------------------------------------------------------
     # Problem 4: Ultimate Challenge
