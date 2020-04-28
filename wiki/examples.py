@@ -110,10 +110,12 @@ to integers:
 '''
 
 def convert_numbers(tree):
-    pass
+    if tree[0] == 'num':
+        return (tree[0], int(tree[1]))
+    return tuple(convert_numbers(_) if isinstance(_, tuple) else _ for _ in tree)
 
 tree = ('assign', 'spam', 
-        ('binop', '+', 
+            ('binop', '+',
                   ('name', 'x'),
                   ('binop', '*', ('num', '34'), ('num', '567'))))
 
@@ -129,7 +131,15 @@ operations can be simplified.  A new simplified tree is returned:
 '''
 
 def simplify_tree(tree):
-    pass
+    if tree[0] == 'binop' and tree[2][0] == tree[3][0] == 'num':
+        op = {
+            '+': lambda x, y: x[1] + y[1],
+            '*': lambda x, y: x[1] * y[1],
+            '-': lambda x, y: x[1] - y[1],
+            '/': lambda x, y: x[1] / y[1],
+        }[tree[1]]
+        return ('num', op(tree[2], tree[3]))
+    return tuple(simplify_tree(_) if isinstance(_, tuple) else _ for _ in tree)
 
 tree = ('assign', 'spam', 
         ('binop', '+', 
