@@ -1,5 +1,5 @@
 # metal.py
-# 
+#
 # One of the main roles of a compiler is taking high-level programs
 # such as what you might write in C or Python and reducing them to
 # instructions that can execute on actual hardware.
@@ -21,7 +21,7 @@
 #
 # The memory of the machine consists of 65536 memory slots,
 # each of which can hold an integer value.  Special LOAD/STORE
-# instructions access the memory.  Instructions are stored 
+# instructions access the memory.  Instructions are stored
 # separately.  All memory addresses from 0-65535 may be used.
 #
 # The machine has a single I/O port which is mapped to the memory
@@ -52,11 +52,12 @@
 #
 # In the the above instructions 'Rx' means some register number such
 # as 'R0', 'R1', etc.  The 'PC' register may also be used as a register.
-# All memory instructions take their address from register plus an offset 
+# All memory instructions take their address from register plus an offset
 # that's encoded as part of the instruction.
 
 IO_OUT = 65535
 MASK = 0xffffffff
+
 
 class Metal:
     def run(self, instructions):
@@ -66,7 +67,7 @@ class Metal:
         are initialized to 0.  R7 is initialized with the highest valid
         memory index (len(memory) - 1).
         '''
-        self.registers = { f'R{d}':0 for d in range(8) }
+        self.registers = {f'R{d}': 0 for d in range(8)}
         self.registers['PC'] = 0
         self.instructions = instructions
         self.memory = [0] * 65536
@@ -78,7 +79,7 @@ class Metal:
             # print(self.registers['PC'], op, args)
             self.registers['PC'] += 1
             getattr(self, op)(*args)
-            self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
+            self.registers['R0'] = 0   # R0 is always 0 (even if you change it)
         return
 
     def ADD(self, ra, rb, rd):
@@ -135,7 +136,8 @@ class Metal:
 
 # =============================================================================
 
-if __name__ == '__main__':        
+
+if __name__ == '__main__':
     machine = Metal()
 
     # ----------------------------------------------------------------------
@@ -144,15 +146,19 @@ if __name__ == '__main__':
     # The CPU of a computer executes low-level instructions.  Using the
     # Metal instruction set above, show how you would compute 3 + 4 - 5
     # and print out the result.
-    # 
+    #
 
-    prog1 = [ # Instructions here
+    prog1 = [  # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 4, 'R2'),
               # More instructions here
-              # ...
+
+              ('ADD', 'R1', 'R2', 'R3'),
+              ('CONST', 5, 'R2'),
+              ('SUB', 'R3', 'R2', 'R1'),
+
               # Print the result.  Change R1 to location of result.
-              ('STORE', 'R1', 'R0', IO_OUT),    
+              ('STORE', 'R1', 'R0', IO_OUT),
               ('HALT',),
               ]
 
@@ -167,12 +173,21 @@ if __name__ == '__main__':
     #
     # Note: The machine doesn't implement multiplication. So, you need
     # to figure out how to do it.  Hint:  You can use one of the values
-    # as a counter. 
+    # as a counter.
 
-    prog2 = [ # Instructions here
+    prog2 = [  # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 7, 'R2'),
-              # ...
+              # More instructions here
+
+              # Note: the following will also work if we replace 3*7 by 0*7
+              ('CONST', 0, 'R3'),  # R3 is our running total
+              ('BZ', 'R1', 3),
+              ('ADD', 'R2', 'R3', 'R3'),
+              ('DEC', 'R1'),
+              ('JMP', 'PC', -4),
+              ('ADD', 'R3', 'R1', 'R1'),
+
               # Print result. Change R1 to location of result
               ('STORE', 'R1', 'R0', IO_OUT),
               ('HALT',),
@@ -205,7 +220,7 @@ if __name__ == '__main__':
     # How would you encode something like this into machine code?
     # Specifically.  How would you define the function mul(). How
     # would it receive inputs?  How would it return a value?  How
-    # would the branching/jump statements work?  
+    # would the branching/jump statements work?
 
     prog3 = [
         ('CONST', 5, 'R1'),       # n = 5
@@ -216,7 +231,7 @@ if __name__ == '__main__':
 
         #
         # ... instructions here
-        # 
+        #
 
         # print(result)
         ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
@@ -224,7 +239,7 @@ if __name__ == '__main__':
 
         # ----------------------------------
         # ; mul(x, y) -> x * y
-        # 
+        #
         #    def mul(x, y):
         #        result = 0
         #        while x > 0:
@@ -235,10 +250,10 @@ if __name__ == '__main__':
         # ... instructions here
     ]
 
-    print("PROGRAM 3::: Expected Output: 120")
-    machine.run(prog3)
-    print(":::PROGRAM 3 DONE")
-    
+    # print("PROGRAM 3::: Expected Output: 120")
+    # machine.run(prog3)
+    # print(":::PROGRAM 3 DONE")
+
     # ----------------------------------------------------------------------
     # Problem 4: Ultimate Challenge
     #
@@ -255,7 +270,7 @@ if __name__ == '__main__':
     #            return 1
     #        else:
     #            return mul(n, fact(n-1))
-    #    
+    #
     #    print(fact(5))
 
     prog4 = [
@@ -264,6 +279,6 @@ if __name__ == '__main__':
         ('HALT',)
         ]
 
-    print("PROGRAM 4::: Expected Output: 120")
-    machine.run(prog4)
-    print(":::PROGRAM 4 DONE")
+    # print("PROGRAM 4::: Expected Output: 120")
+    # machine.run(prog4)
+    # print(":::PROGRAM 4 DONE")
