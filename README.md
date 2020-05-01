@@ -39,7 +39,17 @@ time to see what's new.
 ## Live Session 
 
 The course is conducted live from 09:30 to 17:30 US Central Time on Zoom.
-Meeting details to be posted here.
+The meeting will be open about 30 minutes prior to the starttime. Meeting
+details are as follows:
+
+* Topic: Write a Compiler, May 4-8, 2020
+* Time: This is a recurring meeting Meet anytime
+
+* Join Zoom Meeting
+  https://us02web.zoom.us/j/82940491798?pwd=U05FZ1FIZHhTeWNWbitkWlNOOFk3Zz09
+
+* Meeting ID: 829 4049 1798
+* Password: 016509
 
 ## Course Requirements
 
