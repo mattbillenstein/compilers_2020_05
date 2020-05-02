@@ -23,10 +23,9 @@
 
 (defun flatten (x)
   (if (listp x)
-      (let ((flattened-car (flatten (car x))))
-        (if (cdr x)
-            (append flattened-car (flatten (cdr x)))
-          flattened-car))
+      (if (cdr x)
+          (append (flatten (car x)) (flatten (cdr x)))
+        (flatten (car x)))
     (list x)))
 
 (ert-deftest flatten ()

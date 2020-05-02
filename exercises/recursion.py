@@ -25,3 +25,19 @@ def maxval(x: list):
     13
     """
     return x[0] if len(x) == 1 else max(x[0], maxval(x[1:]))
+
+
+def flatten(x):
+    """
+    >>> flatten([1, [2, [3, 4], 5], 6])
+    [1, 2, 3, 4, 5, 6]
+    """
+    # It seems that if this is a single function then it must accept either an atom or a list.
+    # (Unlike maxval)
+    if isinstance(x, list):
+        if not x:
+            return x
+        else:
+            return flatten(x[0]) + flatten(x[1:])
+    else:
+        return [x]
