@@ -151,10 +151,13 @@ if __name__ == "__main__":
     prog1 = [  # Instructions here
         ("CONST", 3, "R1"),
         ("CONST", 4, "R2"),
+        ("CONST", 5, "R3"),
+        ("ADD", "R1", "R2", "R4"),
+        ("SUB", "R4", "R3", "R5"),
         # More instructions here
         # ...
         # Print the result.  Change R1 to location of result.
-        ("STORE", "R1", "R0", IO_OUT),
+        ("STORE", "R5", "R0", IO_OUT),
         ("HALT",),
     ]
 
