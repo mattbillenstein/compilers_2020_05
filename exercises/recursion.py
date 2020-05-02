@@ -35,9 +35,25 @@ def flatten(x):
     # It seems that if this is a single function then it must accept either an atom or a list.
     # (Unlike maxval)
     if isinstance(x, list):
+        # TODO: why is this different from the lisp implementation?
         if not x:
             return x
         else:
             return flatten(x[0]) + flatten(x[1:])
     else:
         return [x]
+
+
+def count_occurrences(a, x):
+    """
+    >>> count_occurrences(2, [1, [4, [5, 2], 2], [8, [2, 9]]])
+    3
+    """
+    if isinstance(x, list):
+        # TODO: why is this different from the lisp implementation?
+        if not x:
+            return 0
+        else:
+            return count_occurrences(a, x[0]) + count_occurrences(a, x[1:])
+    else:
+        return int(x == a)

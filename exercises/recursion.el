@@ -31,3 +31,15 @@
 (ert-deftest flatten ()
   (should (equal (flatten '(1 (2 (3 4) 5) 6))
                  '(1 2 3 4 5 6))))
+
+
+(defun count-occurences (a x)
+  (if (listp x)
+      (if (cdr x)
+          (+ (count-occurences a (car x)) (count-occurences a (cdr x)))
+        (count-occurences a (car x)))
+    (if (eq x a) 1 0)))
+
+
+(ert-deftest count-occurences ()
+  (should (equal (count-occurences 2 '(1 (4 (5 2) 2) (8 (2 9)))) 3)))
