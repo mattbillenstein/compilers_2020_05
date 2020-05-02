@@ -14,3 +14,14 @@ def count_multiples(a: int, b: int):
         return 0
     else:
         return 1 + count_multiples(a, quot)
+
+
+def maxval(x: list):
+    """
+    Find the maximum value in a Python list without using any kind of looping construct such
+    as "for" or "while."
+
+    >>> maxval([1, 9, -3, 7, 13, 2, 3])
+    13
+    """
+    return x[0] if len(x) == 1 else max(x[0], maxval(x[1:]))
