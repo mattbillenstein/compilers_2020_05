@@ -77,11 +77,20 @@ class Metal:
         while self.running:
             op, *args = self.instructions[self.registers["PC"]]
             # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
+            # print(self.registers["PC"], op, self._format_args(args))
             self.registers["PC"] += 1
             getattr(self, op)(*args)
             self.registers["R0"] = 0  # R0 is always 0 (even if you change it)
         return
+
+    def _format_args(self, args):
+        formatted = []
+        for arg in args:
+            if isinstance(arg, str):
+                formatted.append(f"{arg}={self.registers[arg]}")
+            else:
+                formatted.append(str(arg))
+        return " ".join(formatted)
 
     def ADD(self, ra, rb, rd):
         self.registers[rd] = (self.registers[ra] + self.registers[rb]) & MASK
@@ -102,6 +111,7 @@ class Metal:
         self.registers[rd] = (self.registers[ra] | self.registers[rb]) & MASK
 
     def XOR(self, ra, rb, rd):
+
         self.registers[rd] = (self.registers[ra] ^ self.registers[rb]) & MASK
 
     def SHL(self, ra, rb, rd):
@@ -228,16 +238,25 @@ if __name__ == "__main__":
     # Specifically.  How would you define the function mul(). How
     # would it receive inputs?  How would it return a value?  How
     # would the branching/jump statements work?
-
+    JUMP_TO_END_OFFSET = 3  # n. instructions to advance when breaking out of loop
+    LABELS = {
+        "LOOP_BEGIN": Label("BZ", 2),
+        "FUNCTION_CALL": Label("JMP", 3),
+        "FUNCTION_DEF": Label("STORE", 9),
+        "LOOP_BEGIN_2": Label("BZ", 12),
+    }
     prog3 = [
         ("CONST", 5, "R1"),  # n = 5
-        # result = 1
+        ("CONST", 1, "R2"),  # result = 1
         # while n > 0:
         #     result = mul(result,  n)
         #     n -= 1
         #
-        # ... instructions here
-        #
+        ("BZ", "R1", JUMP_TO_END_OFFSET),  # break if counter == 0
+        ("JMP", "R0", LABELS["FUNCTION_DEF"].index),  # call mul function
+        ("ADD", "R0", "R6", "R2"),  # Set R2 = return value (R6)
+        ("DEC", "R1"),  # R1 -= 1
+        ("JMP", "R0", LABELS["LOOP_BEGIN"].index),
         # print(result)
         ("STORE", "R2", "R0", IO_OUT),  # R2 Holds the Result
         ("HALT",),
@@ -251,8 +270,27 @@ if __name__ == "__main__":
         #            x -= 1
         #        return result
         #
-        # ... instructions here
+        # Arguments are in R2 and R1
+        # For the registers we'll write to, copy their contents to memory
+        ("STORE", "R2", "R0", 2),
+        ("STORE", "R3", "R0", 3),
+        ("CONST", 0, "R3"),  # result = 0
+        # x = R2
+        # y = R1
+        ("BZ", "R2", JUMP_TO_END_OFFSET),  # break if x == 0
+        ("ADD", "R3", "R1", "R3"),  # result += y
+        ("DEC", "R2"),  # R2 -= 1
+        ("JMP", "R0", LABELS["LOOP_BEGIN_2"].index),
+        # Write return value to R6
+        ("ADD", "R0", "R3", "R6"),
+        # Reinstate the original values for the registers we wrote to, (except for special return
+        # value register)
+        ("LOAD", "R0", "R2", 2),
+        ("LOAD", "R0", "R3", 3),
+        ("JMP", "R0", LABELS["FUNCTION_CALL"].index + 1),
     ]
+    for op, i in LABELS.values():
+        assert prog3[i][0] == op, f"Expected {op} at index {i}, but found {prog2[i][0]}"
 
     print("PROGRAM 3::: Expected Output: 120")
     machine.run(prog3)
