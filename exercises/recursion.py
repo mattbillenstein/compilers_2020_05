@@ -57,3 +57,18 @@ def count_occurrences(a, x):
             return count_occurrences(a, x[0]) + count_occurrences(a, x[1:])
     else:
         return int(x == a)
+
+
+def merge(x, y):
+    """
+    >>> merge([1, 8, 9, 14, 15], [2, 10, 23])
+    [1, 2, 8, 9, 10, 14, 15, 23]
+    """
+    if not x:
+        return y
+    if not y:
+        return x
+    if x[0] < y[0]:
+        return x[:1] + merge(x[1:], y)
+    else:
+        return y[:1] + merge(x, y[1:])

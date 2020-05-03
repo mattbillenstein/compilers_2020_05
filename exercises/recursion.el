@@ -58,3 +58,14 @@
                  '(1 (2 3))))
   (should (equal (vector-to-list [1 [4 [5 2] 2] [8 [2 9]]])
                  '(1 (4 (5 2) 2) (8 (2 9))))))
+
+(defun merge (x y)
+  (cond ((null x) y)
+        ((null y) x)
+        (t (if (< (car x) (car y))
+               (cons (car x) (merge (cdr x) y))
+             (cons (car y) (merge x (cdr y)))))))
+
+(ert-deftest merge ()
+  (should (equal (merge '(1 8 9 14 15) '(2 10 23))
+                 '(1 2 8 9 10 14 15 23))))
