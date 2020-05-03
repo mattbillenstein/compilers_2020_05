@@ -1,4 +1,5 @@
 #!/usr/bin/env emacs --script
+(require 'seq)
 
 (defun count-multiples (a b)
   "Count how many multiples of a are part of the factorization of b."
@@ -43,3 +44,17 @@
 
 (ert-deftest count-occurences ()
   (should (equal (count-occurences 2 '(1 (4 (5 2) 2) (8 (2 9)))) 3)))
+
+
+(defun vector-to-list (x)
+  (if (vectorp x)
+      (if (> (length x) 0)
+          (cons (vector-to-list (aref x 0))
+                (vector-to-list (seq-drop x 1))))
+    x))
+
+(ert-deftest vector-to-list ()
+  (should (equal (vector-to-list [1 [2 3]])
+                 '(1 (2 3))))
+  (should (equal (vector-to-list [1 [4 [5 2] 2] [8 [2 9]]])
+                 '(1 (4 (5 2) 2) (8 (2 9))))))
