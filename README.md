@@ -84,9 +84,9 @@ on the wiki.   Reposted here.
 Short video lectures will introduce important parts of the project.  They will be posted here
 about a day in advance (an email notification will also be sent).
 
-* [Course Introduction](https://vimeo.com/414481789/f5cc08e05b) (20 min)
-* [Part 0 - Preliminaries](https://vimeo.com/414482511/54dff477c1) (7 min)
-* [Part 1 - Structure of Programs](https://vimeo.com/414482772/bcf107cae6) (9 min)
+* [Course Introduction](https://vimeo.com/414481789/f5cc08e05b) (20 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Compiler.pdf) 
+* [Part 0 - Preliminaries](https://vimeo.com/414482511/54dff477c1) (7 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Preliminaries.pdf)
+* [Part 1 - Structure of Programs](https://vimeo.com/414482772/bcf107cae6) (9 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/01Structure.pdf)
 
 ## Live Session Recordings
 
