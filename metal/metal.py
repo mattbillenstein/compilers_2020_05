@@ -54,6 +54,7 @@
 # as 'R0', 'R1', etc.  The 'PC' register may also be used as a register.
 # All memory instructions take their address from register plus an offset
 # that's encoded as part of the instruction.
+from collections import namedtuple
 
 IO_OUT = 65535
 MASK = 0xFFFFFFFF
@@ -135,6 +136,9 @@ class Metal:
         self.running = False
 
 
+Label = namedtuple("Label", ["op", "index"])
+
+
 # =============================================================================
 
 if __name__ == "__main__":
@@ -173,15 +177,28 @@ if __name__ == "__main__":
     # Note: The machine doesn't implement multiplication. So, you need
     # to figure out how to do it.  Hint:  You can use one of the values
     # as a counter.
-
-    prog2 = [  # Instructions here
-        ("CONST", 3, "R1"),
-        ("CONST", 7, "R2"),
-        # ...
-        # Print result. Change R1 to location of result
-        ("STORE", "R1", "R0", IO_OUT),
+    LABELS = {
+        "LOOP_BEGIN": Label("BZ", 3),
+    }
+    prog2 = [
+        ("CONST", 3, "R1"),  # Counter
+        ("CONST", 7, "R2"),  # Increment
+        ("CONST", 0, "R3"),  # Running total
+        # R3 = 0
+        # while True:
+        #     if R1 == 0: break
+        #     R3 += R2
+        #     R1--
+        ("BZ", "R1", 3),  # Advance 3 instructions if R1 == 0
+        ("ADD", "R3", "R2", "R3"),
+        ("DEC", "R1"),
+        ("JMP", "R0", LABELS["LOOP_BEGIN"].index),
+        # Print result.
+        ("STORE", "R3", "R0", IO_OUT),
         ("HALT",),
     ]
+    for op, i in LABELS.values():
+        assert prog2[i][0] == op
 
     print("PROGRAM 2::: Expected Output: 21")
     machine.run(prog2)
