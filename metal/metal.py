@@ -76,7 +76,7 @@ class Metal:
         while self.running:
             op, *args = self.instructions[self.registers["PC"]]
             # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
+            # print(self.registers["PC"], op, args)
             self.registers["PC"] += 1
             getattr(self, op)(*args)
             self.registers["R0"] = 0  # R0 is always 0 (even if you change it)
@@ -220,10 +220,15 @@ if __name__ == "__main__":
 
     prog3 = [
         ("CONST", 5, "R1"),  # n = 5
-        # result = 1
-        # while n > 0:
+        ("CONST", 1, "R2"),  # result = 1
+        ("BZ", "R1", 6),  # while n > 0:
         #     result = mul(result,  n)
-        #     n -= 1
+        ("ADD", "R2", "R0", "R3"),  # result = x
+        ("ADD", "R1", "R0", "R4"),  # n = y
+        ("BZ", "R0", 5),  # calculate
+        ("ADD", "R6", "R0", "R2"),  # set to result
+        ("DEC", "R1"),  #     n -= 1
+        ("BZ", "R0", -7),  # restart loop
         #
         # ... instructions here
         #
@@ -234,11 +239,16 @@ if __name__ == "__main__":
         # ; mul(x, y) -> x * y
         #
         #    def mul(x, y):
-        #        result = 0
+        ("CONST", 0, "R6"),  # result = 0
         #        while x > 0:
+        ("BZ", "R3", 3),
         #            result += y
+        ("ADD", "R6", "R4", "R6"),
         #            x -= 1
+        ("DEC", "R3"),
         #        return result
+        ("BZ", "R0", -4),
+        ("BZ", "R0", -11)
         #
         # ... instructions here
     ]
