@@ -1,0 +1,28 @@
+<html>
+<body>
+<h3>Program Output</h3>
+
+<pre id="fout">f out: </pre>
+<pre id="gout">g out: </pre>
+<pre id="hout">h out: </pre>
+
+<script>
+    var imports = { };
+    fetch("example.wasm").then(response =>
+       response.arrayBuffer()
+    ).then(bytes =>
+       WebAssembly.instantiate(bytes, imports)
+    ).then(results => {
+       fout = results.instance.exports.f();
+       document.getElementById("fout").innerHTML += fout + "\n";
+
+       gout = results.instance.exports.g(20, 30);
+       document.getElementById("gout").innerHTML += gout + "\n";
+
+       hout = results.instance.exports.h(100);
+       document.getElementById("hout").innerHTML += hout + "\n";
+
+    });
+</script>
+</body>
+</html>
