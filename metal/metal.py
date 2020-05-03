@@ -1,5 +1,5 @@
 # metal.py
-# 
+#
 # One of the main roles of a compiler is taking high-level programs
 # such as what you might write in C or Python and reducing them to
 # instructions that can execute on actual hardware.
@@ -21,7 +21,7 @@
 #
 # The memory of the machine consists of 65536 memory slots,
 # each of which can hold an integer value.  Special LOAD/STORE
-# instructions access the memory.  Instructions are stored 
+# instructions access the memory.  Instructions are stored
 # separately.  All memory addresses from 0-65535 may be used.
 #
 # The machine has a single I/O port which is mapped to the memory
@@ -52,33 +52,34 @@
 #
 # In the the above instructions 'Rx' means some register number such
 # as 'R0', 'R1', etc.  The 'PC' register may also be used as a register.
-# All memory instructions take their address from register plus an offset 
+# All memory instructions take their address from register plus an offset
 # that's encoded as part of the instruction.
 
 IO_OUT = 65535
-MASK = 0xffffffff
+MASK = 0xFFFFFFFF
+
 
 class Metal:
     def run(self, instructions):
-        '''
+        """
         Run a program. memory is a Python list containing the program
         instructions and other data.  Upon startup, all registers
         are initialized to 0.  R7 is initialized with the highest valid
         memory index (len(memory) - 1).
-        '''
-        self.registers = { f'R{d}':0 for d in range(8) }
-        self.registers['PC'] = 0
+        """
+        self.registers = {f"R{d}": 0 for d in range(8)}
+        self.registers["PC"] = 0
         self.instructions = instructions
         self.memory = [0] * 65536
-        self.registers['R7'] = len(self.memory) - 2
+        self.registers["R7"] = len(self.memory) - 2
         self.running = True
         while self.running:
-            op, *args = self.instructions[self.registers['PC']]
+            op, *args = self.instructions[self.registers["PC"]]
             # Uncomment to debug what's happening
             # print(self.registers['PC'], op, args)
-            self.registers['PC'] += 1
+            self.registers["PC"] += 1
             getattr(self, op)(*args)
-            self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
+            self.registers["R0"] = 0  # R0 is always 0 (even if you change it)
         return
 
     def ADD(self, ra, rb, rd):
@@ -115,27 +116,28 @@ class Metal:
         self.registers[rd] = value & MASK
 
     def LOAD(self, rs, rd, offset):
-        self.registers[rd] = (self.memory[self.registers[rs]+offset]) & MASK
+        self.registers[rd] = (self.memory[self.registers[rs] + offset]) & MASK
 
     def STORE(self, rs, rd, offset):
-        addr = self.registers[rd]+offset
-        self.memory[self.registers[rd]+offset] = self.registers[rs]
+        addr = self.registers[rd] + offset
+        self.memory[self.registers[rd] + offset] = self.registers[rs]
         if addr == IO_OUT:
             print(self.registers[rs])
 
     def JMP(self, rd, offset):
-        self.registers['PC'] = self.registers[rd] + offset
+        self.registers["PC"] = self.registers[rd] + offset
 
     def BZ(self, rt, offset):
         if not self.registers[rt]:
-            self.registers['PC'] += offset
+            self.registers["PC"] += offset
 
     def HALT(self):
         self.running = False
 
+
 # =============================================================================
 
-if __name__ == '__main__':        
+if __name__ == "__main__":
     machine = Metal()
 
     # ----------------------------------------------------------------------
@@ -144,17 +146,17 @@ if __name__ == '__main__':
     # The CPU of a computer executes low-level instructions.  Using the
     # Metal instruction set above, show how you would compute 3 + 4 - 5
     # and print out the result.
-    # 
+    #
 
-    prog1 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 4, 'R2'),
-              # More instructions here
-              # ...
-              # Print the result.  Change R1 to location of result.
-              ('STORE', 'R1', 'R0', IO_OUT),    
-              ('HALT',),
-              ]
+    prog1 = [  # Instructions here
+        ("CONST", 3, "R1"),
+        ("CONST", 4, "R2"),
+        # More instructions here
+        # ...
+        # Print the result.  Change R1 to location of result.
+        ("STORE", "R1", "R0", IO_OUT),
+        ("HALT",),
+    ]
 
     print("PROGRAM 1::: Expected Output: 2")
     machine.run(prog1)
@@ -167,20 +169,20 @@ if __name__ == '__main__':
     #
     # Note: The machine doesn't implement multiplication. So, you need
     # to figure out how to do it.  Hint:  You can use one of the values
-    # as a counter. 
+    # as a counter.
 
-    prog2 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 7, 'R2'),
-              # ...
-              # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
-              ('HALT',),
-            ]
+    prog2 = [  # Instructions here
+        ("CONST", 3, "R1"),
+        ("CONST", 7, "R2"),
+        # ...
+        # Print result. Change R1 to location of result
+        ("STORE", "R1", "R0", IO_OUT),
+        ("HALT",),
+    ]
 
     print("PROGRAM 2::: Expected Output: 21")
     machine.run(prog2)
-    print(':::PROGRAM 2 DONE')
+    print(":::PROGRAM 2 DONE")
 
     # ----------------------------------------------------------------------
     # Problem 3: Abstraction and functions
@@ -205,26 +207,23 @@ if __name__ == '__main__':
     # How would you encode something like this into machine code?
     # Specifically.  How would you define the function mul(). How
     # would it receive inputs?  How would it return a value?  How
-    # would the branching/jump statements work?  
+    # would the branching/jump statements work?
 
     prog3 = [
-        ('CONST', 5, 'R1'),       # n = 5
+        ("CONST", 5, "R1"),  # n = 5
         # result = 1
         # while n > 0:
         #     result = mul(result,  n)
         #     n -= 1
-
         #
         # ... instructions here
-        # 
-
+        #
         # print(result)
-        ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
-        ('HALT',),
-
+        ("STORE", "R2", "R0", IO_OUT),  # R2 Holds the Result
+        ("HALT",),
         # ----------------------------------
         # ; mul(x, y) -> x * y
-        # 
+        #
         #    def mul(x, y):
         #        result = 0
         #        while x > 0:
@@ -238,7 +237,7 @@ if __name__ == '__main__':
     print("PROGRAM 3::: Expected Output: 120")
     machine.run(prog3)
     print(":::PROGRAM 3 DONE")
-    
+
     # ----------------------------------------------------------------------
     # Problem 4: Ultimate Challenge
     #
@@ -255,14 +254,14 @@ if __name__ == '__main__':
     #            return 1
     #        else:
     #            return mul(n, fact(n-1))
-    #    
+    #
     #    print(fact(5))
 
     prog4 = [
         # Print result (assumed to be in R1)
-        ('STORE', 'R1', 'R0', IO_OUT),
-        ('HALT',)
-        ]
+        ("STORE", "R1", "R0", IO_OUT),
+        ("HALT",),
+    ]
 
     print("PROGRAM 4::: Expected Output: 120")
     machine.run(prog4)
