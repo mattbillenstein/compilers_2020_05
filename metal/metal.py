@@ -148,12 +148,15 @@ if __name__ == "__main__":
     # and print out the result.
     #
 
-    prog1 = [  # Instructions here
+    prog1 = [
+        # Set constants, add and store result in R1
         ("CONST", 3, "R1"),
         ("CONST", 4, "R2"),
-        # More instructions here
-        # ...
-        # Print the result.  Change R1 to location of result.
+        ("ADD", "R1", "R2", "R1"),
+        # Set constant, add, and store result in R1
+        ("CONST", 5, "R2"),
+        ("SUB", "R1", "R2", "R1"),
+        # Print the result.
         ("STORE", "R1", "R0", IO_OUT),
         ("HALT",),
     ]
