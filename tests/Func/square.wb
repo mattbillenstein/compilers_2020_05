@@ -1,0 +1,21 @@
+/* square.wb 
+
+   A basic function definition. */
+
+func square(x int) int {
+    return x*x;
+}
+
+const LAST = 10;
+
+func main() int {
+    var n = 0;
+    while n < LAST {
+        print square(n);
+        n = n + 1;
+    }
+    return 0;
+}
+
+
+
