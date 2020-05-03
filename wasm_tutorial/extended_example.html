@@ -1,0 +1,31 @@
+<html>
+<body>
+<h3>Program Output</h3>
+
+<pre id="fout">Should be 7: </pre>
+<pre id="gout">Should be 5: </pre>
+<pre id="hout">Should be 3.5: </pre>
+<pre id="kout">Should be 2.25: </pre>
+
+<script>
+    var imports = { };
+    fetch("extended_example.wasm").then(response =>
+       response.arrayBuffer()
+    ).then(bytes =>
+       WebAssembly.instantiate(bytes, imports)
+    ).then(results => {
+       fout = results.instance.exports.f();
+       document.getElementById("fout").innerHTML += fout + "\n";
+
+       gout = results.instance.exports.g();
+       document.getElementById("gout").innerHTML += gout + "\n";
+
+       hout = results.instance.exports.h();
+       document.getElementById("hout").innerHTML += hout + "\n";
+
+       kout = results.instance.exports.k();
+       document.getElementById("kout").innerHTML += kout + "\n";
+    });
+</script>
+</body>
+</html>

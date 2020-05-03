@@ -210,6 +210,21 @@ class WasmFunction:
     def idiv(self):  # not in tutorial code
         self.code += b"\x6d"
 
+    def fconst(self, value):  # not in tutorial code
+        self.code += b"\x44" + encode_f64(value)
+
+    def fadd(self):  # not in tutorial code
+        self.code += b"\xa0"
+
+    def fsub(self):  # not in tutorial code
+        self.code += b"\xa1"
+
+    def fmul(self):  # not in tutorial code
+        self.code += b"\xa2"
+
+    def fdiv(self):  # not in tutorial code
+        self.code += b"\xa3"
+
     def ret(self):
         self.code += b"\x0f"
 
