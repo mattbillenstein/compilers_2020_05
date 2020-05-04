@@ -81,6 +81,19 @@ class Integer:
         return f"Integer({self.value})"
 
 
+class UnaryOp:
+    """
+    Example: -32
+    """
+
+    def __init__(self, op, target):
+        self.op = op
+        self.target = target
+
+    def __repr__(self):
+        return f"UnaryOp({self.op}, {self.target})"
+
+
 class BinOp:
     """
     Example: left + right
@@ -101,12 +114,14 @@ class BinOp:
 def to_source(node):
     if isinstance(node, list):
         return "\n".join([to_source(item) for item in node])
-    if isinstance(node, Integer):
+    elif isinstance(node, Integer):
         return repr(node.value)
-    if isinstance(node, Float):
+    elif isinstance(node, Float):
         return repr(node.value)
-    if isinstance(node, Print):
+    elif isinstance(node, Print):
         return f"print {to_source(node.value)}"
+    elif isinstance(node, UnaryOp):
+        return f"{node.op}{to_source(node.target)}"
     elif isinstance(node, BinOp):
         return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
     else:

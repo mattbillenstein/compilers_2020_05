@@ -50,10 +50,10 @@ source1 = """
 """
 
 model1 = [
-    Print(BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(-4)))),
-    Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), Float(-4.0)))),
-    Print(BinOp("+", Integer(-2), Integer(3))),
-    Print(BinOp("*", Integer(2), BinOp("+", Integer(3), Integer(-4)))),
+    Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
+    Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
+    Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+    Print(BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))),
 ]
 
 print(to_source(model1))
