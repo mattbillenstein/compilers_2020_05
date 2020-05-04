@@ -47,7 +47,7 @@
 # if you want to go in a different direction with it.
 
 from types import SimpleNamespace
-
+from textwrap import dedent
 
 class Model(SimpleNamespace):
     def to_source(self):
@@ -62,6 +62,9 @@ class Model(SimpleNamespace):
             )
             + ")"
         )
+
+    def __str__(self):
+        return self.to_source()
 
 
 class Integer(Model):
@@ -83,40 +86,117 @@ class Float(Model):
     def __init__(self, value):
         super().__init__(value=value)
 
+    def to_source(self):
+        return f'{self.value}'
+
 
 class BinOp(Model):
     """
     Example: left + right
     """
 
-    def __init__(self, op, left, right):
-        super().__init__(op=op, left=left, right=right)
+    def __init__(self, op, left, right, **kwargs):
+        super().__init__(op=op, left=left, right=right, **kwargs)
 
     def to_source(self):
         return f"{self.left} {self.op} {self.right}"
 
 
-class Assignment(BinOp):
-    def __init__(self, name, value):
-        super().__init__(left=name, right=value, op="=")
+class Add(BinOp):
+    def __init__(self, left, right):
+        super().__init__(
+            op='+',
+            left=left,
+            right=right
+        )
 
+class Subtract(BinOp):
+    def __init__(self, left, right):
+        super().__init__(
+            op='-',
+            left=left,
+            right=right
+        )
+
+class Mult(BinOp):
+    def __init__(self, left, right):
+        super().__init__(
+            op='*',
+            left=left,
+            right=right
+        )
+
+class Div(BinOp):
+    def __init__(self, left, right):
+        super().__init__(
+            op='/',
+            left=left,
+            right=right
+        )
+
+
+class Assignment(BinOp):
+    def __init__(self, name, value, **kwargs):
+        super().__init__(left=name, right=value, op="=", **kwargs)
+
+class Type(Model):
+    ...
+
+def infer_type(value):
+    ...
+
+class Const(Assignment):
+    def __init__(self, name, value=None, type_=None):
+        self._type = type_
+        super().__init__(
+            left=name,
+            op='=',
+            right=value,
+            type=type_ or self._infer_type(value)
+        )
+
+    def _infer_type(self):
+        ...
+
+    def to_source(self):
+        return f'const {self.left} {self.type} = {self.right};'
+
+class Var(Assignment):
+    def __init__(self, name, value=None, type_=None):
+        self._type = None
 
 class IfStatement(Model):
-    def __init__(self, condition, body):
-        self.condition = condition  # expression?
-        self.body = body  # ???
+    def __init__(self, condition, body, else_clause=None):
+        super().__init__(condition=condition, body=body, else_clause=else_clause)  # expression?  # ???
+
+    def to_source(self):
+        if_statement = f'if {self.condition} {{ ' \
+               f'    {self.body} ' \
+               f'}}'
+        if self.else_clause != None:
+            if_statement += f' else {{\n    {self.else_clause} \n}}'
+        return dedent(if_statement)
 
 
 class PrintStatement(Model):
     def __init__(self, expression):
         super().__init__(expression=expression)
 
+    def to_source(self):
+        return f"print {self.expression};"
+
+class Program(Model):
+    def __init__(self, *statements):
+        self.statements = statements
+
+    def to_source(self):
+        return '\n'.join(str(stmt) for stmt in self.statements)
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 
 def to_source(node):
-    node.to_source()
+    return node.to_source()
     # if isinstance(node, Integer):
     #     return repr(node.value)
     # elif isinstance(node, BinOp):
