@@ -74,11 +74,15 @@ class Metal:
         self.running = True
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
-            # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
+
+            if 0:
+                print(self.registers['PC']-1, op, args)
+                print([self.registers[f'R{_}'] for _ in range(8)])
+                print(self.memory[self.registers['R7']:len(self.memory)-1])
+                input()
         return
 
     def ADD(self, ra, rb, rd):
@@ -146,15 +150,20 @@ if __name__ == '__main__':
     # and print out the result.
     # 
 
-    prog1 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 4, 'R2'),
-              # More instructions here
-              # ...
-              # Print the result.  Change R1 to location of result.
-              ('STORE', 'R1', 'R0', IO_OUT),    
-              ('HALT',),
-              ]
+    prog1 = [
+        # Instructions here
+        ('CONST', 3, 'R1'),
+        ('CONST', 4, 'R2'),
+
+        # More instructions here
+        ('CONST', 5, 'R3'),
+        ('ADD', 'R1', 'R2', 'R4'),
+        ('SUB', 'R4', 'R3', 'R1'),
+
+        # Print the result.  Change R1 to location of result.
+        ('STORE', 'R1', 'R0', IO_OUT),
+        ('HALT',),
+    ]
 
     print("PROGRAM 1::: Expected Output: 2")
     machine.run(prog1)
@@ -169,14 +178,21 @@ if __name__ == '__main__':
     # to figure out how to do it.  Hint:  You can use one of the values
     # as a counter. 
 
-    prog2 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 7, 'R2'),
-              # ...
-              # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
-              ('HALT',),
-            ]
+    prog2 = [
+        # Instructions here
+        ('CONST', 3, 'R1'),
+        ('CONST', 7, 'R2'),
+
+        ('CONST', 0, 'R3'),           # our accumulator
+        ('ADD', 'R2', 'R3', 'R3'),    # add 7
+        ('DEC', 'R1'),                # decrement count
+        ('BZ', 'R1', 1),              # jump over the next jump if count is zero
+        ('JMP', 'R0', 3),             # jump to 3
+
+        # Print result. Change R1 to location of result
+        ('STORE', 'R3', 'R0', IO_OUT),
+        ('HALT',),
+    ]
 
     print("PROGRAM 2::: Expected Output: 21")
     machine.run(prog2)
@@ -208,19 +224,7 @@ if __name__ == '__main__':
     # would the branching/jump statements work?  
 
     prog3 = [
-        ('CONST', 5, 'R1'),       # n = 5
-        # result = 1
-        # while n > 0:
-        #     result = mul(result,  n)
-        #     n -= 1
-
-        #
-        # ... instructions here
-        # 
-
-        # print(result)
-        ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
-        ('HALT',),
+        ('JMP', 'R0', 14),              #  0. jump to main
 
         # ----------------------------------
         # ; mul(x, y) -> x * y
@@ -233,6 +237,50 @@ if __name__ == '__main__':
         #        return result
         #
         # ... instructions here
+
+        # mul subroutine, acc in R3, args in R1, R2
+        ('CONST', 0, 'R3'),             #  1. our accumulator
+        ('INC', 'R7'),                  #  w. dec SP
+        ('LOAD', 'R7', 'R1', 0),        #  3. pop first arg
+        ('INC', 'R7'),                  #  4. dec sp
+        ('LOAD', 'R7', 'R2', 0),        #  5. pop second arg
+        # main loop
+        ('ADD', 'R2', 'R3', 'R3'),      #  6. add
+        ('DEC', 'R1'),                  #  7. decrement count
+        ('BZ', 'R1', 1),                #  8. jump over the next jump if zero
+        ('JMP', 'R0', 6),               #  9. loop
+
+        ('INC', 'R7'),                  # 10. dec sp
+        ('LOAD', 'R7', 'R1', 0),        # 11. pop return address
+        ('STORE', 'R3', 'R7', 0),       # 12. push result
+        ('JMP', 'R1', 0),               # 13. jump to 3
+
+        # result = 1
+        # while n > 0:
+        #     result = mul(result,  n)
+        #     n -= 1
+
+        #
+        # ... instructions here
+        ('CONST', 5, 'R4'),             # 14. n = 5
+        ('CONST', 1, 'R5'),             # 15. result = 1
+        ('BZ', 'R4', 11),               # 16. jump over loop if n > 0
+        ('CONST', 25, 'R6'),            # 17. return address
+        ('STORE', 'R6', 'R7', 0),       # 18. push return address
+        ('DEC', 'R7'),                  # 19.
+        ('STORE', 'R5', 'R7', 0),       # 20. push result
+        ('DEC', 'R7'),                  # 21.
+        ('STORE', 'R4', 'R7', 0),       # 22. push n
+        ('DEC', 'R7'),                  # 23.
+        ('JMP', 'R0', 1),               # 24. call multiply
+        ('DEC', 'R4'),                  # 25. n--
+        ('LOAD', 'R7', 'R5', 0),        # 26. save result
+        ('JMP', 'R0', 16),              # 27. loop
+
+        # print(result)
+        ('STORE', 'R5', 'R0', IO_OUT),  # 28. print result
+        ('HALT',),
+
     ]
 
     print("PROGRAM 3::: Expected Output: 120")
