@@ -150,7 +150,9 @@ if __name__ == '__main__':
               ('CONST', 3, 'R1'),
               ('CONST', 4, 'R2'),
               # More instructions here
-              # ...
+              ('ADD', 'R1', 'R2', 'R1'),
+              ('CONST', 5, 'R2'),
+              ('SUB', 'R1', 'R2', 'R1'),
               # Print the result.  Change R1 to location of result.
               ('STORE', 'R1', 'R0', IO_OUT),    
               ('HALT',),
@@ -172,9 +174,29 @@ if __name__ == '__main__':
     prog2 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 7, 'R2'),
-              # ...
-              # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
+              ('CONST', 0, 'R3'),        # R3 will be a running total
+              # while R1 > 0 {           # pseudocode for what I want to do
+              #      R3 = R3 + R2;
+              #      R1 = R1 - 1;
+              # }
+              
+              # test:
+
+              ('CMP', 'R1', 'R0', 'R4'),   # R1 == 0 -> R4
+              ('BZ', 'R4', 1),      # bz body
+              ('JMP', 'R0', 10),    # jmp exit
+
+              # body: 
+
+              ('ADD', 'R3', 'R3', 'R2'),
+              ('CONST', 1, 'R4'),
+              ('SUB', 'R1', 'R4', 'R1'),
+              ('JMP', 'R0', 3),     # jmp test
+
+              # exit:
+
+              # Print result. Change R3 to location of result
+              ('STORE', 'R3', 'R0', IO_OUT),
               ('HALT',),
             ]
 
