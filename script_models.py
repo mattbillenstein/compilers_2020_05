@@ -34,7 +34,8 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print('------ Simple Expression')
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,9 +51,32 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+# Are we allowed to use built-in types like list, tuple, for the model?
+# Should everything be represented by a class definition (for consistency)?
 
-#print(to_source(model1))
+model1 = Statements([      
+    PrintStatement(BinOp('+',
+                         Integer(2),
+                         BinOp('*',
+                               Integer(3),
+                               UnaryOp('-', Integer(4))))),
+    PrintStatement(BinOp('-',
+                         Float(2.0),
+                         BinOp('/',
+                               Float(3.0),
+                               UnaryOp('-', Float(4.0))))),
+    PrintStatement(BinOp('+',
+                         UnaryOp('-', Integer(2)),
+                         Integer(3))),
+
+    PrintStatement(BinOp('+',
+                         BinOp('*', Integer(2), Integer(3)),
+                         UnaryOp('-', Integer(4)))),
+])
+
+# print(to_source(model1))
+print('------ Model 1')
+print(model1.to_source())
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -67,9 +91,15 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = Statements([
+   ConstDefinition("pi", None, Float(3.14159)),
+   VarDefinition("tau", "float", None),
+   AssignmentStatement(NamedLocation("tau"), BinOp('*', Float(2.0), NamedLocation("pi"))),
+   PrintStatement(NamedLocation("tau")),
+])
 
-#print(to_source(model2))
+print('------ Model 1')
+print(model2.to_source())
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of

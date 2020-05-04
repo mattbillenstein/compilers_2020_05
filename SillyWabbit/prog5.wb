@@ -20,7 +20,7 @@ func abs(x float) float {
 
 func sqrt(x float) MaybeFloat {
     if x < 0.0 {
-        return MaybeFloat::No;
+        return MaybeFloat::No;        // Kind of like an exception. 
     }
     var guess = 1.0;
     var nextguess = 0.0;
@@ -61,6 +61,20 @@ print(match y {
    Write a function that computes this using the sqrt() function above. 
    Since there might not be a solution, have it also return a MaybeFloat.
 */
+
+func solve_quadratic(a float, b float, c float) MaybeFloat {
+     var discriminant = sqrt(b*b - 4.0*a*c);     // Yikes. Flashback to algebra
+     return match discriminant {
+          No => MaybeFloat::No;
+	  Yes(d) => MaybeFloat::Yes((-b + d)/(2.0*a));
+     };
+}
+
+var r = solve_quadratic(2.0, 5.0, 1.0);
+match r {
+    No => { print 'n'; };
+    Yes(x) => { print x; };
+};
 
 
    

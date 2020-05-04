@@ -1,4 +1,4 @@
-# model.py
+# wabbit/model.py
 #
 # This file defines the data model for Wabbit programs.  The data
 # model is a data structure that represents the contents of a program
@@ -56,6 +56,22 @@ class Integer:
     def __repr__(self):
         return f'Integer({self.value})'
 
+    def to_source(self):
+        return str(self.value)
+
+class Float:
+    '''
+    Example: 4.2
+    '''
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f'Float({self.value})'
+
+    def to_source(self):
+        return str(self.value)
+
 class BinOp:
     '''
     Example: left + right
@@ -68,7 +84,130 @@ class BinOp:
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
+    def to_source(self):
+        return f'({self.left.to_source()} {self.op} {self.right.to_source()})'
+        
+class UnaryOp:
+    '''
+    Example: -operand
+    '''
+    def __init__(self, op, operand):
+        self.op = op
+        self.operand = operand
+
+    def __repr__(self):
+        return f'UnaryOp({self.op}, {self.operand})'
+
+    def to_source(self):
+        return f'({self.op} {self.operand.to_source()})'
+
+class Statements:
+    '''
+    Zero or more statements:
+
+        statement1;
+        statement2;
+        ...
+    '''
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __repr__(self):
+        return f'Statements({self.statements})'
+
+    def to_source(self):
+        return '\n'.join(stmt.to_source() for stmt in self.statements)
+
+# Example:   Assignment
+#
+#     a = 2 + 4;
+#
+#     location = expression;      
+
+class AssignmentStatement:
+    def __init__(self, location, expression):
+        self.location = location
+        self.expression = expression
+
+    def __repr__(self):
+        return f'AssignmentStatement({self.location}, {self.expression})'
+
+    def to_source(self):
+        return f'{self.location.to_source()} = {self.expression.to_source()};'
+
+
+class ConstDefinition:
+    '''
+    const name [type] = value;
+    '''
+    def __init__(self, name, type, value):
+        self.name = name
+        self.type = type
+        self.value = value
+
+    def __repr__(self):
+        return f'ConstDefinition({self.name}, {self.type}, {self.value})'
+
+    def to_source(self):
+        return f'const {self.name} {self.type if self.type else ""} = {self.value.to_source()};'
+
+class VarDefinition:
+    '''
+    var name [type] [ = value];
+    '''
+    def __init__(self, name, type, value):
+        self.name = name
+        self.type = type
+        self.value = value
+
+    def __repr__(self):
+        return f'VarDefinition({self.name}, {self.type}, {self.value.to_source()})'
+
+    def to_source(self):
+        src = f'var {self.name} {self.type if self.type else ""}'
+        if self.value:
+            src += f'= {self.value.to_source()}'
+        return src
+
+class PrintStatement:
+    '''
+    print expression ;
+    '''
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __repr__(self):
+        return f'PrintStatement({self.expression})'
+
+    def to_source(self):
+        return f'print {self.expression.to_source()};'
+
+class IfStatement:
+    '''
+    if test { consequence } else { alternative }
+    '''
+    def __init__(self, test, consequence, alternative):
+        self.test = test
+        self.consequence = consequence   #  What are these????  (Don't care now. Will refine as we work on it)
+        self.alternative = alternative
+
+class WhileStatement:
+    pass
+
+
+class NamedLocation:
+    def __init__(self, name: str):
+        self.name = name
+        
+    def __repr__(self):
+        return f'NamedLocation({self.name})'
+
+    def to_source(self):
+        return str(self.name)
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
+
+# Could this be a method on the classes?  Maybe. 
 
 def to_source(node):
     if isinstance(node, Integer):

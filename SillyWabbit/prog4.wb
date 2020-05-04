@@ -37,4 +37,23 @@ print_fraction(c);
    you modify the midpoint() function to operate on a Line?
  */
 
+struct Point {
+    x float;
+    y float;
+}
+
+struct Line {
+    p1 Point;
+    p2 Point;
+}
+
+func midpoint(s Line) Point {
+     return Point((s.p1.x + s.p2.x)/2.0, (s.p1.y + s.p2.y) /2.0);
+}
+
+var s = Line(Point(20.0, 25.0), Point(40.0, 55.0));
+var midp = midpoint(s);
+print midp.x;
+print midp.y;
+
 
