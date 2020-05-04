@@ -80,9 +80,10 @@ class Location(Node):
 
 class Integer(Expression):
     '''
-    Example: 42
+    Literal Integer: Example: 42
     '''
     def __init__(self, value):
+        assert isinstance(value, int)
         self.value = value
 
     def __repr__(self):
@@ -96,6 +97,7 @@ class Float(Expression):
     Example: 4.2
     '''
     def __init__(self, value):
+        assert isinstance(value, float)
         self.value = value
 
     def __repr__(self):
@@ -126,6 +128,8 @@ class UnaryOp(Expression):
     Example: -operand
     '''
     def __init__(self, op, operand):
+        assert isinstance(op, str)
+        assert isinstance(operand, Expression)
         self.op = op
         self.operand = operand
 
@@ -141,6 +145,7 @@ class Grouping(Expression):
     ( expression )      # Expression surrounded by parenthesis
     '''
     def __init__(self, expression):
+        assert isinstance(expression, Expression)
         self.expression = expression
         
     def __repr__(self):
@@ -154,6 +159,7 @@ class LoadLocation(Expression):
     Loading a value out of a location for use in an expression.
     '''
     def __init__(self, location):
+        assert isinstance(location, Location)
         self.location = location
 
     def __repr__(self):
@@ -203,6 +209,8 @@ class Statements(Statement):
 
 class AssignmentStatement(Statement):
     def __init__(self, location, expression):
+        assert isinstance(location, Location)
+        assert isinstance(expression, Expression)
         self.location = location
         self.expression = expression
 
@@ -218,8 +226,11 @@ class ConstDefinition(Definition):
     const name [type] = value;
     '''
     def __init__(self, name, type, value):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        assert isinstance(value, Expression)
         self.name = name
-        self.type = type
+        self.type = type    
         self.value = value
 
     def __repr__(self):
@@ -233,6 +244,10 @@ class VarDefinition(Definition):
     var name [type] [ = value];
     '''
     def __init__(self, name, type, value):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        assert value is None or isinstance(value, Expression)
+        assert not (type is None and value is None)
         self.name = name
         self.type = type
         self.value = value
@@ -251,9 +266,7 @@ class PrintStatement(Statement):
     print expression ;
     '''
     def __init__(self, expression):
-        # preventing:   print var x int;   # --> Error.  var x int is a statement
-        # allowed:      print 2 + 3;       # --> Expression.
-        assert isinstance(expression, Expression)     # Contract/safety check 
+        assert isinstance(expression, Expression) 
         self.expression = expression
 
     def __repr__(self):
@@ -304,6 +317,7 @@ class WhileStatement(Statement):
 # Wrapper around a expression to indicate usage as a statement
 class ExpressionStatement(Statement):
     def __init__(self, expression):
+        assert isinstance(expression, Expression)
         self.expression = expression
 
     def __repr__(self):
@@ -316,7 +330,8 @@ class NamedLocation(Location):
     '''
     A location representing a simple variable name like "x"
     '''
-    def __init__(self, name: str):
+    def __init__(self, name):
+        assert isinstance(name, str)
         self.name = name
         
     def __repr__(self):
