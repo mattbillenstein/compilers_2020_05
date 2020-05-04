@@ -46,113 +46,211 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Integer:
+def checkMe(n):
+    ''''''
+    assert(n.is_correct())
+
+class Node:
+    def __init__(self):
+        self.is_expression = False
+        self.is_assignable = False
+
+    def is_correct(self):
+        return True
+
+class Statements(Node):
+    def __init__(self, statements):
+        super().__init__()
+        self.statements = statements
+
+    def __repr__(self):
+        return f'Statements({self.statements})'
+
+    def is_correct(self):
+        if not isinstance(self.statements, list):
+            return False
+        return all([isinstance(Node, x) and x.is_correct() for x in self.statements])
+
+class Integer(Node):
     '''
     Example: 42
     '''
     def __init__(self, value):
+        super().__init__()
         self.value = value
+        self.is_expression = True
+        checkMe(self)
 
     def __repr__(self):
         return f'Integer({self.value})'
 
-class Float:
+    def is_correct(self):
+        return isinstance(self.value, int)
+
+class Float(Node):
     def __init__(self, value):
+        super().__init__()
         self.value = value
+        self.is_expression = True
+        checkMe(self)
 
     def __repr__(self):
         return f'Float({self.value})'
 
-class BinOp:
+    def is_correct(self):
+        return isinstance(self.value, float)
+
+class BinOp(Node):
     '''
     Example: left + right
     '''
     def __init__(self, op, left, right):
+        super().__init__()
         self.op = op
         self.left = left
         self.right = right
+        self.is_expression = True
+        checkMe(self)
+
+    def is_correct(self):
+        legal_ops = ['+', '-', '/', '*', '==', '!=', '&&', '||', '!', '<', '<=', '>', '>=', '==', '!=' ]
+        if not self.op in legal_ops:
+            return False
+        if not self.left.is_expression:
+            return False
+        if not self.right.is_expression:
+            return False
+        return True
 
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
-class PrintStatement:
+    def to_source(self):
+        return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+
+class PrintStatement(Node):
     def __init__(self, node_to_print):
+        super().__init__()
         self.node_to_print = node_to_print
+        checkMe(self)
 
     def __repr__(self):
         return f'PrintStatement({self.node_to_print})'
 
-class Const:
+    def is_correct(self):
+        return True
+
+class Const(Node):
     def __init__(self, name, value):
+        super().__init__()
         self.name = name
         self.value = value
+        checkMe(self)
 
     def __repr__(self):
         return f'Const({self.name}, {self.value})'
 
-class Var:
+    def is_correct(self):
+        return True
+
+class Var(Node):
     def __init__(self, name, myType):
+        super().__init__()
         self.name = name
         self.myType = myType
+        self.is_assignable = True
+        checkMe(self)
 
     def __repr__(self):
         return f'Var({self.name}, {self.myType})'
 
-class Assign:
+    def is_correct(self):
+        return True
+
+class Assign(Node):
     def __init__(self, name, value):
+        super().__init__()
         self.name = name
         self.value = value
+        checkMe(self)
 
     def __repr__(self):
         return f'Assign({self.name}, {self.value})'
 
-class Variable:
+    def is_correct(self):
+        if (not (isinstance(self.name, Node) and self.name.is_assignable)):
+            return False
+        return isinstance(self.value, Node) and self.value.is_expression
+
+
+class Variable(Node):
     def __init__(self, name):
+        super().__init__()
         self.name = name
+        self.is_expression = True
+        self.is_assignable = True
+        checkMe(self)
 
     def __repr__(self):
         return f'Variable({self.name})'
 
-class Compare:
-    def __init__(self, op, lhs, rhs):
-        self.op = op
-        self.lhs = lhs
-        self.rhs = rhs
+    def is_correct(self):
+        return isinstance(self.name, str)
 
-    def __repr__(self):
-        return f'Compare({self.op}, {self.lhs}, {self.rhs})'
-
-class If:
+class If(Node):
     def __init__(self, condition, consequence):
+        super().__init__()
         self.condition = condition
         self.consequence = consequence
+        checkMe(self)
 
     def __repr__(self):
         return f'If({self.condition}, {self.consequence})'
 
-class IfElse:
+    def is_correct(self):
+        return isinstance(self.consequence, Statements)
+
+class IfElse(Node):
     def __init__(self, condition, consequence, otherwise):
+        super().__init__()
         self.condition = condition
         self.consequence = consequence
         self.otherwise = otherwise
+        checkMe(self)
 
     def __repr__(self):
         return f'IfElse({self.condition}, {self.consequence}, {self.otherwise})'
 
-class While:
+    def is_correct(self):
+        if not isinstance(self.consequence, Statements):
+            return False
+        return isinstance(self.otherwise, Statements)
+
+class While(Node):
     def __init__(self, condition, body):
+        super().__init__()
         self.condition = condition
         self.body = body
+        checkMe(self)
 
     def __repr__(self):
         return f'While({self.condition}, {self.body})'
 
-class CompoundExpression:
+    def is_correct(self):
+        return isinstance(self.body, Statements)
+
+class CompoundExpression(Node):
     def __init__(self, statements):
+        super().__init__()
         self.statements = statements
+        self.is_expression = True
+        checkMe(self)
 
     def __repr__(self):
         return f'CompoundExpression({self.statements})'
+
+    def is_correct(self):
+        return isinstance(self.statements, Statements)
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
@@ -161,7 +259,7 @@ nesting_level = 0
 def to_source_list(l):
     global nesting_level
     indent = nesting_level * '    '
-    return ('\n').join([f'{indent}{to_source(x)};' for x in l]) # TODO this leads to ';' after eg while statements
+    return ('\n').join([f'{indent}{to_source(x)};' for x in l.statements]) # TODO this leads to ';' after eg while statements
 
 def to_source_node_or_list(x):
     if isinstance(x, list):
@@ -180,7 +278,7 @@ def to_source(node):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-    elif isinstance(node, list):
+    elif isinstance(node, Statements):
         return to_source_list(node)
     elif isinstance(node, PrintStatement):
         return f'print {to_source(node.node_to_print)}'
@@ -198,8 +296,6 @@ def to_source(node):
         return f'{to_source(node.name)} = {to_source(node.value)}'
     elif isinstance(node, Variable):
         return f'{node.name}'
-    elif isinstance(node, Compare):
-        return f'{to_source(node.lhs)} {node.op} {to_source(node.rhs)}'
     elif isinstance(node, If):
         return f'''if {to_source(node.condition)} {{
 {to_source_nested_body(node.consequence)}
@@ -215,7 +311,7 @@ def to_source(node):
 {to_source_nested_body(node.body)}
 }}'''
     elif isinstance(node, CompoundExpression):
-        return f'{{ {"; ".join([to_source(each) for each in node.statements])}; }}'
+        return f'{{ {"; ".join([to_source(each) for each in node.statements.statements])}; }}'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 

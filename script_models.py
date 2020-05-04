@@ -52,12 +52,12 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = [
+model1 = Statements([
     PrintStatement(BinOp('+', Integer(2), BinOp('*', Integer(3), Integer(-4)))),
     PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
     PrintStatement(BinOp('+', Integer(-2), Integer(3))),
     PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), Integer(-4)))),
-]
+])
 
 print('1')
 print(to_source(model1))
@@ -76,12 +76,12 @@ source2 = """
     print tau;
 """
 
-model2 = [
+model2 = Statements([
     Const('pi', Float(3.14159)),
     Var('tau', 'float'),
-    Assign('tau', BinOp('*', Float(2.0), Variable('pi'))),
+    Assign(Variable('tau'), BinOp('*', Float(2.0), Variable('pi'))),
     PrintStatement(Variable('tau')),
-]
+])
 
 print('2')
 print(to_source(model2))
@@ -101,12 +101,11 @@ source3 = '''
     }
 '''
 
-model3 = [
+model3 = Statements([
     Assign(Var('a', 'int'), Integer(2)),
     Assign(Var('b', 'int'), Integer(3)),
-    If(Compare('<', Variable('a') , Variable('b')), [If(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),]),]),
-    IfElse(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),], [PrintStatement(Variable('b')),]),
-]
+    IfElse(BinOp('<', Variable('a') , Variable('b')), Statements([PrintStatement(Variable('a')),]), Statements([PrintStatement(Variable('b')),])),
+])
 
 print(3)
 print(to_source(model3))
@@ -128,16 +127,16 @@ source4 = '''
     }
 '''
 
-model4 = [
+model4 = Statements([
     Const('n', Integer(10)),
     Assign(Var('x', 'int'), Integer(1)),
     Assign(Var('fact', 'int'), Integer(1)),
-    While(Compare('<', Variable('x'), Variable('n')), [
+    While(BinOp('<', Variable('x'), Variable('n')), Statements([
         Assign(Variable('fact'), BinOp('*', Variable('fact'), Variable('x'))),
         PrintStatement(Variable('x')),
-        Assign(Variable('x'), BinOp('+', Variable('x'), Integer('1'))),
-        ]),
-]
+        Assign(Variable('x'), BinOp('+', Variable('x'), Integer(1))),
+        ])),
+    ])
 print(4)
 print(to_source(model4))
 print()
@@ -155,17 +154,17 @@ source5 = '''
     print y;
 '''
 
-model5 = [
+model5 = Statements([
     Assign(Var('x', None), Integer(37)),
     Assign(Var('y', None), Integer(42)),
-    Assign(Variable('x'), CompoundExpression([
+    Assign(Variable('x'), CompoundExpression(Statements([
         Assign(Var('t', None), Variable('y')),
         Assign(Variable('y'), Variable('x')),
         Variable('t'),
-    ])),
+    ]))),
     PrintStatement(Variable('x')),
     PrintStatement(Variable('y')),
-]
+])
 
 print(5)
 print(to_source(model5))
