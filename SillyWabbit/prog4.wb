@@ -49,6 +49,7 @@ func print_point(p Point) int {
   print ' ';
   print p.y;
   print ')';
+  return 0;
 }
 
 var p1 = Point(20.0, 25.0);
