@@ -1,11 +1,23 @@
 # See https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
-from wabbit.model import *
+from wabbit.model import (
+    Assignment,
+    Integer,
+    Float,
+    Name,
+    UnaryOp,
+    BinOp,
+    ConstDeclaration,
+    VarDeclaration,
+    PrintStatement,
+    print_source,
+)
 
 # ----------------------------------------------------------------------
 # Simple Expression
 expr_source = "2 + 3 * 4;"
 expr_model = [BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))]
 print_source(expr_model)
+print()
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -24,13 +36,11 @@ model1 = [
 ]
 
 print_source(model1)
+print()
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
 #            Expressions and assignment.
-#
-# Encode the following statements.
-
 source2 = """
     const pi = 3.14159;
     var tau float;
@@ -38,9 +48,15 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = [
+    ConstDeclaration("pi", 3.14159),
+    VarDeclaration("tau", "float"),
+    Assignment("tau", BinOp("*", Float(2.0), Name("pi"))),
+    PrintStatement(Name("tau")),
+]
 
 print_source(model2)
+print()
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
