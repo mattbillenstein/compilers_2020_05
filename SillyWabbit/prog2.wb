@@ -4,12 +4,12 @@
    The following program is an example.  In this program, a rubber
    ball is dropped off a building with an initial height of 100 meters.
    On each bounce, the ball rebounds to 3/5 its original height. Print
-   the height of the ball on the first 10 bounces. 
+   the height of the ball on the first 10 bounces.
  */
-   
-const initial_height = 100.0;
-const rebound = 0.6;
-const total_bounces = 10;
+
+const initial_height = 1.0;
+const rebound = 2.0;
+const total_bounces = 19;
 
 func main() int {
    var bounce int = 0;
