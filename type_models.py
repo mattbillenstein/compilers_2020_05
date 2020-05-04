@@ -212,6 +212,30 @@ model8 = Statements(
             Print(Variable("x")),
             Print(Float(0.0)),
         ),
+        While(
+            Let(
+                Assignment(
+                    FunctionCall("Integer", Arguments(Variable("x"))), Variable("a")
+                )
+            ),
+            Statements(
+                [
+                    Print(Variable("x")),
+                    If(
+                        BinOp(">", Variable("x"), Integer(0)),
+                        Assignment(
+                            Variable("a"),
+                            EnumLocation(
+                                "Number",
+                                "Integral",
+                                Arguments(BinOp("-", Variable("x"), Integer(1))),
+                            ),
+                        ),
+                        Assignment(Variable("a"), EnumLocation("Number", "No",),),
+                    ),
+                ]
+            ),
+        ),
     ]
 )
 print(to_source(model8))

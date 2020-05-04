@@ -368,7 +368,7 @@ class While(Statement):
     """
 
     def __init__(self, test, when_true):
-        assert isinstance(test, Expression)
+        assert isinstance(test, Expression) or isinstance(test, Definition)
         assert isinstance(when_true, Statement)
         self.test = test
         self.when_true = when_true
