@@ -11,7 +11,7 @@ func add_fraction(a Fraction, b Fraction) Fraction {
     return Fraction(a.numer * b.denom + a.denom * b.numer, a.denom * b.denom);
 }
 
-func print_fraction(a Fraction) unit {
+func print_fraction(a Fraction) {
     print a.numer;
     print '/';
     print '\n';

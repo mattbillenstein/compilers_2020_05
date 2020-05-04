@@ -1,0 +1,53 @@
+/* struct.wb
+
+   This file will really stretch your compiler as you try to implement
+   support for basic structures.
+*/
+
+
+/* Some library functions for warmup */
+func abs(x float) float {
+    if x < 0.0 {
+        return -x;
+    } else {
+        return x;
+    }
+}
+
+func sqrt(x float) float {
+    var guess = 1.0;
+    var nextguess = 0.0;
+    while true {
+        nextguess = (guess + (x / guess)) / 2.0;
+	if (abs(nextguess-guess)/guess) < 0.000000001 {
+	    break;
+        }
+	guess = nextguess;
+    }
+    return guess;
+}
+
+/* Now the real stuff... */
+
+struct Complex {
+   real float;
+   imag float;
+}
+
+func add(x Complex, y Complex) Complex {
+     return Complex(x.real + y.real, x.imag+y.imag);
+}
+
+func magnitude(x Complex) float {
+    return sqrt(x.real * x.real + x.imag * x.imag);
+}
+
+var a = Complex(10.0, 20.0);
+var b = Complex(3.0, 4.0);
+var c = add(a, b);
+
+print c.real;          // Should get 13.0
+print c.imag;          // Should get 24.0
+print magnitude(b);    // Should get 5.0 (or close to it)
+
+

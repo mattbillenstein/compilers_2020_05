@@ -52,6 +52,24 @@ class Node:
     pass
 
 
+# ================ Program ==============================
+
+class Program(Node):
+    """
+    a list of statements
+    """
+    def __init__(self, *statements):
+        self.statements = tuple(statements)
+
+    def __repr__(self):
+        lines = [to_source(st) for st in self.statements]
+        return f"Program{self.statements}"
+
+    def to_source(self):
+        statements = [to_source(s) for s in self.statements]
+        return "\n".join(statements)
+
+
 # ========================= Number =======================
 
 class Number(Node):
@@ -240,24 +258,6 @@ class Type(Node):
 
     def to_source(self):
         return self.type
-
-
-# ================ Programs =======
-
-class Program(Node):
-    """
-    a list of statements
-    """
-    def __init__(self, *statements):
-        self.statements = tuple(statements)
-
-    def __repr__(self):
-        lines = [to_source(st) for st in self.statements]
-        return f"Program{self.statements}"
-
-    def to_source(self):
-        statements = [to_source(s) for s in self.statements]
-        return "\n".join(statements)
 
 
 class Name(Node):

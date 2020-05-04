@@ -1,0 +1,102 @@
+/* error_type.wb
+
+   This file that has errors that could appear in WabbitType.
+*/
+
+
+struct A {
+   x int;
+   y int;
+}
+
+var a = A(2);       // Not enough values
+var b = A(2, 2.5);  // Type error.  (y is int)
+
+var c A;            // Is this allowed or not? What's the default value?
+var d = A(3, 4);
+
+print d.z;          // Not a valid field
+d.x = 12.34;        // Type error. Expected int
+
+const e = A(3, 4);
+e.x = 10;           // Is this allowed or not???  (think about)
+
+e = A(10, 20);      // Can't assign to e. immutable.
+
+struct B {
+   x int;
+   x int;  // Duplicate field
+}
+
+struct C {
+   x blah;   // Not a type
+}
+
+struct D {
+   x void;   // Void can't be instantiated.
+}
+
+struct E {
+    x E;     // Recursive type not allowed.   
+}
+
+// Swapped name/type 
+struct F {
+    int x;   // "x" is not a type
+}
+
+var f int = 42;
+print f.x;   // "f" is not a structure
+
+
+enum N {
+   AA;
+   BB(int);
+}
+
+print N::AA(1);     // Takes no value
+print N::BB;        // Expects a value
+print N::BB(2.5);   // Wrong type
+print N::CC;        // Doesn't exist
+
+print M::AA;        // M not defined.
+print f::AA;        // f is not an enum
+
+enum M {
+    AA(M);          // No recursive definitions (can't refer to myself)
+}
+
+var n = N::BB(2);
+
+print match n {
+    AA(x) => 0;     // Error. AA has no value
+    BB(y) => 1;
+};
+
+print match n {
+    AA => 0;     
+    BB => 1;     // Error. BB expects a value
+};
+
+print match n {  
+    AA => 0;
+    BB(y) => 1.5;  // Error. Inconsistent type for match
+};
+
+print match n {
+    AA => 0;
+    BB(y) => 1;
+    CC => 2;       // CC is not a choice.
+};
+
+// Error. Not all choices matched (BB missing)
+print match n {
+    AA => 0;
+}; 
+
+print match f {    // f is not an enum
+    AA => 0;
+    BB(y) => 1;
+};
+
+

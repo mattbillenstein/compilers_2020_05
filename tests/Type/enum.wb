@@ -1,0 +1,27 @@
+// enum.wb
+// 
+// Tests of enum features
+
+enum MaybeStuff {
+   Nothing;
+   SomeFloat(float);
+   SomeInt(int);
+}
+
+var x = MaybeStuff::Nothing;
+var y = MaybeStuff::SomeFloat(2.5);
+var z = MaybeStuff::SomeInt(42);
+
+func f(x MaybeStuff) int {
+   var a = match x {
+        Nothing => 0;
+        SomeFloat(z) => 1;
+	SomeInt(z) => z;
+   };
+   return a;
+}
+
+print f(x);     // 0
+print f(y);     // 1
+print f(z);     // 42
+
