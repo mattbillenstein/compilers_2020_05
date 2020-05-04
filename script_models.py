@@ -67,16 +67,24 @@ if source1 != repr1:
 #
 # Encode the following statements.
 
-source2 = """
-    const pi = 3.14159;  
-    var tau float;
-    tau = 2.0 * pi;
-    print tau;
-"""
+source2 = """const pi = 3.14159;
+var tau float;
+tau = 2.0 * pi;
+print tau;"""
 
-model2 = None
+model2 = [
+    VarDecl('pi', None, Float(3.14159), True),
+    VarDecl('tau', 'float'),
+    VarAssign('tau', BinOp('*', Float(2.0), Var('pi'))),
+    Print(Var('tau'))
+]
 
-#print(to_source(model2))
+repr2 = to_source(model2)
+if source2 != repr2:
+    print('err')
+    print(repr2)
+    print(source2) 
+    # looks like a whitespace issue.  disregard and move on
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of

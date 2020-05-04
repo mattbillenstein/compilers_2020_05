@@ -54,7 +54,7 @@ class Scalar:
         self.value = value
 
     def __repr__(self):
-        return self.__class__.__name__ + '(' + self.value + ')'
+        return self.__class__.__name__ + '(' + str(self.value) + ')'
 
     def to_source(self):
         return repr(self.value)
@@ -72,6 +72,59 @@ class Float(Scalar):
     Example: 42.0
     '''
     pass
+
+class Var:
+    '''
+    Example: foo
+    '''
+    def __init__(self, identifier):
+        self.identifier = identifier
+
+    def __repr__(self):
+        return self.identifier
+
+    def to_source(self):
+        return self.identifier
+
+class VarDecl:
+    '''
+    Example: var foo int
+    '''
+    def __init__(self, identifier, _type, expr=None, const=False):
+        self.identifier = identifier
+        self.type = _type
+        self.const = const
+        self.expr = expr
+
+    def __repr__(self):
+        return f'VarDecl({self.identifier}, {self.type or "None"}, {to_source(self.expr) or None}, {"const" if self.const else "var"}) '
+
+    def to_source(self):
+        return f'var {self.identifier} {self.type}'
+
+    def to_source(self):
+        ret = 'const' if self.const else 'var'
+        ret += ' ' + self.identifier
+        if self.type:
+            ret += ' ' + self.type
+        if self.expr:
+            ret += ' = ' + to_source(self.expr)
+        return ret
+
+
+class VarAssign:
+    '''
+    Example: foo = EXPR
+    '''
+    def __init__(self, identifier, expr):
+        self.identifier = identifier
+        self.expr = expr
+
+    def __repr__(self):
+        return f'VarAssign({self.identifier}, {self.expr})'
+
+    def to_source(self):
+        return f'{self.identifier} = {to_source(self.expr)}'
 
 
 class BinOp:
@@ -121,5 +174,7 @@ class Print:
 def to_source(node):
     if isinstance(node, list):
         return ";\n".join(to_source(n) for n in node) + ";\n"
+    elif node is None:
+        return "None"
     else:
         return node.to_source()
