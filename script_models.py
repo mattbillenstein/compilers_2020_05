@@ -43,16 +43,23 @@ expr_model  = BinOp('+', Integer(2),
 # simple expressions.
 #
 
-source1 = """
-    print 2 + 3 * -4;
-    print 2.0 - 3.0 / -4.0;
-    print -2 + 3;
-    print 2 * 3 + -4;
+source1 = """print 2 + 3 * -4;
+print 2.0 - 3.0 / -4.0;
+print -2 + 3;
+print 2 * 3 + -4;
 """
 
-model1 = None
+model1 = [
+    Print(BinOp('+', Integer(2), BinOp('*', Integer(3), UnOp('-', Integer(4))))),
+    Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnOp('-', Float(4.0))))),
+    Print(BinOp('+', UnOp('-', Integer(2)), Integer(3))),
+    Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), UnOp('-', Integer(4)))),
+]
 
-#print(to_source(model1))
+repr1 = to_source(model1)
+if source1 != repr1:
+    print('err')
+    print(repr1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 

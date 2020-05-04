@@ -46,7 +46,7 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Integer:
+class Scalar:
     '''
     Example: 42
     '''
@@ -54,7 +54,25 @@ class Integer:
         self.value = value
 
     def __repr__(self):
-        return f'Integer({self.value})'
+        return self.__class__.__name__ + '(' + self.value + ')'
+
+    def to_source(self):
+        return repr(self.value)
+
+
+class Integer(Scalar):
+    '''
+    Example: 42
+    '''
+    pass
+
+
+class Float(Scalar):
+    '''
+    Example: 42.0
+    '''
+    pass
+
 
 class BinOp:
     '''
@@ -68,16 +86,40 @@ class BinOp:
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
+    def to_source(self):
+        return f'{self.left.to_source()} {self.op} {self.right.to_source()}'
+
+class UnOp:
+    '''
+    Example: -right
+    '''
+    def __init__(self, op, right):
+        self.op = op
+        self.right = right
+
+    def __repr__(self):
+        return f'UnOp({self.op}, {self.right})'
+
+    def to_source(self):
+        return f'{self.op}{self.right.to_source()}'
+
+class Print:
+    '''
+    Example: print(EXPR)
+    '''
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f'Print({self.expr})'
+
+    def to_source(self):
+        return f'print {to_source(self.expr)}'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
-    if isinstance(node, Integer):
-        return repr(node.value)
-    elif isinstance(node, BinOp):
-        return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+    if isinstance(node, list):
+        return ";\n".join(to_source(n) for n in node) + ";\n"
     else:
-        raise RuntimeError(f"Can't convert {node} to source")
-
-
-
-    
+        return node.to_source()
