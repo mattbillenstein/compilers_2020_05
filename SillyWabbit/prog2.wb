@@ -4,12 +4,13 @@
    The following program is an example.  In this program, a rubber
    ball is dropped off a building with an initial height of 100 meters.
    On each bounce, the ball rebounds to 3/5 its original height. Print
-   the height of the ball on the first 10 bounces. 
+   the height of the ball on the first 10 bounces.
  */
-   
+
 const initial_height = 100.0;
 const rebound = 0.6;
 const total_bounces = 10;
+const num_teeth = 20;
 
 func main() int {
    var bounce int = 0;
@@ -19,6 +20,69 @@ func main() int {
        height = height * rebound;
        print(height);
    }
+
+
+   const tot_constant = 1000 * num_teeth;
+   print(tot_constant);
+   var tot_doubling int = 1;
+   var i int = 0;
+   while i < 20 {
+      tot_doubling = tot_doubling * 2;
+      i = i + 1;
+   }
+   print(tot_doubling);
+   if tot_doubling > tot_constant {
+       print 't';
+       print 'o';
+       print 't';
+       print '_';
+       print 'd';
+       print 'o';
+       print 'u';
+       print 'b';
+       print 'l';
+       print 'i';
+       print 'n';
+       print 'g';
+       print ' ';
+       print 'i';
+       print 's';
+       print ' ';
+       print 'b';
+       print 'i';
+       print 'g';
+       print 'g';
+       print 'e';
+       print 'r';
+       print '!';
+       print '\n';
+   } else {
+       print 't';
+       print 'o';
+       print 't';
+       print '_';
+       print 'c';
+       print 'o';
+       print 'n';
+       print 's';
+       print 't';
+       print 'a';
+       print 'n';
+       print 't';
+       print ' ';
+       print 'i';
+       print 's';
+       print ' ';
+       print 'b';
+       print 'i';
+       print 'g';
+       print 'g';
+       print 'e';
+       print 'r';
+       print '!';
+       print '\n';
+   }
+
    return 0;
 }
 
