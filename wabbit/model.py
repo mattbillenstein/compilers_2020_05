@@ -51,7 +51,7 @@ class VarDeclaration(Node):
 
 @dataclass
 class Assignment(Node):
-    name: str
+    location: Any
     value: Any
 
 
@@ -89,7 +89,7 @@ def _to_source(node):
         return " ".join(tokens)
 
     elif isinstance(node, Assignment):
-        return " ".join([node.name, _to_source(node.value)])
+        return " ".join([node.location, "=", _to_source(node.value)])
 
     elif isinstance(node, PrintStatement):
         return " ".join(["print", _to_source(node.expression)])
