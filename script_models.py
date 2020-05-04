@@ -49,14 +49,16 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = [
-    Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
-    Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
-    Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
-    Print(BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))),
-]
+model1 = Statements(
+    [
+        Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
+        Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
+        Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+        Print(BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))),
+    ]
+)
 
-print(to_source(model1))
+# print(to_source(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -71,12 +73,14 @@ source2 = """
     print tau;
 """
 
-model2 = [
-    Assignment(Const("pi"), Float(3.14159)),
-    Var("tau", "float"),
-    Assignment(Variable("tau"), BinOp("*", Float(2.0), Variable("pi"))),
-    Print(Variable("tau")),
-]
+model2 = Statements(
+    [
+        Assignment(Const("pi"), Float(3.14159)),
+        Var("tau", "float"),
+        Assignment(Variable("tau"), BinOp("*", Float(2.0), Variable("pi"))),
+        Print(Variable("tau")),
+    ]
+)
 
 print(to_source(model2))
 
@@ -94,15 +98,17 @@ source3 = """
     }
 """
 
-model3 = [
-    Assignment(Var("a", "int"), Integer(2)),
-    Assignment(Var("b", "int"), Integer(3)),
-    If(
-        BinOp("<", Variable("a"), Variable("b")),
-        Print(Variable("a")),
-        Print(Variable("b")),
-    ),
-]
+model3 = Statements(
+    [
+        Assignment(Var("a", "int"), Integer(2)),
+        Assignment(Var("b", "int"), Integer(3)),
+        If(
+            BinOp("<", Variable("a"), Variable("b")),
+            Print(Variable("a")),
+            Print(Variable("b")),
+        ),
+    ]
+)
 
 print(to_source(model3))
 
@@ -122,8 +128,26 @@ source4 = """
     }
 """
 
-model4 = None
-# print(to_source(model4))
+model4 = Statements(
+    [
+        Assignment(Const("n"), Integer(10)),
+        Assignment(Var("x", "int"), Integer(1)),
+        Assignment(Var("fact", "int"), Integer(1)),
+        While(
+            BinOp("<", Variable("x"), Variable("y")),
+            Statements(
+                [
+                    Assignment(
+                        Variable("fact"), BinOp("*", Variable("fact"), Variable("x"))
+                    ),
+                    Print(Variable("fact")),
+                    Assignment(Variable("x"), BinOp("+", Variable("x"), Integer(1))),
+                ]
+            ),
+        ),
+    ]
+)
+print(to_source(model4))
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of

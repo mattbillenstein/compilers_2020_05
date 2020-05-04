@@ -45,6 +45,18 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+class Statements:
+    """
+    Example:
+    var a int;
+    a = 3
+    """
+
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __repr__(self):
+        return f"Statements({self.statements})"
 
 
 class If:
@@ -59,6 +71,19 @@ class If:
 
     def __repr__(self):
         return f"If({self.test}, {self.when_true}, {self.when_false})"
+
+
+class While:
+    """
+    Example while x < y
+    """
+
+    def __init__(self, test, when_true):
+        self.test = test
+        self.when_true = when_true
+
+    def __repr__(self):
+        return f"While({self.test}, {self.when_true})"
 
 
 class Assignment:
@@ -178,8 +203,8 @@ class BinOp:
 
 
 def to_source(node):
-    if isinstance(node, list):
-        return "\n".join([to_source(item) for item in node])
+    if isinstance(node, Statements):
+        return "\n".join([to_source(s) for s in node.statements])
     elif isinstance(node, Integer):
         return repr(node.value)
     elif isinstance(node, Const):
@@ -196,6 +221,8 @@ def to_source(node):
         return f"print {to_source(node.value)}"
     elif isinstance(node, If):
         return f"if {to_source(node.test)} {{\n   {to_source(node.when_true)}\n}} else {{\n   {to_source(node.when_false)}\n}}"
+    elif isinstance(node, While):
+        return f"while {to_source(node.test)} {{\n   {to_source(node.when_true)}\n}}"
     elif isinstance(node, UnaryOp):
         return f"{node.op}{to_source(node.target)}"
     elif isinstance(node, BinOp):
