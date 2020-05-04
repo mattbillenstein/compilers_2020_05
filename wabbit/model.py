@@ -146,7 +146,7 @@ class Const(Assignment):
         ...
 
     def to_source(self):
-        return f"const {self.left}{' ' + self.type if self.type else ''} = {self.right};"
+        return f"const {self.left}{' ' + self.type if self._type else ''} = {self.right};"
 
 
 class Var(Assignment):
@@ -155,7 +155,7 @@ class Var(Assignment):
         super().__init__(name=name, value=value, type=type_ or infer_type(value))
 
     def to_source(self):
-        return f"var {self.left}{' ' + self.type if self.type else ''} = {self.right};"
+        return f"var {self.left}{' ' + self.type if self._type else ''} = {self.right};"
 
 
 class VarDeclaration(Model):
