@@ -30,8 +30,8 @@ from wabbit.model import *
 
 expr_source = "2 + 3 * 4;"
 
-expr_model  = BinOp('+', Integer(2),
-                         BinOp('*', Integer(3), Integer(4)))
+expr_model  = BinOp('+', Int(2),
+                         BinOp('*', Int(3), Int(4)))
 
 # Can you turn it back into source code?
 # print(to_source(expr_model))
@@ -50,10 +50,10 @@ print 2 * 3 + -4;
 """
 
 model1 = [
-    Print(BinOp('+', Integer(2), BinOp('*', Integer(3), UnOp('-', Integer(4))))),
-    Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnOp('-', Float(4.0))))),
-    Print(BinOp('+', UnOp('-', Integer(2)), Integer(3))),
-    Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), UnOp('-', Integer(4)))),
+    PrintStatement(BinOp('+', Int(2), BinOp('*', Int(3), UnOp('-', Int(4))))),
+    PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnOp('-', Float(4.0))))),
+    PrintStatement(BinOp('+', UnOp('-', Int(2)), Int(3))),
+    PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
 ]
 
 repr1 = to_source(model1)
@@ -73,10 +73,10 @@ tau = 2.0 * pi;
 print tau;"""
 
 model2 = [
-    VarDecl('pi', None, Float(3.14159), True),
-    VarDecl('tau', 'float'),
-    VarAssign('tau', BinOp('*', Float(2.0), Var('pi'))),
-    Print(Var('tau'))
+    AssignStatement(DeclLocation('pi', None, True), Float(3.14159)),
+    DeclLocation('tau', 'float', False),
+    AssignStatement(Location('tau'), BinOp('*', Float(2.0), Location('pi'))),
+    PrintStatement(Location('tau'))
 ]
 
 repr2 = to_source(model2)
@@ -91,16 +91,31 @@ if source2 != repr2:
 # two values.
 #
 source3 = '''
-    var a int = 2;
-    var b int = 3;
-    if a < b {
-        print a;
-    } else {
-        print b;
-    }
+var a int = 2;
+var b int = 3;
+if a < b {
+\tprint a;
+} else {
+\tprint b;
+}
 '''
 
-model3 = None
+model3 = [
+    AssignStatement(DeclLocation('a', 'int', False), Int(2)),
+    AssignStatement(DeclLocation('b', 'int', False), Int(3)),
+    ConditionalStatement(BinOp('<', Location('a'), Location('b')), [
+            PrintStatement(Location('a'))
+        ], [
+            PrintStatement(Location('a'))
+        ]
+    ),
+]
+
+repr3 = to_source(model3)
+if source3 != repr3:
+    print('err')
+    print(repr3)
+    print(source3) 
 
 # print(to_source(model3))
 

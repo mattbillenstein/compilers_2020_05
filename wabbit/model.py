@@ -46,12 +46,64 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Scalar:
+
+from typing import List
+
+
+class Node():
+    pass
+
+
+class ExpressionNode(Node):
+    pass
+
+
+class StatementNode(Node):
+    pass
+
+
+class Identifier(Node):
+    pass
+
+
+class Location(ExpressionNode):
+    '''
+    Example: foo.  This resolves to a place in memory at runtime
+    '''
+    def __init__(self, identifier: Identifier):
+        self.identifier = identifier
+
+    def __repr__(self):
+        return self.identifier
+
+    def to_source(self):
+        return self.identifier
+
+
+class DeclLocation(Location):
+    '''
+    Example: var foo int
+    '''
+    def __init__(self, identifier: Identifier, _type, const=False):
+        self.identifier = identifier
+        self._type = _type
+        self.const = const
+
+    def __repr__(self):
+        return f'DeclLocation({self.identifier}, {str(self._type) or "None"}, {"True" if self.const else "False"}) '
+
+    def to_source(self):
+        ret = 'const' if self.const else 'var'
+        ret += ' ' + self.identifier
+        if self._type:
+            ret += ' ' + str(self._type)
+        return ret
+
+
+class ScalarNode(ExpressionNode):
     '''
     Example: 42
     '''
-    def __init__(self, value):
-        self.value = value
 
     def __repr__(self):
         return self.__class__.__name__ + '(' + str(self.value) + ')'
@@ -60,78 +112,42 @@ class Scalar:
         return repr(self.value)
 
 
-class Integer(Scalar):
+class Int(ScalarNode):
     '''
     Example: 42
     '''
-    pass
+    def __init__(self, value: int):
+        self.value = value
 
 
-class Float(Scalar):
+class Float(ScalarNode):
     '''
     Example: 42.0
     '''
-    pass
-
-class Var:
-    '''
-    Example: foo
-    '''
-    def __init__(self, identifier):
-        self.identifier = identifier
-
-    def __repr__(self):
-        return self.identifier
-
-    def to_source(self):
-        return self.identifier
-
-class VarDecl:
-    '''
-    Example: var foo int
-    '''
-    def __init__(self, identifier, _type, expr=None, const=False):
-        self.identifier = identifier
-        self.type = _type
-        self.const = const
-        self.expr = expr
-
-    def __repr__(self):
-        return f'VarDecl({self.identifier}, {self.type or "None"}, {to_source(self.expr) or None}, {"const" if self.const else "var"}) '
-
-    def to_source(self):
-        return f'var {self.identifier} {self.type}'
-
-    def to_source(self):
-        ret = 'const' if self.const else 'var'
-        ret += ' ' + self.identifier
-        if self.type:
-            ret += ' ' + self.type
-        if self.expr:
-            ret += ' = ' + to_source(self.expr)
-        return ret
+    def __init__(self, value: float):
+        self.value = value
 
 
-class VarAssign:
+class AssignStatement(StatementNode):
     '''
     Example: foo = EXPR
     '''
-    def __init__(self, identifier, expr):
-        self.identifier = identifier
+    def __init__(self, location: Location, expr: ExpressionNode):
+        self.location = location
         self.expr = expr
 
     def __repr__(self):
-        return f'VarAssign({self.identifier}, {self.expr})'
+        return f'Assign({self.location}, {self.expr})'
 
     def to_source(self):
-        return f'{self.identifier} = {to_source(self.expr)}'
+        return f'{self.location.to_source()} = {self.expr.to_source()};'
 
 
-class BinOp:
+class BinOp(ExpressionNode):
     '''
     Example: left + right
     '''
-    def __init__(self, op, left, right):
+    def __init__(self, op, left: ExpressionNode, right: ExpressionNode):
         self.op = op
         self.left = left
         self.right = right
@@ -142,11 +158,12 @@ class BinOp:
     def to_source(self):
         return f'{self.left.to_source()} {self.op} {self.right.to_source()}'
 
-class UnOp:
+
+class UnOp(ExpressionNode):
     '''
     Example: -right
     '''
-    def __init__(self, op, right):
+    def __init__(self, op, right: ExpressionNode):
         self.op = op
         self.right = right
 
@@ -156,7 +173,8 @@ class UnOp:
     def to_source(self):
         return f'{self.op}{self.right.to_source()}'
 
-class Print:
+
+class PrintStatement(StatementNode):
     '''
     Example: print(EXPR)
     '''
@@ -167,13 +185,51 @@ class Print:
         return f'Print({self.expr})'
 
     def to_source(self):
-        return f'print {to_source(self.expr)}'
+        return f'print {to_source(self.expr)};'
+
+
+class ConditionalStatement(StatementNode):
+    '''
+    Example: 
+    if EXPR {
+        BLOCK
+    } else {
+        BLOCK
+    }
+    '''
+
+    def __init__(self, cond: ExpressionNode, blockT: List[StatementNode], blockF: List[StatementNode]):
+        self.cond = cond
+        self.blockT = blockT
+        self.blockF = blockF
+
+    def __repr__(self):
+        ret = f'ConditionalStatement({{self.cond.to_source()}},' 
+        ret += '[' + to_source(self.blockT) + '], '
+        ret += '[' + to_source(self.blockF) + '])'
+        return ret
+
+    def to_source(self):
+        ret = 'if ' + self.cond.to_source() + ' {\n'
+        ret += to_source(self.blockT, indent=1) 
+        ret += '} else {\n'
+        ret += to_source(self.blockF, indent=1)
+        ret += '}'
+        return ret
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
-def to_source(node):
+
+def to_source(node, indent=0):
     if isinstance(node, list):
-        return ";\n".join(to_source(n) for n in node) + ";\n"
+        # list of statements
+        ret = ''
+        for n in node:
+            ret += indent * '\t'
+            ret += to_source(n)
+        return ret
+    elif isinstance(node, StatementNode):
+        return node.to_source() + ';\n'
     elif node is None:
         return "None"
     else:
