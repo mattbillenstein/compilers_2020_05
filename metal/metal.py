@@ -1,4 +1,5 @@
 # metal.py
+# flake8: noqa
 #
 # One of the main roles of a compiler is taking high-level programs
 # such as what you might write in C or Python and reducing them to
@@ -73,13 +74,21 @@ class Metal:
         self.memory = [0] * 65536
         self.registers['R7'] = len(self.memory) - 2
         self.running = True
+
+        nb_inst = 0
+
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
             # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
+            print(self.registers['PC'], op, args)
+            # print("   ", self.registers)
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0   # R0 is always 0 (even if you change it)
+
+            nb_inst += 1
+            if nb_inst > 40:
+                break
         return
 
     def ADD(self, ra, rb, rd):
@@ -162,9 +171,9 @@ if __name__ == '__main__':
               ('HALT',),
               ]
 
-    print("PROGRAM 1::: Expected Output: 2")
-    machine.run(prog1)
-    print(":::PROGRAM 1 DONE")
+    # print("PROGRAM 1::: Expected Output: 2")
+    # machine.run(prog1)
+    # print(":::PROGRAM 1 DONE")
 
     # ----------------------------------------------------------------------
     # Problem 2: Computation
@@ -193,9 +202,9 @@ if __name__ == '__main__':
               ('HALT',),
             ]
 
-    print("PROGRAM 2::: Expected Output: 21")
-    machine.run(prog2)
-    print(':::PROGRAM 2 DONE')
+    # print("PROGRAM 2::: Expected Output: 21")
+    # machine.run(prog2)
+    # print(':::PROGRAM 2 DONE')
 
     # ----------------------------------------------------------------------
     # Problem 3: Abstraction and functions
@@ -263,9 +272,9 @@ if __name__ == '__main__':
         ('JMP', 'PC', -11),
     ]
 
-    print("PROGRAM 3::: Expected Output: 120")
-    machine.run(prog3)
-    print(":::PROGRAM 3 DONE")
+    # print("PROGRAM 3::: Expected Output: 120")
+    # machine.run(prog3)
+    # print(":::PROGRAM 3 DONE")
 
     # ----------------------------------------------------------------------
     # Problem 4: Ultimate Challenge
@@ -286,12 +295,89 @@ if __name__ == '__main__':
     #
     #    print(fact(5))
 
+#   ('ADD', 'Ra', 'Rb', 'Rd')       ; Rd = Ra + Rb
+#   ('CONST', value, 'Rd')          ; Rd = value
+#   ('LOAD', 'Rs', 'Rd', offset)    ; Rd = MEMORY[Rs + offset]
+#   ('STORE', 'Rs', 'Rd', offset)   ; MEMORY[Rd + offset] = Rs
+
+
+# mul stack frame index:
+#   i = pointer to calling function or to next label
+#   i+1: x
+#   i+2: y
+
     prog4 = [
-        # Print result (assumed to be in R1)
+        # function definitions
+        # ('CONST', 0, 'R7'),  # function call pointer
+        # ('CONST', 1000, 'R6'),  # function call pointer
+
+        # # ===========================================================
+        # # mul(x, y)
+        # ('STORE', 'PC', 'R0', 1),  # Label_1
+        # ('LOAD', 'R0', 'R1', 0),  # See if we have initialized positions
+        # ('BZ', 'R1', 11),  # if Memory[0]==0 go to next label definition
+
+        #     # Check stack
+        #     ('LOAD', 'R6', 'R1', -2),  # R1 = x
+        #     ('LOAD', 'R6', 'R2', -1),  # R2 = y
+
+        #     ('BZ', 'R1', 13),  # if x == 0, jmp
+        #     # ---------------------------
+        #     ('DEC', 'R1'),  # x += -1
+
+        #     ('ADD', 'R5', 'R6', 'R0'),  # R5 = current stack location
+        #     # Leave room for label
+        #     ('INC', 'R6'),
+        #     ('STORE', 'R1', 'R6', 0),  # push x on data stack
+        #     ('INC', 'R6'),
+        #     ('STORE', 'R2', 'R6', 0),  # push y on data stack
+        #     ('INC', 'R6'),
+        #     ('STORE', 'R5', 'PC', 0), # essentially Label_2
+
+        # ('STORE', 'PC', 'R0', 2),  # Label_2
+        # ('LOAD', 'R0', 'R1', 0),  # See if we have initialized positions
+        # ('BZ', 'R1', 15),  # if Memory[0]==0 go to next label definition
+
+        #     # first unwind data stack
+        #     ('DEC', 'R6'),
+        #     ('LOAD', 'R6', 'R2', 0),  # R2 = y
+        #     ('DEC', 'R6'),
+        #     ('LOAD', 'R6', 'R1', 0),  # R2 = x
+        #     ('ADD', 'R1', 'R2', 'R2'),  # y += x
+        #     ('ADD', 'R2', 'R3', 'R3'),  # result += y
+        #     # get next jumping point
+        #     ('DEC', 'R6'),
+        #     ('LOAD', 'R6', 'R1', 0),  # R1 = previous function call location
+        #     ('DEC', 'R7'),
+        #     ('JMP', 'R1', 0),  # R1 now offset from current location
+        # # x == 0
+        #     ('CONST', 0, 'R3'),  # initialize result
+        #     ('DEC', 'R6'),  # pop y
+        #     ('DEC', 'R6'),  # pop x
+        #     ('LOAD', 'R6', 'R2', 0),  # get Label_2
+        #     ('JMP', 'R2', 2),
+        # ('CONST', 1, 'R1'), # non zero value to finish the initialization
+        # ('STORE', 'PC', 'R0', 2),  # Label_2
+        # # ==============================================================
+
+        # # begin program
+        # ('CONST', 0, 'R6'),
+        # ('CONST', 3, 'R1'),
+        # ('CONST', 2, 'R2'),
+
+
+        # ('LOAD', 'R6', 'R3', 1),  # get Label_1
+        # ('STORE', 'R7', 'PC', 0),
+        # ('INC', 'R6'),
+        # ('JMP', 'R3', 0),
+        # # Print result (assumed to be in R1)
+        ('ADD', 'R3', 'R0', 'R1'),
         ('STORE', 'R1', 'R0', IO_OUT),
         ('HALT',)
         ]
 
-    # print("PROGRAM 4::: Expected Output: 120")
-    # machine.run(prog4)
-    # print(":::PROGRAM 4 DONE")
+    print("PROGRAM 4::: Expected Output: 120")
+    machine.run(prog4)
+    print(":::PROGRAM 4 DONE")
+
+

@@ -1,4 +1,5 @@
 # script_models.py
+# flake8: noqa
 #
 # Within the bowels of your compiler, you need to represent programs
 # as data structures.   In this file, you will manually encode
@@ -28,10 +29,9 @@ from wabbit.model import *
 # This one is given to you as an example. You might need to adapt it
 # according to the names/classes you defined in wabbit.model
 
-expr_source = "2 + 3 * 4;"
+expr_source = "2 + 3 * 4"
 
-expr_model  = BinOp('+', Integer(2),
-                         BinOp('*', Integer(3), Integer(4)))
+expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
 # print(to_source(expr_model))
@@ -50,32 +50,47 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+expr1 = BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
+expr2 = BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
+expr3 = BinOp("+", UnaryOp("-", Integer(2)), Integer(3))
+expr4 = BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))
 
-#print(to_source(model1))
+model1 = Program(
+    PrintStatement(expr1),
+    PrintStatement(expr2),
+    PrintStatement(expr3),
+    PrintStatement(expr4)
+    )
+
+# print(to_source(model1))
 
 # ----------------------------------------------------------------------
-# Program 2: Variable and constant declarations. 
+# Program 2: Variable and constant declarations.
 #            Expressions and assignment.
 #
 # Encode the following statements.
 
 source2 = """
-    const pi = 3.14159;  
+    const pi = 3.14159;
     var tau float;
     tau = 2.0 * pi;
     print tau;
 """
 
-model2 = None
+expr1 = ConstantDefinition(Name('pi'), None, Float(3.14159))
 
-#print(to_source(model2))
+expr2 = VariableDefinition(Name('tau'), Type('float'))
+expr3 = Assignment(Name('tau'), BinOp("*", Float(2.0), Name('pi')))
+expr4 = PrintStatement(Name('tau'))
+model2 = Program(expr1, expr2, expr3, expr4)
+
+# print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
 # two values.
 #
-source3 = '''
+source3 = """
     var a int = 2;
     var b int = 3;
     if a < b {
@@ -83,17 +98,23 @@ source3 = '''
     } else {
         print b;
     }
-'''
+"""
 
-model3 = None
+expr1 = VariableDefinition(Name('a'), Type('int'), Integer(2))
+expr2 = VariableDefinition(Name('b'), Type('int'), Integer(3))
+expr3 = IfStatement(BinOp('<', Name('a'), Name('b')),
+                    PrintStatement('a'),
+                    PrintStatement('b'))
 
-# print(to_source(model3))
+model3 = Program(expr1, expr2, expr3)
+
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
 #
 
-source4 = '''
+source4 = """
     const n = 10;
     var x int = 1;
     var fact int = 1;
@@ -103,7 +124,7 @@ source4 = '''
         print fact;
         x = x + 1;
     }
-'''
+"""
 
 model4 = None
 # print(to_source(model4))
@@ -113,13 +134,13 @@ model4 = None
 # two variables using a single expression.
 #
 
-source5 = '''
+source5 = """
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
+    x = { var t = y; y = x; t; };     // Compound expression.
     print x;
     print y;
-'''
+"""
 
 model5 = None
 # print(to_source(model5))
@@ -127,4 +148,3 @@ model5 = None
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
-

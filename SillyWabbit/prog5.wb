@@ -1,6 +1,6 @@
 /* prog5.wb
 
-   Wabbit has enums. An enum represents a choice of values. 
+   Wabbit has enums. An enum represents a choice of values.
    Only one may be chosen.  Here is an example:
 */
 
@@ -39,15 +39,15 @@ var x = sqrt(2.0);
 var y = sqrt(-2.0);
 
 // Use match to extract values
-print(match x {
-          No => 0.0;
-          Yes(val) => val;
-      });
+// print(match x {
+//           No => 0.0;
+//           Yes(val) => val;
+//       });
 
-print(match y {
-          No => 0.0;
-          Yes(val) => val;
-      });
+// print(match y {
+//           No => 0.0;
+//           Yes(val) => val;
+//       });
 
 
 /* Challenge. Here's a quadratic function:
@@ -58,11 +58,31 @@ print(match y {
 
        x = (-b + sqrt(b**2 - 4*a*c))/(2*a)
 
-   Write a function that computes this using the sqrt() function above. 
+   Write a function that computes this using the sqrt() function above.
    Since there might not be a solution, have it also return a MaybeFloat.
 */
 
 
-   
+func find_root(a float, b float, c float) MaybeFloat {
+	var det MaybeFloat;
+	var det_square float;
+	var root float;
 
+	det_square = b * b - 4.0 * a * c;
+
+	if det_square < 0.0 {
+		return MaybeFloat::No;
+	}
+
+	det = MaybeFloat::Yes(sqrt(det_square));
+
+	return MaybeFloat::Yes(match det {
+		No => 0.0;
+		Yes(det) => (-b + det) / (2 * a);
+	})
+}
+
+var z = find_root(1., 2., 0.);
+
+// print(z)
 
