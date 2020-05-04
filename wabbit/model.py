@@ -2,84 +2,62 @@ from dataclasses import dataclass
 from typing import Any, Union
 
 
+class Node:
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.__dict__})"
+
+
 @dataclass
-class Integer:
+class Integer(Node):
     value: int
 
-    def __repr__(self):
-        return f"Integer({self.value})"
-
 
 @dataclass
-class Float:
+class Float(Node):
     value: float
 
-    def __repr__(self):
-        return f"Float({self.value})"
-
 
 @dataclass
-class Name:
+class Name(Node):
     name: str
 
-    def __repr__(self):
-        return f"Name({self.name})"
-
 
 @dataclass
-class UnaryOp:
+class UnaryOp(Node):
     op: str
     right: Any
 
-    def __repr__(self):
-        return f"UnaryOp({self.op}, {self.right})"
-
 
 @dataclass
-class BinOp:
+class BinOp(Node):
     op: str
     left: Any
     right: Any
 
-    def __repr__(self):
-        return f"BinOp({self.op}, {self.left}, {self.right})"
-
 
 @dataclass
-class ConstDeclaration:
+class ConstDeclaration(Node):
     name: str
     value: Union[int, float]
     type: str = None
 
-    def __repr__(self):
-        return f"ConstDeclaration({self.name}, {self.type}, {self.value})"
-
 
 @dataclass
-class VarDeclaration:
+class VarDeclaration(Node):
     name: str
     type: str
     value: Any = None
 
-    def __repr__(self):
-        return f"VarDeclaration({self.name}, {self.type}, {self.value})"
-
 
 @dataclass
-class Assignment:
+class Assignment(Node):
     name: str
     value: Any
 
-    def __repr__(self):
-        return f"Assignment({self.name}, {self.value})"
-
 
 @dataclass
-class PrintStatement:
+class PrintStatement(Node):
     expression: Any
-
-    def __repr__(self):
-        return f"PrintStatement({self.expression})"
 
 
 def print_source(program):
