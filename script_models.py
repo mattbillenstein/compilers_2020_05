@@ -71,7 +71,12 @@ source2 = """
     print tau;
 """
 
-model2 = [Assignment(Const("pi"), Float(3.14159))]
+model2 = [
+    Assignment(Const("pi"), Float(3.14159)),
+    Var("tau", "float"),
+    Assignment(Variable("tau"), BinOp("*", Float(2.0), Variable("pi"))),
+    Print(Variable("tau")),
+]
 
 print(to_source(model2))
 

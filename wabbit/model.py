@@ -96,6 +96,31 @@ class Const:
         return f"Const({self.value})"
 
 
+class Var:
+    """
+    Example: var foo
+    """
+
+    def __init__(self, value, type):
+        self.value = value
+        self.type = type
+
+    def __repr__(self):
+        return f"Var({self.value}, {self.type})"
+
+
+class Variable:
+    """
+    Example: pi
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Variable({self.value})"
+
+
 class Integer:
     """
     Example: 42
@@ -145,6 +170,10 @@ def to_source(node):
         return repr(node.value)
     elif isinstance(node, Const):
         return f"const {node.value}"
+    elif isinstance(node, Variable):
+        return node.value
+    elif isinstance(node, Var):
+        return f"var {node.value} {node.type}"
     elif isinstance(node, Assignment):
         return f"{to_source(node.location)} = {to_source(node.expression)}"
     elif isinstance(node, Float):
