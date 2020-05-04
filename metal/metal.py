@@ -351,7 +351,7 @@ if __name__ == '__main__':
 		('JMP', 'PC', -9),			# 	CALL fact
 		
 		('STORE', 'R6', 'R7', 0),	
-		('LOAD', 'R2', 'R7', 0),	# MOV R2, R6
+		('LOAD', 'R7', 'R2', 0),	# MOV R2, R6
 		
 		('STORE', 'PC', 'R7', 0),	#	save retaddr
 		('JMP', 'R0', 5),			# 	CALL mul

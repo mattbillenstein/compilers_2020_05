@@ -34,7 +34,7 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,9 +50,14 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+model1 = Program([Statement(PrintStatement(BinOp('+', Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4)))))),
+				Statement(PrintStatement(BinOp('-', Float(2.0), BinOp("*", Float(3.0), UnaryOp("-", Float(4.0)))))),
+				Statement(PrintStatement(BinOp('+', UnaryOp("-", Integer(2)), Integer(3)))),
+				Statement(PrintStatement(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))))
+])
 
-#print(to_source(model1))
+print("\n\nsource1:")
+print(to_source(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -67,9 +72,15 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = Program([
+	Statement(Assignment(ConstDef(Var("pi")), Float(3.14159))),
+	Statement(VarDef("tau", "float")),
+	Statement(Assignment(Var("tau"), BinOp("+", Float(2.0), Var("pi")))),
+	Statement(PrintStatement(Var("tau")))
+])
 
-#print(to_source(model2))
+print("\n\nsource2:")
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -85,9 +96,17 @@ source3 = '''
     }
 '''
 
-model3 = None
+model3 = Program([
+	Statement(Assignment(VarDef("a", "int"), Integer(2))),
+	Statement(Assignment(VarDef("b", "int"), Integer(3))),
+	IfConditional(BinOp("<", Var("a"), Var("b")), 
+				  Block([Statement(PrintStatement(Var("a")))]),
+				  Block([Statement(PrintStatement(Var("b")))]))
 
-# print(to_source(model3))
+])
+
+print("\n\nsource3:")
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -105,7 +124,10 @@ source4 = '''
     }
 '''
 
-model4 = None
+model4 = Program([
+
+])
+
 # print(to_source(model4))
 
 # ----------------------------------------------------------------------
@@ -121,8 +143,10 @@ source5 = '''
     print y;
 '''
 
-model5 = None
-# print(to_source(model5))
+model5 = Program([])
+
+print("\n\nModel5:")
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
