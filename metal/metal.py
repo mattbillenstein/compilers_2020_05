@@ -76,7 +76,7 @@ class Metal:
         while self.running:
             op, *args = self.instructions[self.registers["PC"]]
             # Uncomment to debug what's happening
-            # print(self.registers["PC"], op, args)
+            print(self.registers["PC"], op, args)
             self.registers["PC"] += 1
             getattr(self, op)(*args)
             self.registers["R0"] = 0  # R0 is always 0 (even if you change it)
@@ -275,11 +275,83 @@ if __name__ == "__main__":
     #            return mul(n, fact(n-1))
     #
     #    print(fact(5))
+    N = 1
+    X = 2
+    Y = 3
+    RETURN = 8
+    PC = 9
+    STACK_OFFSET = 10
 
     prog4 = [
+        ("CONST", 1, "R5"),  # helper to subtract one
+        ("CONST", 1, "R4"),  # helper to subtract one
+        ("CONST", 0, "R7"),  # set stack pointer
+        ("CONST", STACK_OFFSET, "R6"),  # set stack offset
+        ("CONST", 5, "R1"),  # set 5
+        ("ADD", "R7", "R6", "R7"),  # increment stack pointer
+        ("STORE", "R1", "R7", N),  # store 5 as n in fact
+        ("ADD", "PC", "R4", "R4"),  # store 5 as n in fact
+        ("STORE", "R4", "R7", PC),  # store call site
+        #
+        ("BZ", "R0", 3),  # start fact
         # Print result (assumed to be in R1)
+        ("LOAD", "R7", "R1", RETURN),
         ("STORE", "R1", "R0", IO_OUT),
         ("HALT",),
+        #
+        ("LOAD", "R7", "R1", N),  # load n into R1
+        ("BZ", "R1", 17),  # jump if n == 0
+        ("SUB", "R1", "R5", "R2"),  # n - 1
+        # fact(n-1)
+        ("ADD", "R7", "R6", "R7"),  # increment stack pointer
+        ("STORE", "R2", "R7", N),  # store n - 1 as n
+        ("STORE", "PC", "R7", PC),  # store call site
+        ("BZ", "R0", -7),  # call fact
+        # mul(n, fact(n-1))
+        ("LOAD", "R7", "R1", N),  # load n into R1
+        ("LOAD", "R7", "R2", RETURN),  # load fact(n-1) into R2
+        #
+        ("ADD", "R7", "R6", "R7"),  # increment stack pointer
+        ("STORE", "R1", "R7", X),  # store n as x
+        ("STORE", "R2", "R7", Y),  # store fact(n-1) as y
+        ("STORE", "PC", "R7", PC),  # store call site
+        ("BZ", "R0", 9),  # call mul
+        #
+        ("LOAD", "R7", "R1", PC),  # get jump point
+        ("LOAD", "R7", "R2", RETURN),  # get return value
+        ("SUB", "R7", "R6", "R7"),  # remove call stack
+        ("STORE", "R2", "R7", RETURN),  # store return
+        ("JMP", "R1", 1),  # jump to caller
+        #
+        # when n == 0
+        ("LOAD", "R7", "R1", PC),  # get jump point
+        ("SUB", "R7", "R6", "R7"),
+        ("STORE", "R5", "R7", RETURN),  # return 1
+        ("JMP", "R1", 1),  # jump to caller
+        #
+        # mul(x, y)
+        ("LOAD", "R7", "R1", X),  # load x into R1
+        ("LOAD", "R7", "R2", Y),  # load y into R2
+        ("BZ", "R1", 13),  # if x === 0
+        ("SUB", "R1", "R5", "R3"),  # x - 1
+        ("ADD", "R7", "R6", "R7"),  # increment stack pointer
+        ("STORE", "R3", "R7", X),  # store x-1 as x
+        ("STORE", "R2", "R7", Y),  # store y as y
+        ("STORE", "PC", "R7", PC),  # store call site
+        ("BZ", "R0", -9),  # call mul
+        # results
+        ("LOAD", "R7", "R1", RETURN),  # load mul(x-1, y) into R1
+        ("LOAD", "R7", "R2", Y),  # load y into R2
+        ("ADD", "R1", "R2", "R3"),  # store answer in R3
+        ("LOAD", "R7", "R1", PC),  # get jump point
+        ("SUB", "R7", "R6", "R7"),  # remove call stack
+        ("STORE", "R3", "R7", RETURN),  # store return
+        ("JMP", "R1", 1),  # jump to caller
+        # x === 0
+        ("LOAD", "R7", "R1", PC),  # get jump point
+        ("SUB", "R7", "R6", "R7"),  # remove call stack
+        ("STORE", "R0", "R7", RETURN),  # store return
+        ("JMP", "R1", 1),  # jump to caller
     ]
 
     print("PROGRAM 4::: Expected Output: 120")
