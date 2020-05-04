@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # script_models.py
 #
 # Within the bowels of your compiler, you need to represent programs
@@ -30,11 +32,15 @@ from wabbit.model import *
 
 expr_source = "2 + 3 * 4;"
 
-expr_model  = BinOp('+', Integer(2),
-                         BinOp('*', Integer(3), Integer(4)))
+expr_model  = Block([
+    BinOp('+',
+        Integer(2),
+        BinOp('*', Integer(3), Integer(4)),
+    ),
+])
 
-# Can you turn it back into source code?
-# print(to_source(expr_model))
+s = to_source(expr_model)
+assert s.strip('\n') == expr_source.strip('\n'), (s, expr_source)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,9 +56,15 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+model1 = Block([
+    Print(BinOp('+', Integer(2), BinOp('*', Integer(3), Integer(-4)))),
+    Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
+    Print(BinOp('+', Integer(-2), Integer(3))),
+    Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), Integer(-4))),
+], indent='    ')
 
-#print(to_source(model1))
+s = to_source(model1) 
+assert s.strip('\n') == source1.strip('\n'), (s, source1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -61,15 +73,21 @@ model1 = None
 # Encode the following statements.
 
 source2 = """
-    const pi = 3.14159;  
+    const pi = 3.14159;
     var tau float;
     tau = 2.0 * pi;
     print tau;
 """
 
-model2 = None
+model2 = Block([
+    Const('pi', Float(3.14159)),
+    Var('tau', type='float'),
+    Assign('tau', BinOp('*', Float(2.0), 'pi')),
+    Print('tau'),
+], indent='    ')
 
-#print(to_source(model2))
+s = to_source(model2)
+assert s.strip('\n') == source2.strip('\n'), (s, source2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of

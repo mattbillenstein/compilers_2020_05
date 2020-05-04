@@ -46,7 +46,10 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Integer:
+class Node:
+    pass
+
+class Integer(Node):
     '''
     Example: 42
     '''
@@ -56,7 +59,23 @@ class Integer:
     def __repr__(self):
         return f'Integer({self.value})'
 
-class BinOp:
+    def to_source(self):
+        return f'{self.value}'
+
+class Float(Node):
+    '''
+    Example: 42.0
+    '''
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f'Float({self.value})'
+
+    def to_source(self):
+        return f'{self.value}'
+
+class BinOp(Node):
     '''
     Example: left + right
     '''
@@ -68,16 +87,98 @@ class BinOp:
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
+    def to_source(self):
+        return f'{to_source(self.left)} {self.op} {to_source(self.right)}'
+
+class UnaOp(Node):
+    '''
+    Example: left + right
+    '''
+    def __init__(self, op, arg):
+        self.op = op
+        self.arg = arg
+
+    def __repr__(self):
+        return f'UnaOp({self.op}, {self.arg})'
+
+    def to_source(self):
+        return f'{self.op}{to_source(self.arg)}'
+
+class Block(Node):
+    '''
+    List of statements
+
+    stmt1;
+    stmt2;
+    stmt3;
+    '''
+    def __init__(self, statements, indent=''):
+        self.statements = statements
+        self.indent = indent
+
+    def __repr__(self):
+        return f'Block({[_ for _ in self.statements]}, indent={indent})'
+
+    def to_source(self):
+        return ';\n'.join(self.indent + to_source(_) for _ in self.statements) + ';\n'
+
+class Print(Node):
+    '''
+    Print is kinda a special case of a function call - optional parens
+    '''
+    def __init__(self, arg):
+        self.arg = arg
+
+    def __repr__(self):
+        return f'Print({self.arg})'
+
+    def to_source(self):
+        return f'print {to_source(self.arg)}'
+
+class Const(Node):
+    def __init__(self, loc, arg, type=None):
+        self.loc = loc
+        self.arg = arg
+        self.type = type
+
+    def __repr__(self):
+        type = f', type={self.type}' if self.type is not None else ''
+        return f'Const({self.loc}, {self.arg}{type})'
+
+    def to_source(self):
+        type = f' {self.type}' if self.type is not None else ''
+        return f'const {self.loc}{type} = {to_source(self.arg)}'
+
+class Var(Node):
+    def __init__(self, loc, arg=None, type=None):
+        self.loc = loc
+        self.arg = arg
+        self.type = type
+
+    def __repr__(self):
+        arg = f', {self.arg}' if self.arg is not None else ''
+        type = f', type={self.type}' if self.type is not None else ''
+        return f'Var({self.loc}{self.arg}{self.type})'
+
+    def to_source(self):
+        arg = f' = {self.arg}' if self.arg is not None else ''
+        type = f' {self.type}' if self.type is not None else ''
+        return f'var {self.loc}{type}{arg}'
+
+class Assign(Node):
+    def __init__(self, loc, arg):
+        self.loc = loc
+        self.arg = arg
+
+    def __repr__(self):
+        return f'Assign({self.loc}, {self.arg})'
+
+    def to_source(self):
+        return f'{self.loc} = {to_source(self.arg)}'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
-    if isinstance(node, Integer):
-        return repr(node.value)
-    elif isinstance(node, BinOp):
-        return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-    else:
-        raise RuntimeError(f"Can't convert {node} to source")
-
-
-
-    
+    if isinstance(node, Node):
+        return node.to_source()
+    return str(node)
