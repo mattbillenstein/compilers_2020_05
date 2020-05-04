@@ -7,6 +7,16 @@ struct Fraction {
     denom int;
 }
 
+struct Point {
+  x int;
+  y int;
+}
+
+struct Line {
+	start Point;
+	end Point;
+}  
+
 func add_fraction(a Fraction, b Fraction) Fraction {
     return Fraction(a.numer * b.denom + a.denom * b.numer, a.denom * b.denom);
 }
@@ -18,11 +28,32 @@ func print_fraction(a Fraction) {
     print a.denom;
 }
 
+
+func midpoint(a Point, b Point) {
+	var deltaX = (a.x + b.x) / 2;
+	var deltaY = (a.y + b.y) / 2;
+	print (deltaX);
+	print (deltaY);
+}
+
+func midpointLine(a Line)
+{
+	midpoint(a.start, a.end);
+}
+
 var a = Fraction(2,3);
 var b = Fraction(1,4);
 var c = add_fraction(a, b);
 print_fraction(c);
-       
+   
+
+var e = Point(20, 25);
+var f = Point(40, 55);
+midpoint(e, f);
+
+
+midpointLine(Line(e, f));
+
 /* Define a struct Point that represent a point (x, y) in 2D.
    Write a function midpoint that computes the midpoint of a line-segment drawn 
    between points p1 and p2.

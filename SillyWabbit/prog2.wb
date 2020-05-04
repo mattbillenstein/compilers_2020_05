@@ -10,7 +10,7 @@
 const initial_height = 100.0;
 const rebound = 0.6;
 const total_bounces = 10;
-
+/*
 func main() int {
    var bounce int = 0;
    var height float = initial_height;
@@ -21,7 +21,19 @@ func main() int {
    }
    return 0;
 }
+*/
 
+func main() int {
+	var total = 0.01;
+	var i = 20;
+	while i > 0
+	{	
+		total = total * 2.0;
+		i = i - 1;
+	}
+	
+	print(total);
+}
 /* Run the above program using python wabbit.py prog2.wb.  Make sure
    you understand the output. Try changing some of the initial constants */
 
