@@ -76,6 +76,23 @@ class Arguments:
         return ", ".join([s.to_source() for s in self.args])
 
 
+class FunctionCall:
+    """
+    Example mul(n, 5)
+    """
+
+    def __init__(self, name, *args):
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return f"FunctionCall({self.name}, {self.args})"
+
+    def to_source(self):
+        args = ", ".join([s.to_source() for s in self.args])
+        return f"{self.name}({args})"
+
+
 class FunctionDefinition:
     """
     Example func mul(x int, y int) int {

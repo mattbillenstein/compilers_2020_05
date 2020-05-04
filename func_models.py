@@ -57,7 +57,37 @@ model6 = Statements(
             Arguments([Argument("x", "int"), Argument("y", "int")]),
             Variable("int"),
             Statements([Return(BinOp("+", Variable("x"), Variable("y")))]),
-        )
+        ),
+        FunctionDefinition(
+            "mul",
+            Arguments([Argument("x", "int"), Argument("y", "int")]),
+            Variable("int"),
+            Statements([Return(BinOp("*", Variable("x"), Variable("y")))]),
+        ),
+        FunctionDefinition(
+            "factorial",
+            Arguments([Argument("n", "int")]),
+            Variable("int"),
+            Statements(
+                [
+                    If(
+                        BinOp("==", Variable("n"), Integer(0)),
+                        Return(Integer(1)),
+                        Return(
+                            FunctionCall(
+                                "mul",
+                                Variable("n"),
+                                FunctionCall(
+                                    "factorial",
+                                    FunctionCall("add", Variable("n"), Integer(-1)),
+                                ),
+                            )
+                        ),
+                    ),
+                    Return(BinOp("*", Variable("x"), Variable("y"))),
+                ]
+            ),
+        ),
     ]
 )
 
