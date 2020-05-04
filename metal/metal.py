@@ -87,6 +87,9 @@ class Metal:
     def SUB(self, ra, rb, rd):
         self.registers[rd] = (self.registers[ra] - self.registers[rb]) & MASK
 
+    def MULT(self, ra, rb, rd):
+        self.registers[rd] = (self.registers[ra] * self.registers[rb]) & MASK
+
     def INC(self, ra):
         self.registers[ra] = (self.registers[ra] + 1) & MASK
 
@@ -150,7 +153,9 @@ if __name__ == '__main__':
               ('CONST', 3, 'R1'),
               ('CONST', 4, 'R2'),
               # More instructions here
-              # ...
+              ('CONST', 5, 'R3'),
+              ('ADD', 'R1', 'R2', 'R4'),
+              ('SUB', 'R4', 'R3', 'R1'),
               # Print the result.  Change R1 to location of result.
               ('STORE', 'R1', 'R0', IO_OUT),    
               ('HALT',),
@@ -172,7 +177,7 @@ if __name__ == '__main__':
     prog2 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 7, 'R2'),
-              # ...
+              ('MULT', 'R1', 'R2', 'R1'),
               # Print result. Change R1 to location of result
               ('STORE', 'R1', 'R0', IO_OUT),
               ('HALT',),
