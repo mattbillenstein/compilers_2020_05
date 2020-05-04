@@ -49,6 +49,7 @@
 from types import SimpleNamespace
 from textwrap import dedent
 
+
 class Model(SimpleNamespace):
     def to_source(self):
         raise NotImplementedError
@@ -83,11 +84,12 @@ class Float(Model):
     """
     Example: 42.0
     """
+
     def __init__(self, value):
         super().__init__(value=value)
 
     def to_source(self):
-        return f'{self.value}'
+        return f"{self.value}"
 
 
 class BinOp(Model):
@@ -104,94 +106,84 @@ class BinOp(Model):
 
 class Add(BinOp):
     def __init__(self, left, right):
-        super().__init__(
-            op='+',
-            left=left,
-            right=right
-        )
+        super().__init__(op="+", left=left, right=right)
+
 
 class Subtract(BinOp):
     def __init__(self, left, right):
-        super().__init__(
-            op='-',
-            left=left,
-            right=right
-        )
+        super().__init__(op="-", left=left, right=right)
+
 
 class Mult(BinOp):
     def __init__(self, left, right):
-        super().__init__(
-            op='*',
-            left=left,
-            right=right
-        )
+        super().__init__(op="*", left=left, right=right)
+
 
 class Div(BinOp):
     def __init__(self, left, right):
-        super().__init__(
-            op='/',
-            left=left,
-            right=right
-        )
+        super().__init__(op="/", left=left, right=right)
 
 
 class Assignment(BinOp):
     def __init__(self, name, value, **kwargs):
         super().__init__(left=name, right=value, op="=", **kwargs)
 
+
 class Type(Model):
     ...
+
 
 def infer_type(value):
     ...
 
+
 class Const(Assignment):
     def __init__(self, name, value, type_=None):
         self._type = type_
-        super().__init__(
-            left=name,
-            op='=',
-            right=value,
-            type=type_ or infer_type(value)
-        )
+        super().__init__(name=name, value=value, type=type_ or infer_type(value))
 
     def _infer_type(self):
         ...
 
     def to_source(self):
-        return f'const {self.left} {self.type} = {self.right};'
+        return f"const {self.left} {self.type} = {self.right};"
+
 
 class Var(Assignment):
     def __init__(self, name, value, type_=None):
         self._type = None
-        super().__init__(
-            left=name,
-            op='=',
-            right=value,
-            type=type_ or infer_type(value)
-        )
+        super().__init__(name=name, value=value, type=type_ or infer_type(value))
 
     def to_source(self):
-        return f'var {self.left} {self.type} = {self.right};'
+        return f"var {self.left} {self.type} = {self.right};"
+
 
 class VarDeclaration(Model):
     def __init__(self, name, type):
         super().__init__(name=name, type=type)
 
     def to_source(self):
-        return f'var {self.name} {self.type};'
+        return f"var {self.name} {self.type};"
+
+
+class Identifier(Model):
+    def __init__(self, name):
+        super().__init__(name=name)
+
+    def to_source(self):
+        return f"{self.name}"
 
 
 class IfStatement(Model):
     def __init__(self, condition, body, else_clause=None):
-        super().__init__(condition=condition, body=body, else_clause=else_clause)  # expression?  # ???
+        super().__init__(
+            condition=condition, body=body, else_clause=else_clause
+        )  # expression?  # ???
 
     def to_source(self):
-        if_statement = f'if {self.condition} {{ ' \
-               f'    {self.body} ' \
-               f'}}'
+        if_statement = f"if {self.condition} {{ " f"    {self.body} " f"}}"
         if self.else_clause != None:
-            if_statement += f' else {{\n    {self.else_clause} \n}}'
+            if_statement += f" else {{\n    {self.else_clause} \n}}"
         return dedent(if_statement)
 
 
@@ -208,7 +200,8 @@ class Program(Model):
         self.statements = statements
 
     def to_source(self):
-        return '\n'.join(str(stmt) for stmt in self.statements)
+        return "\n".join(str(stmt) for stmt in self.statements)
+
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 

@@ -59,7 +59,7 @@ model1 = Program(
     PrintStatement(Mult(Add(Integer(2), Integer(3)), Integer(-4))),
     PrintStatement(Div(Subtract(Float(2.0), Float(3.0)), Float(-4.0))),
     PrintStatement(Add(Integer(-2), Integer(3))),
-    PrintStatement(Add(Mult(Integer(2), Integer(3)), Integer(-4)))
+    PrintStatement(Add(Mult(Integer(2), Integer(3)), Integer(-4))),
 )
 
 print(to_source(model1))
@@ -78,11 +78,13 @@ source2 = """
 """
 
 model2 = Program(
-    Const('pi', Float(3.14159)),
-    Var('tau')
+    Const("pi", Float(3.14159)),
+    VarDeclaration("tau", type="float"),
+    Var("tau", Mult(Float(2.0), Identifier("pi"))),
+    PrintStatement(Identifier("tau")),
 )
 
-# print(to_source(model2))
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
