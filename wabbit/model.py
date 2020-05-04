@@ -26,16 +26,16 @@
 # not. All you know is that an assignment operator definitely requires
 # both of those parts.  DON'T OVERTHINK IT.  Further details will be
 # filled in as the project evolves.
-# 
+#
 # Work on this file in conjunction with the top-level
 # "script_models.py" file.  Go look at that file and see what program
-# samples are provided.  Then, figure out what those programs look like 
+# samples are provided.  Then, figure out what those programs look like
 # in terms of data structures.
 #
 # There is no "right" solution to this part of the project other than
 # the fact that a program has to be represented as some kind of data
-# structure that's not "text."   You could use classes. You could use 
-# tuples. You could make a bunch of nested dictionaries like JSON. 
+# structure that's not "text."   You could use classes. You could use
+# tuples. You could make a bunch of nested dictionaries like JSON.
 # The key point: it must be a data structure.
 #
 # Starting out, I'd advise against making this file too fancy. Just
@@ -45,39 +45,58 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+class Print:
+    """
+    Example: print 3;
+    """
 
-class Integer:
-    '''
-    Example: 42
-    '''
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
-        return f'Integer({self.value})'
+        return f"Print({self.value})"
+
+
+class Integer:
+    """
+    Example: 42
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Integer({self.value})"
+
 
 class BinOp:
-    '''
+    """
     Example: left + right
-    '''
+    """
+
     def __init__(self, op, left, right):
         self.op = op
         self.left = left
         self.right = right
 
     def __repr__(self):
-        return f'BinOp({self.op}, {self.left}, {self.right})'
+        return f"BinOp({self.op}, {self.left}, {self.right})"
+
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
+
 def to_source(node):
+    if isinstance(node, list):
+        return "\n".join([to_source(item) for item in node])
     if isinstance(node, Integer):
         return repr(node.value)
+    if isinstance(node, Print):
+        return f"print {to_source(node.value)}"
+    if isinstance(node, Newline):
+        return f"{to_source(node.before)}\n{to_source(node.after)}"
     elif isinstance(node, BinOp):
-        return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+        return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
-
-
-    

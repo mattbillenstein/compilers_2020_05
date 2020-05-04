@@ -30,11 +30,10 @@ from wabbit.model import *
 
 expr_source = "2 + 3 * 4;"
 
-expr_model  = BinOp('+', Integer(2),
-                         BinOp('*', Integer(3), Integer(4)))
+expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,18 +49,21 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+model1 = [
+    Print(BinOp("+", Integer(2), Integer(3))),
+    Print(BinOp("+", Integer(1), Integer(3))),
+]
 
-#print(to_source(model1))
+print(to_source(model1))
 
 # ----------------------------------------------------------------------
-# Program 2: Variable and constant declarations. 
+# Program 2: Variable and constant declarations.
 #            Expressions and assignment.
 #
 # Encode the following statements.
 
 source2 = """
-    const pi = 3.14159;  
+    const pi = 3.14159;
     var tau float;
     tau = 2.0 * pi;
     print tau;
@@ -69,13 +71,13 @@ source2 = """
 
 model2 = None
 
-#print(to_source(model2))
+# print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
 # two values.
 #
-source3 = '''
+source3 = """
     var a int = 2;
     var b int = 3;
     if a < b {
@@ -83,7 +85,7 @@ source3 = '''
     } else {
         print b;
     }
-'''
+"""
 
 model3 = None
 
@@ -93,7 +95,7 @@ model3 = None
 # Program 4: Loops.  This program prints out the first 10 factorials.
 #
 
-source4 = '''
+source4 = """
     const n = 10;
     var x int = 1;
     var fact int = 1;
@@ -103,7 +105,7 @@ source4 = '''
         print fact;
         x = x + 1;
     }
-'''
+"""
 
 model4 = None
 # print(to_source(model4))
@@ -113,13 +115,13 @@ model4 = None
 # two variables using a single expression.
 #
 
-source5 = '''
+source5 = """
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
+    x = { var t = y; y = x; t; };     // Compound expression.
     print x;
     print y;
-'''
+"""
 
 model5 = None
 # print(to_source(model5))
