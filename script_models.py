@@ -155,8 +155,21 @@ source5 = '''
     print y;
 '''
 
-model5 = None
-# print(to_source(model5))
+model5 = [
+    Assign(Var('x', None), Integer(37)),
+    Assign(Var('y', None), Integer(42)),
+    Assign(Variable('x'), CompoundExpression([
+        Assign(Var('t', None), Variable('y')),
+        Assign(Variable('y'), Variable('x')),
+        Variable('t'),
+    ])),
+    PrintStatement(Variable('x')),
+    PrintStatement(Variable('y')),
+]
+
+print(5)
+print(to_source(model5))
+print()
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

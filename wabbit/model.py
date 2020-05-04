@@ -147,6 +147,13 @@ class While:
     def __repr__(self):
         return f'While({self.condition}, {self.body})'
 
+class CompoundExpression:
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __repr__(self):
+        return f'CompoundExpression({self.statements})'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 nesting_level = 0
@@ -182,6 +189,8 @@ def to_source(node):
     elif isinstance(node, Const):
         return f'const {node.name} = {to_source(node.value)}'
     elif isinstance(node, Var):
+        if node.myType is None:
+            return f'var {node.name}'
         return f'var {node.name} {node.myType}'
     elif isinstance(node, Assign):
         if isinstance(node.name, str):
@@ -205,6 +214,8 @@ def to_source(node):
         return f'''while {to_source(node.condition)} {{
 {to_source_nested_body(node.body)}
 }}'''
+    elif isinstance(node, CompoundExpression):
+        return f'{{ {"; ".join([to_source(each) for each in node.statements])}; }}'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
