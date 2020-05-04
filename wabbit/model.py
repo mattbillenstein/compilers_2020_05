@@ -106,6 +106,20 @@ class Float(Expression):
     def to_source(self):
         return str(self.value)
 
+class Bool(Expression):
+    '''
+    Literal Bool:  true, false
+    '''
+    def __init__(self, value):
+        assert isinstance(value, bool)
+        self.value = value
+
+    def __repr__(self):
+        return f'Bool({self.value})'
+
+    def to_source(self):
+        return str(self.value).lower()
+
 class BinOp(Expression):
     '''
     Example: left + right
@@ -120,9 +134,12 @@ class BinOp(Expression):
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
+    def visit(self, visitor):
+        visitor.visit_BinOp(self)
+
     def to_source(self):
         return f'({self.left.to_source()} {self.op} {self.right.to_source()})'
-        
+
 class UnaryOp(Expression):
     '''
     Example: -operand
@@ -181,6 +198,13 @@ class Compound(Expression):
 
     def to_source(self):
         return '{\n' + self.statements.to_source() + '\n}'
+
+
+#   var x = { 2+3; 4+5; 10+11;};    // 21 is answer
+#   var x = if test compound else compound;   // Possible extension?
+#
+#   if test { statements } else { statements }
+#
 
 class Statements(Statement):
     '''
@@ -242,6 +266,8 @@ class ConstDefinition(Definition):
 class VarDefinition(Definition):
     '''
     var name [type] [ = value];
+
+    var bar float;
     '''
     def __init__(self, name, type, value):
         assert isinstance(name, str)
@@ -345,22 +371,89 @@ class DottedLocation(Location):
     '''
     a.b = 23
     '''
-    
+
+# Should types be their own object in the model?  Or just strings?
+# Complex issue.  For now.... leave type names as strings. (Python strings)
+class Type(Node):
+    pass
+
+class SimpleType(Type):
+    def __init__(self, name):
+        self.name = name
+
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 # Could this be a method on the classes?  Maybe. 
 
+# Pro: Decoupled from the data model (different code, easy to change, etc.)
+
 def to_source(node):
+    # Ugh. case-analysis with if-else
     if isinstance(node, Integer):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
     elif isinstance(node, UnaryOp):
-        ...
+        return f'{node.op}{to_source(node.operand)}'
     elif isinstance(node, PrintStatement):
-        ...
+        return f'print {to_source(node.expression)};\n'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
+
+# Alternatives to the big-if.
+
+# Visitor Pattern
+class NodeVisitor:
+    def visit(self, node):
+        methname = f'visit_{node.__class__.__name__}'   
+        getattr(self, methname)(node)   # A bit more natural for Python
+
+        # Extension:  If no matching method, automatically traverse into child nodes
+
+    def visit_Integer(self, node):
+        return repr(node.value)
+    
+    def visit_Float(self, node):
+        ...
+
+    def visit_BinOp(self, node):
+        return f'{self.visit(node.left)} {node.op} {self.visit(node.right)}'
+              #   ^^^^^
+    def visit_UnaryOp(self, node):
+        ...
+
+    def visit_PrintStatement(self, node):
+        ...
+
+# Example of using visitor pattern
+def to_source_2(node):
+    NodeVisitor().visit(node)    
+
+# Another option:  Use singledispatch
+
+from functools import singledispatch
+
+@singledispatch
+def to_source_3(node):
+    raise RuntimeError("Can't generate source for {node}")
+
+rule = to_source_3.register     # Shortcut
+
+# Absolutely critical:  The functions here can *** NOT *** be named "to_source"
+@rule
+def to_source_binop(node: BinOp):
+    return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+
+@rule
+def to_source_integer(node: Integer):
+    return str(node.value)
+
+@rule
+def to_source_unaryop(node: UnaryOp):
+    ...
+
+
 
 
 
