@@ -92,5 +92,6 @@ about a day in advance (an email notification will also be sent).
 
 Video recordings of live sessions will be posted here.
 
+* [Course Start, Project Demo](https://vimeo.com/414833210/68fdd7ea4a) (36 min)
 
 
