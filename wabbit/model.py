@@ -137,7 +137,7 @@ class IfElse:
         self.otherwise = otherwise
 
     def __repr__(self):
-        return f'If({self.condition}, {self.consequence}, {self.otherwise})'
+        return f'IfElse({self.condition}, {self.consequence}, {self.otherwise})'
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
