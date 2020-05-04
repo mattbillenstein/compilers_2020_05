@@ -38,3 +38,34 @@ print_fraction(c);
  */
 
 
+struct Point {
+	x float;
+	y float;
+}
+
+func midpoint(a Point, b Point) Point {
+	return Point((a.x + b.x) / 2.0,
+		         (a.y + b.y) / 2.0);
+}
+
+var mid = midpoint(Point(20.0, 25.0),
+                   Point(40.0, 55.0));
+print mid.x;
+print mid.y;
+
+struct Line {
+	a Point;
+	b Point;
+}
+
+func midpoint_line(line Line) Point {
+	return midpoint(line.a, line.b);
+}
+
+var line = Line(Point(20.0, 25.0),
+                Point(40.0, 55.0));
+
+var mid2 = midpoint_line(line);
+
+print mid2.x;
+print mid2.y;
