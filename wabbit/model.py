@@ -1,18 +1,36 @@
 from dataclasses import dataclass
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, List
 
 
-class Node:
+class Statement:
+    terminator = ";"
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__dict__})"
 
     @property
-    def tokens(self):
+    def tokens(self) -> List[str]:
         raise NotImplementedError
+
+    def to_source(self) -> str:
+        return " ".join(tok for tok in self.tokens if tok is not None)
+
+@dataclass
+class Statements:
+    statements: List[Statement]
+
+    def to_source(self, level=0) -> str:
+        indent = " " * 4 * level
+        return "\n".join(indent + stmnt.to_source() + stmnt.terminator for stmnt in self.statements)
 
 
 @dataclass
-class Integer(Node):
+class Expression(Statement):
+    pass
+
+
+@dataclass
+class Integer(Expression):
     value: int
 
     @property
@@ -21,7 +39,7 @@ class Integer(Node):
 
 
 @dataclass
-class Float(Node):
+class Float(Expression):
     value: float
 
     @property
@@ -30,7 +48,7 @@ class Float(Node):
 
 
 @dataclass
-class Name(Node):
+class Name(Expression):
     name: str
 
     @property
@@ -39,7 +57,7 @@ class Name(Node):
 
 
 @dataclass
-class UnaryOp(Node):
+class UnaryOp(Expression):
     op: str
     right: Any
 
@@ -49,7 +67,7 @@ class UnaryOp(Node):
 
 
 @dataclass
-class BinOp(Node):
+class BinOp(Expression):
     op: str
     left: Any
     right: Any
@@ -60,21 +78,21 @@ class BinOp(Node):
 
 
 @dataclass
-class ConstDef(Node):
+class ConstDef(Statement):
     name: str
+    type: Optional[str]
     value: Union[int, float]
-    type: Optional[str] = None
 
     @property
     def tokens(self):
-        return ["const", self.name if self.name is not None else "", str(self.value)]
+        return ["const", self.name, "=", self.type, str(self.value)]
 
 
 @dataclass
-class VarDef(Node):
+class VarDef(Statement):
     name: str
     type: str
-    value: Any = None
+    value: Optional[Any]
 
     @property
     def tokens(self):
@@ -85,7 +103,7 @@ class VarDef(Node):
 
 
 @dataclass
-class Assignment(Node):
+class Assign(Statement):
     location: Any
     value: Any
 
@@ -95,7 +113,7 @@ class Assignment(Node):
 
 
 @dataclass
-class Print(Node):
+class Print(Statement):
     expression: Any
 
     @property
@@ -104,24 +122,39 @@ class Print(Node):
 
 
 @dataclass
-class If(Node):
-    tst: Any
-    thn: Any
-    els: Any
+class If(Statement):
+    test: Any
+    then: Statements
+    else_: Statements
 
-    @property
-    def tokens(self):
-        return [
-            "if",
-            *self.tst.tokens,
-            "{",
-            *self.thn.tokens,
-            "}",
-            "{",
-            *self.els.tokens,
-            "}",
-        ]
+    terminator = ""
+
+    def to_source(self):
+        # TODO: indentation
+        return f"""\
+if {self.test.to_source()} {{
+{self.then.to_source(level=1)}
+}} else {{
+{self.else_.to_source(level=1)}
+}}
+"""
+
+
+@dataclass
+class While(Statement):
+    test: Any
+    then: Statements
+
+    terminator = ""
+
+    def to_source(self):
+        # TODO: indentation
+        return f"""\
+while {self.test.to_source()} {{
+{self.then.to_source(level=1)}
+}}
+"""
 
 
 def to_source(program):
-    return "\n".join(" ".join(node.tokens) + ";" for node in program or [])
+    return Statements(program or []).to_source()

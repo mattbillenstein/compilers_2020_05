@@ -1,35 +1,48 @@
 # See https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
+import sys
+from difflib import unified_diff
+from subprocess import Popen, PIPE
+
 from wabbit.model import (
-    Assignment,
-    Integer,
-    Float,
-    If,
-    Name,
-    UnaryOp,
+    Assign,
     BinOp,
     ConstDef,
-    VarDef,
+    Float,
+    If,
+    Integer,
+    Name,
     Print,
+    UnaryOp,
+    VarDef,
+    While,
+    Statements,
     to_source,
 )
+
+
+def assert_equivalent(source, model):
+    transpiled_source = to_source(model)
+    if transpiled_source.strip() != source.strip():
+        diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
+        proc = Popen(["delta"], stdin=PIPE)
+        proc.stdin.write(diff.encode("utf-8"))  # type: ignore
+        proc.communicate()
+
 
 # ----------------------------------------------------------------------
 # Simple Expression
 expr_source = "2 + 3 * 4;"
 expr_model = [BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))]
 
-print("\n\n0\n-----------------------------------------------------------\n")
-print(expr_source)
-print(to_source(expr_model))
-print()
+assert_equivalent(expr_source, expr_model)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
 source1 = """
-print 2 + 3 * -4;
-print 2.0 - 3.0 / -4.0;
-print -2 + 3;
-print 2 * 3 + -4;
+print 2 + 3 * - 4;
+print 2.0 - 3.0 / - 4.0;
+print - 2 + 3;
+print 2 * 3 + - 4;
 """
 
 model1 = [
@@ -39,11 +52,7 @@ model1 = [
     Print(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))),
 ]
 
-print("\n\n1\n-----------------------------------------------------------\n")
-print(source1)
-print()
-print(to_source(model1))
-print()
+assert_equivalent(source1, model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -56,17 +65,13 @@ print tau;
 """
 
 model2 = [
-    ConstDef("pi", 3.14159),
-    VarDef("tau", "float"),
-    Assignment("tau", BinOp("*", Float(2.0), Name("pi"))),
+    ConstDef("pi", None, 3.14159),
+    VarDef("tau", "float", None),
+    Assign("tau", BinOp("*", Float(2.0), Name("pi"))),
     Print(Name("tau")),
 ]
 
-print("\n\n2\n-----------------------------------------------------------\n")
-print(source2)
-print()
-print(to_source(model2))
-print()
+assert_equivalent(source2, model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -85,14 +90,14 @@ if a < b {
 model3 = [
     VarDef("a", "int", 2),
     VarDef("b", "int", 3),
-    If(BinOp("<", Name("a"), Name("b")), Print(Name("a")), Print(Name("b"))),
+    If(
+        BinOp("<", Name("a"), Name("b")),
+        Statements([Print(Name("a"))]),
+        Statements([Print(Name("b"))]),
+    ),
 ]
 
-print("\n\n3\n-----------------------------------------------------------\n")
-print(source3)
-print()
-print(to_source(model3))
-print()
+assert_equivalent(source3, model3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -110,8 +115,24 @@ while x < n {
 }
 """
 
-model4 = None
-# print(to_source(model4))
+model4 = [
+    ConstDef("n", None, 10),
+    VarDef("x", "int", 1),
+    VarDef("fact", "int", 1),
+    While(
+        BinOp("<", Name("x"), Name("n")),
+        Statements(
+            [
+                Assign("fact", BinOp("*", Name("fact"), Name("x"))),
+                Print(Name("fact")),
+                Assign("x", BinOp("+", Name("x"), Integer(1))),
+            ]
+        ),
+    ),
+]
+
+assert_equivalent(source4, model4)
+
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
