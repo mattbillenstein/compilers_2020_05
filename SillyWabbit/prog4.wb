@@ -1,4 +1,4 @@
-/* prog4.wb - Structures */
+/* prog4.wb - Structures *
 
 /* Wabbit has user-defined structures. Here is an example */
 
@@ -22,19 +22,45 @@ var a = Fraction(2,3);
 var b = Fraction(1,4);
 var c = add_fraction(a, b);
 print_fraction(c);
-       
+
 /* Define a struct Point that represent a point (x, y) in 2D.
-   Write a function midpoint that computes the midpoint of a line-segment drawn 
+   Write a function midpoint that computes the midpoint of a line-segment drawn
    between points p1 and p2.
 
-   Compute and print the midpoint of the line drawn between (20, 25) 
+   Compute and print the midpoint of the line drawn between (20, 25)
    and (40, 55).
 
-   Note: The midpoint is computed by calculating the average of the x 
+   Note: The midpoint is computed by calculating the average of the x
    coordinates and the average of the y coordinates.
 
    Can you define a struct Line that consists of two Points?  Can
    you modify the midpoint() function to operate on a Line?
  */
 
+struct Point {
+	x int;
+	y int;
+}
 
+struct Line {
+	a Point;
+	b Point;
+}
+
+func midpoint(l Line) Point {
+	var x int = (l.a.x + l.b.x) / 2;
+	var y int = (l.a.y + l.b.y) / 2;
+	return Point(x, y);
+}
+
+func print_point(p Point) unit {
+	print p.x;
+	print p.y;
+}
+
+var p1 = Point(20, 25);
+var p2 = Point(40, 55);
+
+/* print_point(midpoint(p1, p2)); */
+var l1 = Line(p1, p2);
+print_point(midpoint(l1));
