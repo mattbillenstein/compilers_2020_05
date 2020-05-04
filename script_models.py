@@ -162,8 +162,25 @@ source5 = """
     print y;
 """
 
-model5 = None
-# print(to_source(model5))
+model5 = Statements(
+    [
+        Assignment(Var("x"), Integer(37)),
+        Assignment(Var("y"), Integer(42)),
+        Assignment(
+            Var("x"),
+            Block(
+                [
+                    Assignment(Var("t"), Variable("y")),
+                    Assignment(Variable("y"), Variable("x")),
+                    Variable("t"),
+                ]
+            ),
+        ),
+        Print(Variable("x")),
+        Print(Variable("y")),
+    ]
+)
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

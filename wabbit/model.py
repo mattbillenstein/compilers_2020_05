@@ -45,6 +45,18 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+class Block:
+    """
+    Example x = { var t = y; y = x; t; }; // Compound expression.
+    """
+
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __repr__(self):
+        return f"Block({self.statements})"
+
+
 class Statements:
     """
     Example:
@@ -140,12 +152,14 @@ class Var:
     Example: var foo
     """
 
-    def __init__(self, value, type):
+    def __init__(self, value, type=None):
         self.value = value
         self.type = type
 
     def __repr__(self):
-        return f"Var({self.value}, {self.type})"
+        if self.type:
+            return f"Var({self.value}, {self.type})"
+        return f"Var({self.value})"
 
 
 class Variable:
@@ -205,6 +219,9 @@ class BinOp:
 def to_source(node):
     if isinstance(node, Statements):
         return "\n".join([to_source(s) for s in node.statements])
+    if isinstance(node, Block):
+        joined_statements = "; ".join([to_source(s) for s in node.statements])
+        return f"{{ {joined_statements} }}"
     elif isinstance(node, Integer):
         return repr(node.value)
     elif isinstance(node, Const):
@@ -212,7 +229,9 @@ def to_source(node):
     elif isinstance(node, Variable):
         return node.value
     elif isinstance(node, Var):
-        return f"var {node.value} {node.type}"
+        if node.type:
+            return f"var {node.value} {node.type}"
+        return f"var {node.value}"
     elif isinstance(node, Assignment):
         return f"{to_source(node.location)} = {to_source(node.expression)}"
     elif isinstance(node, Float):
