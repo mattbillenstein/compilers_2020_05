@@ -7,7 +7,7 @@
 #     1. Function definitions.
 #     2. Function application.
 #     3. The return statement.
-# 
+#
 # This file contains a single example that you should represent
 # using your model.  Please see the following document for more information.
 #
@@ -20,7 +20,7 @@ from wabbit.model import *
 # with various function definitions.
 #
 
-source6 = '''
+source6 = """
 func add(x int, y int) int {
     return x + y;
 }
@@ -48,12 +48,21 @@ func main() int {
     var result = print_factorials(10);
     return 0;
 }
-'''
+"""
 
-model6 = None
+model6 = Statements(
+    [
+        FunctionDefinition(
+            "add",
+            Statements([Var("x", "int"), Var("y", "int")]),
+            Variable("int"),
+            Statements([Print(BinOp("+", Variable("x"), Variable("y")))]),
+        )
+    ]
+)
 
-# print(to_source(model6))
+print(to_source(model6))
 
 # ----------------------------------------------------------------------
-# Bring it!  If you're here wanting even more, proceed to the file 
+# Bring it!  If you're here wanting even more, proceed to the file
 # "type_models.py".

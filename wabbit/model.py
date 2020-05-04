@@ -57,8 +57,11 @@ class FunctionDefinition:
         self.return_type = return_type
         self.body = body
 
-        def __repr__(self):
-            return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
+    def __repr__(self):
+        return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
+
+    def to_source(self):
+        return f"func {self.name}({self.args.to_source()}) {self.return_type.to_source()} {{ \n {self.body.to_source()}\n}}"
 
 
 class Block:
