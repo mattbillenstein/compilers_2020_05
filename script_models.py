@@ -128,8 +128,19 @@ source4 = '''
     }
 '''
 
-model4 = None
-# print(to_source(model4))
+model4 = [
+    Const('n', Integer(10)),
+    Assign(Var('x', 'int'), Integer(1)),
+    Assign(Var('fact', 'int'), Integer(1)),
+    While(Compare('<', Variable('x'), Variable('n')), [
+        Assign(Variable('fact'), BinOp('*', Variable('fact'), Variable('x'))),
+        PrintStatement(Variable('x')),
+        Assign(Variable('x'), BinOp('+', Variable('x'), Integer('1'))),
+        ]),
+]
+print(4)
+print(to_source(model4))
+print()
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of

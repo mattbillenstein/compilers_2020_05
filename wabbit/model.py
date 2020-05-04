@@ -139,6 +139,14 @@ class IfElse:
     def __repr__(self):
         return f'IfElse({self.condition}, {self.consequence}, {self.otherwise})'
 
+class While:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def __repr__(self):
+        return f'While({self.condition}, {self.body})'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
@@ -146,7 +154,7 @@ def to_source(node):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-    elif isinstance(node, list):
+    elif isinstance(node, list): # TODO this leads to ';' after eg while statements
         return ('\n').join([f'{to_source(x)};' for x in node])
     elif isinstance(node, PrintStatement):
         return f'print {to_source(node.node_to_print)}'
@@ -164,7 +172,7 @@ def to_source(node):
         return f'{node.name}'
     elif isinstance(node, Compare):
         return f'{to_source(node.lhs)} {node.op} {to_source(node.rhs)}'
-    elif isinstance(node, If):
+    elif isinstance(node, If): # TODO: this and IfElse need the same body formatting as while
         return f'''if {to_source(node.condition)} {{
     {to_source(node.consequence)}
 }}'''
@@ -173,6 +181,13 @@ def to_source(node):
     {to_source(node.consequence)}
 }} else {{
     {to_source(node.otherwise)}
+}}'''
+    elif isinstance(node, While): # TODO: what if we're a nested while, then it's not 4 spaces is it?
+        body = f'    {to_source(node.body)}'
+        if isinstance(node.body, list):
+            body = '\n'.join([f'    {to_source(each)};' for each in node.body])
+        return f'''while {to_source(node.condition)} {{
+{body}
 }}'''
     else:
         raise RuntimeError(f"Can't convert {node} to source")
