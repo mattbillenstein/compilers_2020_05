@@ -84,34 +84,37 @@ class PrintStatement:
 
 def print_source(program):
     for statement in program or []:
-        print(f"{_to_source(statement)};")
+        print(_to_source(statement) + ";")
 
 
 def _to_source(node):
 
     if isinstance(node, (Integer, Float)):
-        return repr(node.value)
+        return str(node.value)
 
     elif isinstance(node, UnaryOp):
-        return f"{node.op}{_to_source(node.right)}"
+        return "".join([node.op, _to_source(node.right)])
 
     elif isinstance(node, BinOp):
-        return f"{_to_source(node.left)} {node.op} {_to_source(node.right)}"
+        return " ".join([_to_source(node.left), node.op, _to_source(node.right)])
 
     elif isinstance(node, Name):
-        return f"{node.name}"
+        return node.name
 
     elif isinstance(node, ConstDeclaration):
-        return f"const {node.name} {node.type or ''} = {node.value}"
+        return " ".join(["const", node.name if node.name is not None else "", str(node.value)])
 
     elif isinstance(node, VarDeclaration):
-        return f"var {node.name} {node.type}" + (f"= {node.value}" if node.value else "")
+        tokens = ["var", node.name, node.type]
+        if node.value is not None:
+            tokens.extend(["=", str(node.value)])
+        return " ".join(tokens)
 
     elif isinstance(node, Assignment):
-        return f"{node.name} = {_to_source(node.value)}"
+        return " ".join([node.name, _to_source(node.value)])
 
     elif isinstance(node, PrintStatement):
-        return f"print {_to_source(node.expression)}"
+        return " ".join(["print", _to_source(node.expression)])
 
     else:
         raise RuntimeError(f"Can't convert {node} to source")
