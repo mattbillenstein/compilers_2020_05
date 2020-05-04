@@ -149,13 +149,32 @@ class While:
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
+nesting_level = 0
+
+def to_source_list(l):
+    global nesting_level
+    indent = nesting_level * '    '
+    return ('\n').join([f'{indent}{to_source(x)};' for x in l]) # TODO this leads to ';' after eg while statements
+
+def to_source_node_or_list(x):
+    if isinstance(x, list):
+        return to_source_list(x)
+    return to_source(x)
+
+def to_source_nested_body(body):
+    global nesting_level
+    nesting_level += 1
+    body = to_source_node_or_list(body)
+    nesting_level -= 1
+    return body
+
 def to_source(node):
     if isinstance(node, Integer):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-    elif isinstance(node, list): # TODO this leads to ';' after eg while statements
-        return ('\n').join([f'{to_source(x)};' for x in node])
+    elif isinstance(node, list):
+        return to_source_list(node)
     elif isinstance(node, PrintStatement):
         return f'print {to_source(node.node_to_print)}'
     elif isinstance(node, Float):
@@ -172,22 +191,19 @@ def to_source(node):
         return f'{node.name}'
     elif isinstance(node, Compare):
         return f'{to_source(node.lhs)} {node.op} {to_source(node.rhs)}'
-    elif isinstance(node, If): # TODO: this and IfElse need the same body formatting as while
+    elif isinstance(node, If):
         return f'''if {to_source(node.condition)} {{
-    {to_source(node.consequence)}
+{to_source_nested_body(node.consequence)}
 }}'''
     elif isinstance(node, IfElse):
         return f'''if {to_source(node.condition)} {{
-    {to_source(node.consequence)}
+{to_source_nested_body(node.consequence)}
 }} else {{
-    {to_source(node.otherwise)}
+{to_source_nested_body(node.otherwise)}
 }}'''
-    elif isinstance(node, While): # TODO: what if we're a nested while, then it's not 4 spaces is it?
-        body = f'    {to_source(node.body)}'
-        if isinstance(node.body, list):
-            body = '\n'.join([f'    {to_source(each)};' for each in node.body])
+    elif isinstance(node, While):
         return f'''while {to_source(node.condition)} {{
-{body}
+{to_source_nested_body(node.body)}
 }}'''
     else:
         raise RuntimeError(f"Can't convert {node} to source")

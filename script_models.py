@@ -104,7 +104,7 @@ source3 = '''
 model3 = [
     Assign(Var('a', 'int'), Integer(2)),
     Assign(Var('b', 'int'), Integer(3)),
-    # If(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),]),
+    If(Compare('<', Variable('a') , Variable('b')), [If(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),]),]),
     IfElse(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),], [PrintStatement(Variable('b')),]),
 ]
 
