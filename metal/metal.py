@@ -75,7 +75,7 @@ class Metal:
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
             # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
+            print("%02d: %05s %20s ; %s" % (self.registers['PC'], op, args, self.registers))
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
@@ -149,8 +149,9 @@ if __name__ == '__main__':
     prog1 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 4, 'R2'),
-              # More instructions here
-              # ...
+              ('ADD', 'R1', 'R2', 'R1'),
+              ('CONST', 5, 'R2'),
+              ('SUB', 'R1', 'R2', 'R1'),
               # Print the result.  Change R1 to location of result.
               ('STORE', 'R1', 'R0', IO_OUT),    
               ('HALT',),
@@ -172,9 +173,12 @@ if __name__ == '__main__':
     prog2 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 7, 'R2'),
-              # ...
+              ('ADD', 'R2', 'R3', 'R3'),		# R3 is initialized to 0 at startup, acting as our accumulator now
+              ('DEC', 'R1'),
+              ('BZ', 'R1', 1),
+              ('JMP', 'PC', -4),					# R4 is initialized to 0 at startup
               # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
+              ('STORE', 'R3', 'R0', IO_OUT),
               ('HALT',),
             ]
 
@@ -208,15 +212,23 @@ if __name__ == '__main__':
     # would the branching/jump statements work?  
 
     prog3 = [
-        ('CONST', 5, 'R1'),       # n = 5
         # result = 1
         # while n > 0:
         #     result = mul(result,  n)
         #     n -= 1
 
-        #
-        # ... instructions here
-        # 
+        ('CONST', 5, 'R1'),			# n = 5
+        ('CONST', 1, 'R2'),			# result
+        
+        ('BZ', 'R1',  6),		# while n > 0
+        ('STORE', 'PC', 'R7', 0),	# set up CALL by saving current PC to stack
+        ('JMP', 'R0', 11),			# make the CALL
+        
+        ('STORE', 'R6', 'R7', 0),	# save return val to stack
+        ('LOAD', 'R7', 'R2', 0),	# put the return in the result register
+        
+        ('DEC', 'R1'),				# n--
+        ('JMP', 'R0', 2),			# loop
 
         # print(result)
         ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
@@ -233,6 +245,27 @@ if __name__ == '__main__':
         #        return result
         #
         # ... instructions here
+        # inputs are R1: x, R2: y
+        # output in R6
+        
+        # Addr = 12
+        
+        ('DEC', 'R7'),						# start the PUSH
+        ('STORE', 'R1', 'R7', 0),			# PUSH R1 to the stack since we modify it 
+        
+        ('CONST', 0, 'R6'),					# initialize accum
+        ('ADD', 'R2', 'R6', 'R6'),
+        ('DEC', 'R1'),
+        ('BZ', 'R1', 1),
+        ('JMP', 'PC', -4),					# R4 is initialized to 0 at startup
+
+		('LOAD', 'R7', 'R1', 0),			# POP the R1 value off the stack
+		('INC', 'R7'),						# finish the POP
+
+		('LOAD', 'R7', 'R5', 0),			# pop return address from the stack
+        
+        ('JMP', 'R5', 1)					# RET
+        
     ]
 
     print("PROGRAM 3::: Expected Output: 120")
