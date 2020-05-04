@@ -26,16 +26,16 @@
 # not. All you know is that an assignment operator definitely requires
 # both of those parts.  DON'T OVERTHINK IT.  Further details will be
 # filled in as the project evolves.
-# 
+#
 # Work on this file in conjunction with the top-level
 # "script_models.py" file.  Go look at that file and see what program
-# samples are provided.  Then, figure out what those programs look like 
+# samples are provided.  Then, figure out what those programs look like
 # in terms of data structures.
 #
 # There is no "right" solution to this part of the project other than
 # the fact that a program has to be represented as some kind of data
-# structure that's not "text."   You could use classes. You could use 
-# tuples. You could make a bunch of nested dictionaries like JSON. 
+# structure that's not "text."   You could use classes. You could use
+# tuples. You could make a bunch of nested dictionaries like JSON.
 # The key point: it must be a data structure.
 #
 # Starting out, I'd advise against making this file too fancy. Just
@@ -56,6 +56,13 @@ class Integer:
     def __repr__(self):
         return f'Integer({self.value})'
 
+class Float:
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f'Float({self.value})'
+
 class BinOp:
     '''
     Example: left + right
@@ -68,6 +75,13 @@ class BinOp:
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
+class PrintStatement:
+    def __init__(self, node_to_print):
+        self.node_to_print = node_to_print
+
+    def __repr__(self):
+        return f'PrintStatement({self.node_to_print})'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
@@ -75,9 +89,15 @@ def to_source(node):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+    elif isinstance(node, list):
+        return ('\n').join([to_source(x) for x in node])
+    elif isinstance(node, PrintStatement):
+        return f'print {to_source(node.node_to_print)}'
+    elif isinstance(node, Float):
+        return f'{node.value}'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
 
 
-    
+

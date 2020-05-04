@@ -34,7 +34,7 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,18 +50,23 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+model1 = [
+    PrintStatement(BinOp('+', Integer(2), BinOp('*', Integer(3), Integer(-4)))),
+    PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
+    PrintStatement(BinOp('+', Integer(-2), Integer(3))),
+    PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), Integer(-4)))),
+]
 
-#print(to_source(model1))
+print(to_source(model1))
 
 # ----------------------------------------------------------------------
-# Program 2: Variable and constant declarations. 
+# Program 2: Variable and constant declarations.
 #            Expressions and assignment.
 #
 # Encode the following statements.
 
 source2 = """
-    const pi = 3.14159;  
+    const pi = 3.14159;
     var tau float;
     tau = 2.0 * pi;
     print tau;
@@ -116,7 +121,7 @@ model4 = None
 source5 = '''
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
+    x = { var t = y; y = x; t; };     // Compound expression.
     print x;
     print y;
 '''
