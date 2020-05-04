@@ -1,7 +1,13 @@
 # test_script_models.py
+# uses pytest
+
+import os
+import sys
+
+root = os.path.join(__file__, "..", "..")
+sys.path.insert(0, root)
 
 import script_models as sm
-
 from wabbit.model import to_source
 
 
