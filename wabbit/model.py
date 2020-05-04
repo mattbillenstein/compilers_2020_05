@@ -46,6 +46,8 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
+NoneType = type(None)
+
 class Node:
     is_statement = False
 
@@ -54,6 +56,7 @@ class Integer(Node):
     Example: 42
     '''
     def __init__(self, value):
+        assert isinstance(value, int)
         self.value = value
 
     def __repr__(self):
@@ -67,6 +70,7 @@ class Float(Node):
     Example: 42.0
     '''
     def __init__(self, value):
+        assert isinstance(value, float)
         self.value = value
 
     def __repr__(self):
@@ -80,6 +84,9 @@ class BinOp(Node):
     Example: left + right
     '''
     def __init__(self, op, left, right):
+        assert op in ('+', '-', '/', '*', '<', '>', '<=', '>=', '!=', '==')
+        assert isinstance(left, (Node, str))
+        assert isinstance(right, (Node, str))
         self.op = op
         self.left = left
         self.right = right
@@ -95,6 +102,8 @@ class UnaOp(Node):
     Example: left + right
     '''
     def __init__(self, op, arg):
+        assert op in ('-',)
+        assert isinstance(arg, (Node, str))
         self.op = op
         self.arg = arg
 
@@ -113,6 +122,8 @@ class Block(Node):
     stmt3;
     '''
     def __init__(self, statements, indent=''):
+        assert isinstance(statements, list)
+        assert indent == '' or set(indent) == {' '}
         self.statements = statements
         self.indent = indent
 
@@ -134,6 +145,7 @@ class Print(Node):
     Print is kinda a special case of a function call - optional parens
     '''
     def __init__(self, arg):
+        assert isinstance(arg, (Node, str))
         self.arg = arg
 
     def __repr__(self):
@@ -144,6 +156,9 @@ class Print(Node):
 
 class Const(Node):
     def __init__(self, loc, arg, type=None):
+        assert isinstance(loc, str)
+        assert isinstance(arg, (Node, str))
+        assert isinstance(type, (str, NoneType))
         self.loc = loc
         self.arg = arg
         self.type = type
@@ -158,6 +173,9 @@ class Const(Node):
 
 class Var(Node):
     def __init__(self, loc, arg=None, type=None):
+        assert isinstance(loc, str)
+        assert isinstance(arg, (Node, str, NoneType))
+        assert isinstance(type, (str, NoneType))
         self.loc = loc
         self.arg = arg
         self.type = type
@@ -174,6 +192,8 @@ class Var(Node):
 
 class Assign(Node):
     def __init__(self, loc, arg):
+        assert isinstance(loc, str)
+        assert isinstance(arg, (Node, str))
         self.loc = loc
         self.arg = arg
 
@@ -187,6 +207,9 @@ class If(Node):
     is_statement = True
 
     def __init__(self, cond, block, eblock=None):
+        assert isinstance(cond, (Node, str))
+        assert isinstance(block, Block)
+        assert isinstance(eblock, (Block, NoneType))
         self.cond = cond
         self.block = block
         self.eblock = eblock
@@ -203,6 +226,8 @@ class While(Node):
     is_statement = True
 
     def __init__(self, cond, block):
+        assert isinstance(cond, (Node, str))
+        assert isinstance(block, Block)
         self.cond = cond
         self.block = block
 
@@ -214,6 +239,8 @@ class While(Node):
 
 class Compound(Node):
     def __init__(self, statements):
+        assert isinstance(statements, list)
+        assert all(isinstance(_, (Node, str)) for _ in statements)
         self.statements = statements
 
     def __repr__(self):
