@@ -56,12 +56,13 @@ source1 = """
 #           ]
 
 model1 = Program(
-    PrintStatement(Mult(Add(Integer(2), Integer(3)), Integer(-4))),
-    PrintStatement(Div(Subtract(Float(2.0), Float(3.0)), Float(-4.0))),
-    PrintStatement(Add(Integer(-2), Integer(3))),
-    PrintStatement(Add(Mult(Integer(2), Integer(3)), Integer(-4))),
+    PrintStatement(BinOp.mult(BinOp.add(Integer(2), Integer(3)), Integer(-4))),
+    PrintStatement(BinOp.div(BinOp.subtract(Float(2.0), Float(3.0)), Float(-4.0))),
+    PrintStatement(BinOp.add(Integer(-2), Integer(3))),
+    PrintStatement(BinOp.add(BinOp.mult(Integer(2), Integer(3)), Integer(-4))),
 )
 
+print(repr(model1))
 print(to_source(model1))
 
 # ----------------------------------------------------------------------
@@ -80,10 +81,11 @@ source2 = """
 model2 = Program(
     Const("pi", Float(3.14159)),
     VarDeclaration("tau", type="float"),
-    Var("tau", Mult(Float(2.0), Identifier("pi"))),
+    Var("tau", BinOp.mult(Float(2.0), Identifier("pi"))),
     PrintStatement(Identifier("tau")),
 )
 
+print(repr(model2))
 print(to_source(model2))
 
 # ----------------------------------------------------------------------
@@ -101,12 +103,16 @@ source3 = """
 """
 
 model3 = Program(
-    Var(name='a', value=Integer(2), type_='int'),
-    Var(name='b', value=Integer(3), type_='int'),
-    IfStatement(condition=LessThan(Identifier('a'), Identifier('b')), body=PrintStatement(Identifier('a')),  # Maybe body should be a 'Clause' instead
-                else_clause=PrintStatement(Identifier('b')))
+    Var(left="a", value=Integer(2), type_="int"),
+    Var(left="b", value=Integer(3), type_="int"),
+    IfStatement(
+        condition=LessThan(Identifier("a"), Identifier("b")),
+        body=PrintStatement(Identifier("a")),  # Maybe body should be a 'Clause' instead
+        else_clause=PrintStatement(Identifier("b")),
+    ),
 )
 
+print(repr(model3))
 print(to_source(model3))
 
 # ----------------------------------------------------------------------
@@ -126,17 +132,20 @@ source4 = """
 """
 
 model4 = Program(
-    Const(name='n', value=Integer(10)),
-    Var(name='x', value=Integer(1), type_='int'),
-    Var(name='fact', value=Integer(1), type_='int'),
-    WhileLoop(condition=LessThan(Identifier('x'), Identifier('n')),
-              body=Clause(Assignment(name='fact', value=Mult(Identifier('fact'), Identifier('x'))),
-                          PrintStatement(Identifier('fact')),
-                          Assignment(name='x', value=Add(Identifier('x'), Integer(1)))
-                          )
-              )
-
+    Const(left="n", value=Integer(10)),
+    Var(left="x", value=Integer(1), type_="int"),
+    Var(left="fact", value=Integer(1), type_="int"),
+    WhileLoop(
+        condition=LessThan(Identifier("x"), Identifier("n")),
+        body=Clause(
+            Assignment(left="fact", value=BinOp.mult(Identifier("fact"), Identifier("x"))),
+            PrintStatement(Identifier("fact")),
+            Assignment(left="x", value=BinOp.add(Identifier("x"), Integer(1))),
+        ),
+    ),
 )
+
+print(repr(model4))
 print(to_source(model4))
 
 # ----------------------------------------------------------------------
@@ -152,8 +161,22 @@ source5 = """
     print y;
 """
 
-model5 = None
-# print(to_source(model5))
+model5 = Program(
+    Var(left="x", value=Integer(37)),
+    Var(left="y", value=Integer(42)),
+    Assignment(
+        left="x",
+        value=CompoundExpr(
+            Var(left="t", value=Identifier("y")),
+            Assignment(left="y", value=Identifier("x")),
+            Identifier("t"),
+        ),
+    ),
+    PrintStatement(Identifier('x')),
+    PrintStatement(Identifier('y'))
+)
+print(repr(model5))
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

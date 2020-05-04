@@ -104,29 +104,42 @@ class BinOp(Model):
         return f"{self.left} {self.op} {self.right}"
 
 
-class Add(BinOp):
-    def __init__(self, left, right):
-        super().__init__(op="+", left=left, right=right)
+    @classmethod
+    def add(cls, left, right):
+        return cls(op="+", left=left, right=right)
 
 
-class Subtract(BinOp):
-    def __init__(self, left, right):
-        super().__init__(op="-", left=left, right=right)
+    @classmethod
+    def subtract(cls, left, right):
+        return cls(op="-", left=left, right=right)
 
 
-class Mult(BinOp):
-    def __init__(self, left, right):
-        super().__init__(op="*", left=left, right=right)
+    @classmethod
+    def mult(cls, left, right):
+        return cls(op="*", left=left, right=right)
 
 
-class Div(BinOp):
-    def __init__(self, left, right):
-        super().__init__(op="/", left=left, right=right)
+    @classmethod
+    def div(cls, left, right):
+        return cls(op="/", left=left, right=right)
 
 
-class Assignment(BinOp):
-    def __init__(self, name, value, **kwargs):
-        super().__init__(left=name, right=value, op="=", **kwargs)
+class Statement(Model):
+    ...
+
+class Definition(Statement):
+    ...
+
+class Expression(Model):
+    ...
+
+
+class Assignment(Statement):
+    def __init__(self, left, value, **kwargs):
+        super().__init__(left=left, right=value, **kwargs)
+
+    def to_source(self):
+        return f'{self.left} = {self.right}'
 
 
 class Type(Model):
@@ -138,9 +151,9 @@ def infer_type(value):
 
 
 class Const(Assignment):
-    def __init__(self, name, value, type_=None):
+    def __init__(self, left, value, type_=None):
         self._type = type_
-        super().__init__(name=name, value=value, type=type_ or infer_type(value))
+        super().__init__(left=left, value=value, type=type_ or infer_type(value))
 
     def _infer_type(self):
         ...
@@ -150,9 +163,9 @@ class Const(Assignment):
 
 
 class Var(Assignment):
-    def __init__(self, name, value, type_=None):
+    def __init__(self, left, value, type_=None):
         self._type = None
-        super().__init__(name=name, value=value, type=type_ or infer_type(value))
+        super().__init__(left=left, value=value, type=type_ or infer_type(value))
 
     def to_source(self):
         return f"var {self.left}{' ' + self.type if self._type else ''} = {self.right};"
@@ -166,6 +179,7 @@ class VarDeclaration(Model):
         return f"var {self.name} {self.type};"
 
 
+
 class Identifier(Model):
     def __init__(self, name):
         super().__init__(name=name)
@@ -173,18 +187,6 @@ class Identifier(Model):
     def to_source(self):
         return f"{self.name}"
 
-
-class IfStatement(Model):
-    def __init__(self, condition, body, else_clause=None):
-        super().__init__(
-            condition=condition, body=body, else_clause=else_clause
-        )  # expression?  # ???
-
-    def to_source(self):
-        if_statement = f"if {self.condition} {{ \n    {self.body}\n}}"
-        if self.else_clause != None:
-            if_statement += f" else {{\n    {self.else_clause} \n}}"
-        return dedent(if_statement)
 
 
 class PrintStatement(Model):
@@ -233,6 +235,19 @@ Gte = GreaterThanEqual
 Lt = LessThan
 Lte = LessThanEqual
 
+class IfStatement(Model):
+    def __init__(self, condition, body, else_clause=None):
+        super().__init__(
+            condition=condition, body=body, else_clause=else_clause
+        )  # expression?  # ???
+
+    def to_source(self):
+        if_statement = f"if {self.condition} {{ \n    {self.body}\n}}"
+        if self.else_clause != None:
+            if_statement += f" else {{\n    {self.else_clause} \n}}"
+        return dedent(if_statement)
+
+
 class WhileLoop(Model):
     def __init__(self, condition, body):
         super().__init__(condition=condition, body=body)
@@ -241,6 +256,7 @@ class WhileLoop(Model):
         if_statement = f"while {self.condition} {{ \n    {self.body}\n}}"
         return dedent(if_statement)
 
+
 class Program(Model):
     def __init__(self, *statements):
         self.statements = statements
@@ -248,8 +264,17 @@ class Program(Model):
     def to_source(self):
         return "\n".join(str(stmt) for stmt in self.statements)
 
-class Clause(Program):
+
+class Clause(Program):  # Not sure if this will remain a subclass of Program, but we'll see
     ...  # maybe I can cleanly handle nesting formatting here?
+
+
+class CompoundExpr(Model):
+    def __init__(self, *statements):
+        self.statements = statements
+
+    def to_source(self):
+        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '}'
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
