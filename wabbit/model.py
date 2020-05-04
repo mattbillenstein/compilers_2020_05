@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Union
+from typing import Any, Union, Optional
 
 
 class Node:
@@ -63,7 +63,7 @@ class BinOp(Node):
 class ConstDef(Node):
     name: str
     value: Union[int, float]
-    type: str = None
+    type: Optional[str] = None
 
     @property
     def tokens(self):
