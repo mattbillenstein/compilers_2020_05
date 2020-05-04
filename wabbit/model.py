@@ -60,9 +60,15 @@ class Print(Node):
     expression: Any
 
 
-def print_source(program):
-    for statement in program or []:
-        print(_to_source(statement) + ";")
+@dataclass
+class If(Node):
+    tst: Any
+    thn: Any
+    els: Any
+
+
+def to_source(program):
+    return "\n".join(_to_source(stmnt) + ";" for stmnt in program or [])
 
 
 def _to_source(node):
@@ -90,6 +96,20 @@ def _to_source(node):
 
     elif isinstance(node, Assignment):
         return " ".join([node.location, "=", _to_source(node.value)])
+
+    elif isinstance(node, If):
+        return " ".join(
+            [
+                "if",
+                _to_source(node.tst),
+                "{",
+                _to_source(node.thn),
+                "}",
+                "{",
+                _to_source(node.els),
+                "}",
+            ]
+        )
 
     elif isinstance(node, Print):
         return " ".join(["print", _to_source(node.expression)])
