@@ -71,9 +71,9 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = [Assignment(Const("pi"), Float(3.14159))]
 
-# print(to_source(model2))
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of

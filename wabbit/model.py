@@ -45,9 +45,24 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+
+
+class Assignment:
+    """
+    Example: foo = 7
+    """
+
+    def __init__(self, location, expression):
+        self.location = location
+        self.expression = expression
+
+    def __repr__(self):
+        return f"Assignment({self.location}, {self.expression})"
+
+
 class Print:
     """
-    Example: print 3;
+    Example: print 3
     """
 
     def __init__(self, value):
@@ -67,6 +82,18 @@ class Float:
 
     def __repr__(self):
         return f"Float({self.value})"
+
+
+class Const:
+    """
+    Example: const bar
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Const({self.value})"
 
 
 class Integer:
@@ -116,6 +143,10 @@ def to_source(node):
         return "\n".join([to_source(item) for item in node])
     elif isinstance(node, Integer):
         return repr(node.value)
+    elif isinstance(node, Const):
+        return f"const {node.value}"
+    elif isinstance(node, Assignment):
+        return f"{to_source(node.location)} = {to_source(node.expression)}"
     elif isinstance(node, Float):
         return repr(node.value)
     elif isinstance(node, Print):
