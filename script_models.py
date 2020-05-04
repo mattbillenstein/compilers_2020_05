@@ -100,9 +100,13 @@ source3 = """
     }
 """
 
-model3 = None
+model3 = Program(
+    Var(name='a', value=Integer(2), type_='int'),
+    Var(name='b', value=Integer(3), type_='int'),
+    IfStatement(condition=LessThan(Identifier('a'), Identifier('b')), body=PrintStatement(Identifier('a')), else_clause=PrintStatement(Identifier('b')))
+)
 
-# print(to_source(model3))
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
