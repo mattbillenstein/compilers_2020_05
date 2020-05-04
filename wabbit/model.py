@@ -57,6 +57,18 @@ class Print:
         return f"Print({self.value})"
 
 
+class Float:
+    """
+    Example: 3.14
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Float({self.value})"
+
+
 class Integer:
     """
     Example: 42
@@ -91,10 +103,10 @@ def to_source(node):
         return "\n".join([to_source(item) for item in node])
     if isinstance(node, Integer):
         return repr(node.value)
+    if isinstance(node, Float):
+        return repr(node.value)
     if isinstance(node, Print):
         return f"print {to_source(node.value)}"
-    if isinstance(node, Newline):
-        return f"{to_source(node.before)}\n{to_source(node.after)}"
     elif isinstance(node, BinOp):
         return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
     else:
