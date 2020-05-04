@@ -61,7 +61,7 @@ model1 = Block([
     Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
     Print(BinOp('+', Integer(-2), Integer(3))),
     Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), Integer(-4))),
-], indent='    ')
+], indent=' '*4)
 
 s = to_source(model1) 
 assert s.strip('\n') == source1.strip('\n'), (s, source1)
@@ -84,7 +84,7 @@ model2 = Block([
     Var('tau', type='float'),
     Assign('tau', BinOp('*', Float(2.0), 'pi')),
     Print('tau'),
-], indent='    ')
+], indent=' '*4)
 
 s = to_source(model2)
 assert s.strip('\n') == source2.strip('\n'), (s, source2)
@@ -103,9 +103,18 @@ source3 = '''
     }
 '''
 
-model3 = None
+model3 = Block([
+    Var('a', Integer(2), type='int'),
+    Var('b', Integer(3), type='int'),
+    If(
+        BinOp('<', 'a', 'b'),
+        Block([Print('a')], indent=' '*4),
+        Block([Print('b')], indent=' '*4),
+    )
+], indent=' '*4)
 
-# print(to_source(model3))
+s = to_source(model3)
+assert s.strip('\n') == source3.strip('\n'), (s, source3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -115,7 +124,6 @@ source4 = '''
     const n = 10;
     var x int = 1;
     var fact int = 1;
-
     while x < n {
         fact = fact * x;
         print fact;
@@ -123,8 +131,22 @@ source4 = '''
     }
 '''
 
-model4 = None
-# print(to_source(model4))
+model4 = Block([
+    Const('n', Integer(10)),
+    Var('x', Integer(1), type='int'),
+    Var('fact', Integer(1), type='int'),
+    While(
+        BinOp('<', 'x', 'n'),
+        Block([
+            Assign('fact', BinOp('*', 'fact', 'x')),
+            Print('fact'),
+            Assign('x', BinOp('+', 'x', Integer(1))),
+        ], indent=' '*4),
+    )
+], indent=' '*4)
+
+s = to_source(model4)
+assert s.strip('\n') == source4.strip('\n'), (s, source4)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -134,13 +156,26 @@ model4 = None
 source5 = '''
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
+    x = { var t = y; y = x; t; };
     print x;
     print y;
 '''
 
-model5 = None
-# print(to_source(model5))
+model5 = Block([
+    Var('x', Integer(37)),
+    Var('y', Integer(42)),
+    Assign('x', Compound([
+            Var('t', 'y'),
+            Assign('y', 'x'),
+            't',
+        ]),
+    ),
+    Print('x'),
+    Print('y'),
+], indent=' '*4)
+
+s = to_source(model5)
+assert s.strip('\n') == source5.strip('\n'), (s, source5)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

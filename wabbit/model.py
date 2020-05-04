@@ -47,7 +47,7 @@
 # if you want to go in a different direction with it.
 
 class Node:
-    pass
+    is_statement = False
 
 class Integer(Node):
     '''
@@ -120,7 +120,14 @@ class Block(Node):
         return f'Block({[_ for _ in self.statements]}, indent={indent})'
 
     def to_source(self):
-        return ';\n'.join(self.indent + to_source(_) for _ in self.statements) + ';\n'
+        L = []
+        for stmt in self.statements:
+            s = to_source(stmt) + ('' if not isinstance(stmt, Node) or stmt.is_statement else ';')
+            # hack, split lines to add indent, then rejoin them...
+            lines = [self.indent + _ for _ in s.split('\n') if _.strip()]
+            s = '\n'.join(lines)
+            L.append(s)
+        return '\n'.join(L) + '\n'
 
 class Print(Node):
     '''
@@ -161,7 +168,7 @@ class Var(Node):
         return f'Var({self.loc}{self.arg}{self.type})'
 
     def to_source(self):
-        arg = f' = {self.arg}' if self.arg is not None else ''
+        arg = f' = {to_source(self.arg)}' if self.arg is not None else ''
         type = f' {self.type}' if self.type is not None else ''
         return f'var {self.loc}{type}{arg}'
 
@@ -175,6 +182,46 @@ class Assign(Node):
 
     def to_source(self):
         return f'{self.loc} = {to_source(self.arg)}'
+
+class If(Node):
+    is_statement = True
+
+    def __init__(self, cond, block, eblock=None):
+        self.cond = cond
+        self.block = block
+        self.eblock = eblock
+
+    def __repr__(self):
+        els = f', {self.eblock}' if self.eblock is not None else ''
+        return f'If({self.cond}, {self.block}{els})'
+
+    def to_source(self):
+        els = f' else {{\n{to_source(self.eblock)}}}' if self.eblock is not None else ''
+        return f'if {to_source(self.cond)} {{\n{to_source(self.block)}}}{els}'
+
+class While(Node):
+    is_statement = True
+
+    def __init__(self, cond, block):
+        self.cond = cond
+        self.block = block
+
+    def __repr__(self):
+        return f'While({self.cond}, {self.block})'
+
+    def to_source(self):
+        return f'while {to_source(self.cond)} {{\n{to_source(self.block)}}}'
+
+class Compound(Node):
+    def __init__(self, statements):
+        self.statements = statements
+
+    def __repr__(self):
+        return f'Compound({[_ for _ in self.statements]})'
+
+    def to_source(self):
+        s = '; '.join(to_source(_) for _ in self.statements) + ';'
+        return f'{{ {s} }}'
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
