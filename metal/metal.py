@@ -255,8 +255,19 @@ if __name__ == "__main__":
         #     n -= 1
         #
         ("BZ", "R1", JUMP_TO_END_OFFSET),  # break if counter == 0
-        ("JMP", "R0", LABELS["FUNCTION_DEF"].index),  # call mul function
-        ("ADD", "R0", "R6", "R2"),  # Set R2 = return value (R6)
+        (
+            "JMP",
+            "R0",
+            LABELS["FUNCTION_DEF"].index,
+            lambda self: f"At toplevel: calling mul({self.registers['R2']}, {self.registers['R1']})",
+        ),  # call mul function
+        (
+            "ADD",
+            "R0",
+            "R6",
+            "R2",
+            lambda self: f"At toplevel: result = {self.registers['R2']}",
+        ),  # Set R2 = return value (R6)
         ("DEC", "R1"),  # R1 -= 1
         ("JMP", "R0", LABELS["LOOP_BEGIN"].index),
         # print(result)
@@ -280,7 +291,13 @@ if __name__ == "__main__":
         # x = R2
         # y = R1
         ("BZ", "R2", JUMP_TO_END_OFFSET),  # break if x == 0
-        ("ADD", "R3", "R1", "R3"),  # result += y
+        (
+            "ADD",
+            "R3",
+            "R1",
+            "R3",
+            lambda self: f"In mul(): result += y[{self.registers['R1']}]",
+        ),  # result += y
         ("DEC", "R2"),  # R2 -= 1
         ("JMP", "R0", LABELS["LOOP_BEGIN_2"].index),
         # Write return value to R6
