@@ -292,9 +292,81 @@ if __name__ == '__main__':
     #    print(fact(5))
 
     prog4 = [
+        ('CONST', 5, 'R1'),    	
+        ('STORE', 'PC', 'R7', 0),	# set up CALL by saving current PC to stack
+        ('JMP', 'R0', 22),			# make the CALL to fact()
         # Print result (assumed to be in R1)
-        ('STORE', 'R1', 'R0', IO_OUT),
-        ('HALT',)
+        ('STORE', 'R6', 'R0', IO_OUT),
+        ('HALT',),
+
+		#    def mul(x, y):
+		#        if x > 0:
+		#            return y + mul(x-1, y)
+		#        else:
+		#            return 0
+
+		# addr = 5	mul function
+		('CONST', 0, 'R5'),			# prologue
+		('SUB', 'R7', 'R5', 'R7'),
+		('STORE', 'R1', 'R7', 1),	# x
+		('STORE', 'R2', 'R7', 2),	# y
+		
+		('BZ', 'R1', 5),
+
+		('DEC', 'R1'),				# x--
+		('STORE', 'PC', 'R7', 0),	#	save retaddr
+		('JMP', 'R0', 5),			# 	CALL mul
+		('ADD', 'R6', 'R2', 'R6'),	# y + mul(x-1, y)
+		('JMP', 'PC', 1),
+		
+		('CONST', 0, 'R6'),			# return 0
+		
+		('LOAD', 'R7', 'R1', 1), 	# restore x
+		('LOAD', 'R7', 'R2', 2),	# restore y
+		
+		('CONST', 3, 'R5'),
+		('ADD', 'R7', 'R5', 'R7'),	# epilogue
+		
+		('LOAD', 'R7', 'R5', 0),		# RET
+		('JMP', 'R5', 1),
+		
+
+
+		# addr = 22
+        #    def fact(n):
+        #        if n == 0:
+        #            return 1
+        #        else:
+        #            return mul(n, fact(n-1))
+    	('CONST', 3, 'R5'),			# prologue
+		('SUB', 'R7', 'R5', 'R7'),
+		('STORE', 'R1', 'R7', 1),	# n
+		('STORE', 'R1', 'R7', 2),	# tmp = n
+		
+		('BZ', 'R1', 9),
+		('DEC', 'R1'),
+		('LOAD', 'R7', 'R2', 1),		# y = n-1
+		
+		('STORE', 'PC', 'R7', 0),	#	save retaddr
+		('JMP', 'PC', -9),			# 	CALL fact
+		
+		('STORE', 'R6', 'R7', 0),	
+		('LOAD', 'R2', 'R7', 0),	# MOV R2, R6
+		
+		('STORE', 'PC', 'R7', 0),	#	save retaddr
+		('JMP', 'R0', 5),			# 	CALL mul
+		('JMP', 'PC', 1),
+		
+		('CONST', 1, 'R6'),			# return 1
+		
+		('LOAD', 'R7', 'R1', 1), 	# restore n
+		('LOAD', 'R7', 'R2', 2),	# restore tmp
+		
+		('CONST', 3, 'R5'),
+		('ADD', 'R7', 'R5', 'R7'),	# epilogue
+		
+		('LOAD', 'R7', 'R5', 0),	# RET
+		('JMP', 'R5', 1)
         ]
 
     print("PROGRAM 4::: Expected Output: 120")
