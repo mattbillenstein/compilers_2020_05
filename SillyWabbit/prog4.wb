@@ -2,27 +2,6 @@
 
 /* Wabbit has user-defined structures. Here is an example */
 
-struct Fraction {
-    numer int;
-    denom int;
-}
-
-func add_fraction(a Fraction, b Fraction) Fraction {
-    return Fraction(a.numer * b.denom + a.denom * b.numer, a.denom * b.denom);
-}
-
-func print_fraction(a Fraction) {
-    print a.numer;
-    print '/';
-    print '\n';
-    print a.denom;
-}
-
-var a = Fraction(2,3);
-var b = Fraction(1,4);
-var c = add_fraction(a, b);
-print_fraction(c);
-       
 /* Define a struct Point that represent a point (x, y) in 2D.
    Write a function midpoint that computes the midpoint of a line-segment drawn 
    between points p1 and p2.
@@ -37,4 +16,36 @@ print_fraction(c);
    you modify the midpoint() function to operate on a Line?
  */
 
+struct Point {
+    x int;
+    y int;
+}
 
+struct Line {
+    a Point;
+    b Point;
+}
+
+func midpoint(a Point, b Point) Point {
+   return Point((a.x + b.x) / 2, (a.y + b.y) / 2);
+}
+
+func midpoint_line(a Line) Point {
+    return midpoint(a.a, a.b);
+}
+
+func print_point(a Point) int {
+    print '(';
+    print a.x;
+    print ',';
+    print ' ';
+    print a.y;
+    print ')';
+    print '\n';
+    return 0;
+}
+
+func main() int {
+   print_point(midpoint(Point(20, 25), Point(40, 55)));
+   print_point(midpoint_line(Line(Point(20, 25), Point(40, 55))));
+}
