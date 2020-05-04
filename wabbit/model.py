@@ -188,7 +188,7 @@ class ConstDef:
 	
 
 class VarDef:
-	def __init__(self, name, vartype):
+	def __init__(self, name, vartype = ""):
 		self.name = name
 		self.vartype = vartype
 		

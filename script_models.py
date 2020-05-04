@@ -143,7 +143,14 @@ source5 = '''
     print y;
 '''
 
-model5 = Program([])
+model5 = Program([
+	Statement(Assignment(VarDef("x"), Integer(37))),
+	Statement(Assignment(VarDef("y"), Integer(42))),
+	Statement(Assignment(Var("x"), Block([Statement(Assignment(VarDef("t"), Var("y"))), Statement(Assignment(Var("x"), Var("y"))), Statement(Var("t"))]))),
+	Statement(PrintStatement(Var("x"))),
+	Statement(PrintStatement(Var("y")))
+
+])
 
 print("\n\nModel5:")
 print(to_source(model5))
