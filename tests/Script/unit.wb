@@ -1,0 +1,24 @@
+/* unit.wb
+
+   This is a brief test of the unit type.  unit is kind of like None in Python.
+   It's written as ().
+
+*/
+
+var a = ();
+var b unit;
+
+/* Unit can be compared against unit */
+if a == () {
+   print true;
+} else {
+   print false;
+}
+print a;
+
+if a == b {
+  print true;
+} else {
+  print false;
+}
+

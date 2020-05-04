@@ -39,7 +39,17 @@ time to see what's new.
 ## Live Session 
 
 The course is conducted live from 09:30 to 17:30 US Central Time on Zoom.
-Meeting details to be posted here.
+The meeting will be open about 30 minutes prior to the starttime. Meeting
+details are as follows:
+
+Topic: Write a Compiler, May 4-8, 2020.
+Time: 09:00 - 18:00 US CDT (UTC-05:00). 
+
+Join Zoom Meeting
+https://us02web.zoom.us/j/82940491798?pwd=U05FZ1FIZHhTeWNWbitkWlNOOFk3Zz09
+
+Meeting ID: 829 4049 1798.
+Password: 016509.
 
 ## Course Requirements
 
@@ -74,9 +84,13 @@ on the wiki.   Reposted here.
 Short video lectures will introduce important parts of the project.  They will be posted here
 about a day in advance (an email notification will also be sent).
 
+* [Course Introduction](https://vimeo.com/414481789/f5cc08e05b) (20 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Compiler.pdf) 
+* [Part 0 - Preliminaries](https://vimeo.com/414482511/54dff477c1) (7 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Preliminaries.pdf)
+* [Part 1 - Structure of Programs](https://vimeo.com/414482772/bcf107cae6) (9 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/01Structure.pdf)
+
 ## Live Session Recordings
 
-Video recordings of live sessions will be posted.
+Video recordings of live sessions will be posted here.
 
 
 

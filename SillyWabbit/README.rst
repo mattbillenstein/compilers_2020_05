@@ -1,10 +1,11 @@
 Important
 =========
 
-Copy this entire directory to your own working area before modifying any
-of the programs.  For example::
+Make sure you are working on your own branch of the GitHub repo before
+modifying any of the programs here.  For example, do this first (replace
+yourname with your name of course)::
 
-    bash $ cp -R SillyWabbit ../people/dabeaz
+    bash $ git checkout -b yourname
 
 Playing with Wabbit
 ===================
@@ -25,11 +26,12 @@ inside. You can run each program using the provided program
 Don't concern yourself too much with the details of the `wabbit.py`
 program (if you must know, it's running each program in an interpreter
 which is sort of similar to the compiler you're going to write except
-that everything runs a lot slower).
+that everything runs a lot slower and it's somewhat user-hostile with
+respect to error messages).
 
-I don't guarantee that wabbit.py is entirely free of bugs--or good error
-messages for that matter.  Think of this as more of a minimal viable
-implementation to see how things might work.
+I don't guarantee that wabbit.py is entirely free of bugs--or good
+error messages for that matter.  Think of this as more of a minimal
+viable implementation to see how things might work.
 
 
 
