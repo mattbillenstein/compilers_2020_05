@@ -233,6 +233,14 @@ Gte = GreaterThanEqual
 Lt = LessThan
 Lte = LessThanEqual
 
+class WhileLoop(Model):
+    def __init__(self, condition, body):
+        super().__init__(condition=condition, body=body)
+
+    def to_source(self):
+        if_statement = f"while {self.condition} {{ \n    {self.body}\n}}"
+        return dedent(if_statement)
+
 class Program(Model):
     def __init__(self, *statements):
         self.statements = statements
@@ -240,6 +248,8 @@ class Program(Model):
     def to_source(self):
         return "\n".join(str(stmt) for stmt in self.statements)
 
+class Clause(Program):
+    ...  # maybe I can cleanly handle nesting formatting here?
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 

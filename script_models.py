@@ -103,7 +103,8 @@ source3 = """
 model3 = Program(
     Var(name='a', value=Integer(2), type_='int'),
     Var(name='b', value=Integer(3), type_='int'),
-    IfStatement(condition=LessThan(Identifier('a'), Identifier('b')), body=PrintStatement(Identifier('a')), else_clause=PrintStatement(Identifier('b')))
+    IfStatement(condition=LessThan(Identifier('a'), Identifier('b')), body=PrintStatement(Identifier('a')),  # Maybe body should be a 'Clause' instead
+                else_clause=PrintStatement(Identifier('b')))
 )
 
 print(to_source(model3))
@@ -124,8 +125,19 @@ source4 = """
     }
 """
 
-model4 = None
-# print(to_source(model4))
+model4 = Program(
+    Const(name='n', value=Integer(10)),
+    Var(name='x', value=Integer(1), type_='int'),
+    Var(name='fact', value=Integer(1), type_='int'),
+    WhileLoop(condition=LessThan(Identifier('x'), Identifier('n')),
+              body=Clause(Assignment(name='fact', value=Mult(Identifier('fact'), Identifier('x'))),
+                          PrintStatement(Identifier('fact')),
+                          Assignment(name='x', value=Add(Identifier('x'), Integer(1)))
+                          )
+              )
+
+)
+print(to_source(model4))
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
