@@ -48,7 +48,27 @@ model7 = Statements(
             "frac_mul",
             Arguments(Argument("a", "Fraction"), Argument("b", "Fraction")),
             Variable("Fraction"),
+            Return(
+                FunctionCall(
+                    "Fraction",
+                    BinOp("*", Variable("a.numerator"), Variable("b.numerator")),
+                    BinOp("*", Variable("a.denominator"), Variable("b.denominator")),
+                )
+            ),
         ),
+        Assignment(Var("x"), FunctionCall("Fraction", Integer(1), Integer(4))),
+        Assignment(Var("y"), FunctionCall("Fraction", Integer(3), Integer(8))),
+        Assignment(Var("c"), FunctionCall("frac_mul", Variable("x"), Variable("y"))),
+        Print(Variable("c.numerator")),
+        Print(Variable("c.denominator")),
+        Assignment(
+            Variable("c.numerator"), BinOp("/", Variable("c.numerator"), Integer(4))
+        ),
+        Assignment(
+            Variable("c.denominator"), BinOp("/", Variable("c.denominator"), Integer(4))
+        ),
+        Print(Variable("c.numerator")),
+        Print(Variable("c.denominator")),
     ]
 )
 
