@@ -156,13 +156,30 @@ if source4 != repr4:
 #
 
 source5 = '''
-    var x = 37;
-    var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
-    print x;
-    print y;
+var x = 37;
+var y = 42;
+x = { var t = y; y = x; t; };     // Compound expression. 
+print x;
+print y;
 '''
 
+model5 = [
+    AssignStatement(DeclLocation('x'), Int(37)),
+    AssignStatement(DeclLocation('y'), Int(42)),
+    AssignStatement(Location('x'), BlockExpression([
+        AssignStatement(DeclLocation('t'), Location('y')),
+        AssignStatement(Location('y'), Location('x')),
+        ExpressionStatement(Location('t')),
+        ])),
+    PrintStatement(Location('x')),
+    PrintStatement(Location('y')),
+        ]
+
+repr5 = to_source(model5)
+if source5 != repr5:
+    print('err')
+    print(repr5)
+    print(source5) 
 model5 = None
 # print(to_source(model5))
 

@@ -84,7 +84,7 @@ class DeclLocation(Location):
     '''
     Example: var foo int
     '''
-    def __init__(self, identifier: Identifier, _type, const=False):
+    def __init__(self, identifier: Identifier, _type=None, const=False):
         self.identifier = identifier
         self._type = _type
         self.const = const
@@ -140,7 +140,7 @@ class AssignStatement(StatementNode):
         return f'Assign({self.location}, {self.expr})'
 
     def to_source(self):
-        return self.location.to_source() + ' = ' + self.expr.to_source() + ';\n'
+        return self.location.to_source() + ' = ' + self.expr.to_source()
 
 
 class BinOp(ExpressionNode):
@@ -185,7 +185,7 @@ class PrintStatement(StatementNode):
         return f'Print({self.expr})'
 
     def to_source(self):
-        return f'print {to_source(self.expr)};\n'
+        return f'print {to_source(self.expr)}'
 
 
 class ConditionalStatement(StatementNode):
@@ -238,6 +238,37 @@ class ConditionalLoopStatement(StatementNode):
         ret += '}'
         return ret
 
+
+class BlockExpression(ExpressionNode):
+    '''
+    Example:
+    { x = 1; y; }
+    '''
+
+    def __init__(self, block: List[StatementNode]):
+        self.block = block
+
+    def __repr__(self):
+        return to_repr(self.block)
+
+    def to_source(self):
+        return '{ ' + to_source(self.block, indent=0, joiner='; ') + '}'
+
+
+class ExpressionStatement(StatementNode):
+    '''
+    Example:
+    t;
+    '''
+
+    def __init__(self, statement: ExpressionNode):
+        self.statement = statement
+
+    def __repr__(self):
+        return str(self.statement)
+
+    def to_source(self):
+        return self.statement.to_source() 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 
@@ -249,13 +280,14 @@ def to_repr(node, indent = 0):
         return str(node)
 
 
-def to_source(node, indent=0):
+def to_source(node, indent=0, joiner=';\n'):
     if isinstance(node, list):
         # list of statements
         ret = ''
         for n in node:
             ret += indent * '\t'
             ret += to_source(n)
+            ret += joiner
         return ret
     else:
         # individual statement
