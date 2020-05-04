@@ -46,6 +46,10 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
+# TODO UnaryOp
+# TODO Grouping (for when they put parens around things to say which go first)
+# TODO implement is_correct for everything
+
 def checkMe(n):
     ''''''
     assert(n.is_correct())
@@ -137,9 +141,6 @@ class PrintStatement(Node):
     def __repr__(self):
         return f'PrintStatement({self.node_to_print})'
 
-    def is_correct(self):
-        return True
-
 class Const(Node):
     def __init__(self, name, value):
         super().__init__()
@@ -149,9 +150,6 @@ class Const(Node):
 
     def __repr__(self):
         return f'Const({self.name}, {self.value})'
-
-    def is_correct(self):
-        return True
 
 class Var(Node):
     def __init__(self, name, myType):
@@ -163,9 +161,6 @@ class Var(Node):
 
     def __repr__(self):
         return f'Var({self.name}, {self.myType})'
-
-    def is_correct(self):
-        return True
 
 class Assign(Node):
     def __init__(self, name, value):
