@@ -109,7 +109,20 @@ class FunctionDefinition:
         return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
 
     def to_source(self):
-        return f"func {self.name}({self.args.to_source()}) {self.return_type.to_source()} {{ \n {self.body.to_source()}\n}}"
+        if self.return_type:
+            return_type = self.return_type.to_source()
+        else:
+            return_type = f""
+        if self.body:
+            body = self.body.to_source()
+        else:
+            body = f""
+        if self.args:
+            args = self.args.to_source()
+
+        else:
+            args = f""
+        return f"func {self.name}({args}) {return_type} {{ \n {body}\n}}"
 
 
 class Block:

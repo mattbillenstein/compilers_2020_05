@@ -88,6 +88,41 @@ model6 = Statements(
                 ]
             ),
         ),
+        FunctionDefinition(
+            "print_factorials",
+            Arguments([Argument("last", "int")]),
+            None,
+            Statements(
+                [
+                    Assignment(Var("x"), Integer(0)),
+                    While(
+                        BinOp("<", Variable("x"), Variable("last")),
+                        Statements(
+                            [
+                                Print(FunctionCall("factorial", Variable("x"))),
+                                Assignment(
+                                    Variable("x"),
+                                    FunctionCall("add", Variable("x"), Integer(1)),
+                                ),
+                            ]
+                        ),
+                    ),
+                ]
+            ),
+        ),
+        FunctionDefinition(
+            "main",
+            None,
+            Variable("int"),
+            Statements(
+                [
+                    Assignment(
+                        Var("result"), FunctionCall("print_factorials", Integer(10))
+                    ),
+                    Return(Integer(0)),
+                ]
+            ),
+        ),
     ]
 )
 
