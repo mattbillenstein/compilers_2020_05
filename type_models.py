@@ -122,4 +122,82 @@ while let Integer(x) = a {
 }
 """
 
-model8 = None
+model8 = Statements(
+    [
+        Enum(
+            "MaybeNumber",
+            EnumChoice("No"),
+            EnumChoice("Integer", "int"),
+            EnumChoice("Float", "float"),
+        ),
+        FunctionDefinition(
+            "add",
+            Arguments(Argument("a", "Number"), Argument("b", "Number")),
+            Variable("Number"),
+            Return(
+                Match(
+                    "a",
+                    MatchCondition(EnumChoice("No"), EnumChoice("Number::No")),
+                    MatchCondition(
+                        EnumChoice("Integer", "x"),
+                        Match(
+                            "b",
+                            MatchCondition(
+                                EnumChoice("Integer", "y"),
+                                EnumLocation(
+                                    "Number",
+                                    "Integer",
+                                    Arguments(BinOp("+", Variable("x"), Variable("y"))),
+                                ),
+                            ),
+                            MatchCondition(
+                                EnumChoice("Float", "y"),
+                                EnumLocation(
+                                    "Number",
+                                    "Float",
+                                    Arguments(
+                                        BinOp(
+                                            "+",
+                                            FunctionCall("float", Variable("x")),
+                                            Variable("y"),
+                                        ),
+                                        Variable("y"),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                    MatchCondition(
+                        EnumChoice("Float", "x"),
+                        Match(
+                            "b",
+                            MatchCondition(
+                                EnumChoice("Integer", "y"),
+                                EnumLocation(
+                                    "Number",
+                                    "Float",
+                                    Arguments(
+                                        BinOp(
+                                            "+",
+                                            Variable("x"),
+                                            FunctionCall("float", Variable("x")),
+                                        )
+                                    ),
+                                ),
+                            ),
+                            MatchCondition(
+                                EnumChoice("Float", "y"),
+                                EnumLocation(
+                                    "Number",
+                                    "Float",
+                                    Arguments(BinOp("+", Variable("x"), Variable("y"))),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        ),
+    ]
+)
+print(to_source(model8))

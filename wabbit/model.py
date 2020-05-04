@@ -77,6 +77,137 @@ class Location(Node):
     pass
 
 
+class Enum(Definition):
+    """
+    Example:
+    enum MaybeNumber {
+        No;
+        Integer(int);
+        Float(float);
+    }
+    """
+
+    def __init__(self, name, *choices):
+        for choice in choices:
+            assert isinstance(choice, EnumChoice)
+        self.name = name
+        self.choices = choices
+
+    def __repr__(self):
+        return f"Enum({self.name}, {self.choices})"
+
+    def to_source(self):
+        args = ";\n".join([c.to_source() for c in self.choices])
+        return f"enum {self.name} {{\n{args};\n}}"
+
+
+class EnumChoice(Definition):
+    """
+    Example:
+    enum MaybeNumber {
+        No;
+        Integer(int);
+        Float(float);
+    }
+    """
+
+    def __init__(self, name, type=None):
+        self.name = name
+        self.type = type
+
+    def __repr__(self):
+        return f"EnumChoice({self.name}, {self.type})"
+
+    def to_source(self):
+        if self.type:
+            return f"{self.name}({self.type})"
+        return f"{self.name}"
+
+
+class EnumLocation(Location):
+    """
+    Example:
+    enum MaybeNumber {
+        No;
+        Integer(int);
+        Float(float);
+    }
+    """
+
+    def __init__(self, enum, location, args=None):
+        if args is not None:
+            assert isinstance(args, Arguments)
+        self.enum = enum
+        self.location = location
+        self.args = args
+
+    def __repr__(self):
+        return f"EnumLocation({self.enum}, {self.location}, {self.args})"
+
+    def to_source(self):
+        if self.args:
+            return f"{self.enum}::{self.location}({self.args.to_source()})"
+        return f"{self.enum}::{self.location}"
+
+
+class MatchCondition:
+    """
+    Example:
+    return match(a) {
+                No => Number::No;
+                Integer(x) => match(b) {
+                    Integer(y) => Number::Integer(x + y);
+                    Float(y) => Number::Float(float(x) + y);
+                };
+                Float(x) => match(b) {
+                    Integer(y) => Number::Float(x + float(x));
+                    Float(y) => Number::Float(x + y);
+                };
+    };
+   """
+
+    def __init__(self, choice, expression):
+        assert isinstance(choice, EnumChoice)
+        self.choice = choice
+        self.expression = expression
+
+    def __repr__(self):
+        return f"MatchCondition({self.choice}, {self.expression})"
+
+    def to_source(self):
+        return f"{self.choice.to_source()} => {self.expression.to_source()}"
+
+
+class Match:
+    """
+    Example:
+    return match(a) {
+                No => Number::No;
+                Integer(x) => match(b) {
+                    Integer(y) => Number::Integer(x + y);
+                    Float(y) => Number::Float(float(x) + y);
+                };
+                Float(x) => match(b) {
+                    Integer(y) => Number::Float(x + float(x));
+                    Float(y) => Number::Float(x + y);
+                };
+    };
+   """
+
+    def __init__(self, test, *conditions):
+        for condition in conditions:
+            assert isinstance(condition, MatchCondition)
+        self.test = test
+        self.conditions = conditions
+
+    def __repr__(self):
+        return f"Match({self.test}, {self.conditions})"
+
+    def to_source(self):
+        args = ";\n".join([c.to_source() for c in self.conditions])
+        return f"match({self.test}) {{\n {args}; \n}}"
+
+
 class Struct(Definition):
     """
     Example struct Fraction { }
@@ -131,6 +262,9 @@ class FunctionCall(Expression):
     """
 
     def __init__(self, name, *args):
+        assert isinstance(name, str)
+        for arg in args:
+            assert isinstance(arg, Expression) or isinstance(arg, Location)
         self.name = name
         self.args = args
 
