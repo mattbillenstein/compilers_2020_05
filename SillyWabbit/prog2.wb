@@ -4,9 +4,11 @@
    The following program is an example.  In this program, a rubber
    ball is dropped off a building with an initial height of 100 meters.
    On each bounce, the ball rebounds to 3/5 its original height. Print
-   the height of the ball on the first 10 bounces. 
+   the height of the ball on the first 10 bounces.
  */
-   
+
+/*
+
 const initial_height = 100.0;
 const rebound = 0.6;
 const total_bounces = 10;
@@ -22,6 +24,8 @@ func main() int {
    return 0;
 }
 
+*/
+
 /* Run the above program using python wabbit.py prog2.wb.  Make sure
    you understand the output. Try changing some of the initial constants */
 
@@ -33,6 +37,22 @@ func main() int {
    Which is a better deal?  A child typically has 20 baby teeth.  */
 
 
+const total_teeth = 20;
 
+func main() int {
+   var nb_teeth int = 0;
+   var first_total = 0;
 
+   var pay_mul float = 0.01;
+   var second_total float = 0.;
 
+   while nb_teeth < total_teeth {
+       nb_teeth = nb_teeth + 1;
+       first_total = first_total + 10;
+       second_total = second_total + pay_mul;
+       pay_mul = pay_mul * 2.;
+   }
+   print(first_total);
+   print(second_total);
+   return 0;
+}

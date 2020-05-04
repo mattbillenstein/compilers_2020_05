@@ -16,9 +16,20 @@ func isprime(n int) bool {
     return true;
 }
 
+func print_primes(n int) int {
+    var i int = 0;
+    while i < 100 {
+        if isprime(i) {
+            print(i);
+        }
+        i = i + 1;
+    }
+}
+
 func main() int {
-   print isprime(15);    // Prints 0
-   print isprime(37);    // Prints 1
+   // print isprime(15);    // Prints 0
+   // print isprime(37);    // Prints 1
+   print print_primes(100);
    return 0;
 }
 

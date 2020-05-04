@@ -11,7 +11,7 @@ func add_fraction(a Fraction, b Fraction) Fraction {
     return Fraction(a.numer * b.denom + a.denom * b.numer, a.denom * b.denom);
 }
 
-func print_fraction(a Fraction) void {
+func print_fraction(a Fraction) unit {
     print a.numer;
     print '/';
     print '\n';
@@ -21,16 +21,16 @@ func print_fraction(a Fraction) void {
 var a = Fraction(2,3);
 var b = Fraction(1,4);
 var c = add_fraction(a, b);
-print_fraction(c);
-       
+// print_fraction(c);
+
 /* Define a struct Point that represent a point (x, y) in 2D.
-   Write a function midpoint that computes the midpoint of a line-segment drawn 
+   Write a function midpoint that computes the midpoint of a line-segment drawn
    between points p1 and p2.
 
-   Compute and print the midpoint of the line drawn between (20, 25) 
+   Compute and print the midpoint of the line drawn between (20, 25)
    and (40, 55).
 
-   Note: The midpoint is computed by calculating the average of the x 
+   Note: The midpoint is computed by calculating the average of the x
    coordinates and the average of the y coordinates.
 
    Can you define a struct Line that consists of two Points?  Can
@@ -38,3 +38,34 @@ print_fraction(c);
  */
 
 
+struct Point {
+    x int;
+    y int;
+}
+
+var p1 = Point(20, 25);
+var p2 = Point(40, 55);
+
+func print_midpoint(a Point, b Point) unit {
+    var x = (a.x + b.x) / 2;
+    var y = (a.y + b.y) / 2;
+    print x;
+    print y;
+}
+
+print_midpoint(p1, p2);
+
+struct Line {
+	p1 Point;
+	p2 Point;
+}
+
+var line = Line(p1, p2);
+
+
+func print_line_midpoint(a Line) unit {
+    var x = (a.p1.x + a.p2.x) / 2;
+    var y = (a.p1.y + a.p2.y) / 2;
+    print x;
+    print y;
+}
