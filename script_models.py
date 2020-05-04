@@ -94,9 +94,17 @@ source3 = """
     }
 """
 
-model3 = None
+model3 = [
+    Assignment(Var("a", "int"), Integer(2)),
+    Assignment(Var("b", "int"), Integer(3)),
+    If(
+        BinOp("<", Variable("a"), Variable("b")),
+        Print(Variable("a")),
+        Print(Variable("b")),
+    ),
+]
 
-# print(to_source(model3))
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
