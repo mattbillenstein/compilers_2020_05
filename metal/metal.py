@@ -59,7 +59,7 @@ IO_OUT = 65535
 MASK = 0xffffffff
 
 class Metal:
-    def run(self, instructions):
+    def run(self, instructions, debug=False):
         '''
         Run a program. memory is a Python list containing the program
         instructions and other data.  Upon startup, all registers
@@ -74,14 +74,17 @@ class Metal:
         self.running = True
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
+            old_pc = self.registers['PC']
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
 
-            if 0:
-                print(self.registers['PC']-1, op, args)
-                print([self.registers[f'R{_}'] for _ in range(8)])
-                print(self.memory[self.registers['R7']:len(self.memory)-1])
+            if debug:
+                print(old_pc, op, args)
+                s = 'PC:%s ' + ' '.join(f'R{_}:%s' for _ in range(8))
+                args = tuple([self.registers['PC']] + [self.registers[f'R{_}'] for _ in range(8)])
+                print(s % args)
+                print('STACK:', self.memory[self.registers['R7']:len(self.memory)-1])
                 input()
         return
 
@@ -139,6 +142,25 @@ class Metal:
 
 # =============================================================================
 
+def unlabel(prog):
+    labels = {}
+    pc = 0
+    for instr in prog:
+        if instr[0] == 'LABEL':
+            labels[instr[1]] = pc
+        else:
+            pc += 1
+
+    prog = [_ for _ in prog if _[0] != 'LABEL']
+    for i, instr in enumerate(prog):
+        if instr[0] == 'BZ' and instr[2] in labels:
+            # use relative offset
+            prog[i] = ('BZ', instr[1], labels[instr[2]] - i - 1)
+        else:
+            prog[i] = tuple(labels.get(_, _) for _ in instr)
+
+    return prog
+
 if __name__ == '__main__':        
     machine = Metal()
 
@@ -151,11 +173,8 @@ if __name__ == '__main__':
     # 
 
     prog1 = [
-        # Instructions here
         ('CONST', 3, 'R1'),
         ('CONST', 4, 'R2'),
-
-        # More instructions here
         ('CONST', 5, 'R3'),
         ('ADD', 'R1', 'R2', 'R4'),
         ('SUB', 'R4', 'R3', 'R1'),
@@ -179,7 +198,6 @@ if __name__ == '__main__':
     # as a counter. 
 
     prog2 = [
-        # Instructions here
         ('CONST', 3, 'R1'),
         ('CONST', 7, 'R2'),
 
@@ -224,7 +242,25 @@ if __name__ == '__main__':
     # would the branching/jump statements work?  
 
     prog3 = [
-        ('JMP', 'R0', 14),              #  0. jump to main
+        # n = 5
+        # result = 1
+        # while n > 0:
+        #     result = mul(result,  n)
+        #     n -= 1
+
+        ('CONST', 5, 'R4'),                         # n = 5
+        ('CONST', 1, 'R5'),                         # result = 1
+        ('LABEL', 'main_loop'),
+        ('BZ', 'R4', 'print'),                      # jump to print
+        ('CONST', 'main_loop_end', 'R6'),           # return address
+        ('STORE', 'R6', 'R7', 0), ('DEC', 'R7'),    # push return address
+        ('STORE', 'R5', 'R7', 0), ('DEC', 'R7'),    # push result
+        ('STORE', 'R4', 'R7', 0), ('DEC', 'R7'),    # push n
+        ('JMP', 'R0', 'mul'),                       # call multiply
+        ('LABEL', 'main_loop_end'),
+        ('DEC', 'R4'),                              # n--
+        ('INC', 'R7'), ('LOAD', 'R7', 'R5', 0),     # pop result from stack
+        ('JMP', 'R0', 'main_loop'),                 # repeat
 
         # ----------------------------------
         # ; mul(x, y) -> x * y
@@ -235,56 +271,31 @@ if __name__ == '__main__':
         #            result += y
         #            x -= 1
         #        return result
-        #
-        # ... instructions here
 
-        # mul subroutine, acc in R3, args in R1, R2
-        ('CONST', 0, 'R3'),             #  1. our accumulator
-        ('INC', 'R7'),                  #  w. dec SP
-        ('LOAD', 'R7', 'R1', 0),        #  3. pop first arg
-        ('INC', 'R7'),                  #  4. dec sp
-        ('LOAD', 'R7', 'R2', 0),        #  5. pop second arg
-        # main loop
-        ('ADD', 'R2', 'R3', 'R3'),      #  6. add
-        ('DEC', 'R1'),                  #  7. decrement count
-        ('BZ', 'R1', 1),                #  8. jump over the next jump if zero
-        ('JMP', 'R0', 6),               #  9. loop
-
-        ('INC', 'R7'),                  # 10. dec sp
-        ('LOAD', 'R7', 'R1', 0),        # 11. pop return address
-        ('STORE', 'R3', 'R7', 0),       # 12. push result
-        ('JMP', 'R1', 0),               # 13. jump to 3
-
-        # result = 1
-        # while n > 0:
-        #     result = mul(result,  n)
-        #     n -= 1
-
-        #
-        # ... instructions here
-        ('CONST', 5, 'R4'),             # 14. n = 5
-        ('CONST', 1, 'R5'),             # 15. result = 1
-        ('BZ', 'R4', 11),               # 16. jump over loop if n > 0
-        ('CONST', 25, 'R6'),            # 17. return address
-        ('STORE', 'R6', 'R7', 0),       # 18. push return address
-        ('DEC', 'R7'),                  # 19.
-        ('STORE', 'R5', 'R7', 0),       # 20. push result
-        ('DEC', 'R7'),                  # 21.
-        ('STORE', 'R4', 'R7', 0),       # 22. push n
-        ('DEC', 'R7'),                  # 23.
-        ('JMP', 'R0', 1),               # 24. call multiply
-        ('DEC', 'R4'),                  # 25. n--
-        ('LOAD', 'R7', 'R5', 0),        # 26. save result
-        ('JMP', 'R0', 16),              # 27. loop
+        # acc in R3, args in R1, R2
+        ('LABEL', 'mul'),
+        ('CONST', 0, 'R3'),                         # clear accumulator
+        ('INC', 'R7'), ('LOAD', 'R7', 'R1', 0),     # pop first arg
+        ('INC', 'R7'), ('LOAD', 'R7', 'R2', 0),     # pop second arg
+        ('LABEL', 'mul_loop'),
+        ('BZ', 'R1', 'mul_loop_end'),               # break
+        ('ADD', 'R2', 'R3', 'R3'),                  # add
+        ('DEC', 'R1'),                              # decrement count
+        ('JMP', 'R0', 'mul_loop'),                  # repeat
+        ('LABEL', 'mul_loop_end'),
+        ('INC', 'R7'), ('LOAD', 'R7', 'R1', 0),     # pop return address
+        ('STORE', 'R3', 'R7', 0), ('DEC', 'R7'),    # push result
+        ('JMP', 'R1', 0),                           # return
 
         # print(result)
-        ('STORE', 'R5', 'R0', IO_OUT),  # 28. print result
+        ('LABEL', 'print'),
+        ('STORE', 'R5', 'R0', IO_OUT),              # print result
         ('HALT',),
-
     ]
+    prog3 = unlabel(prog3)
 
     print("PROGRAM 3::: Expected Output: 120")
-    machine.run(prog3)
+    machine.run(prog3) #, debug=True)
     print(":::PROGRAM 3 DONE")
     
     # ----------------------------------------------------------------------
