@@ -181,7 +181,7 @@ class IfStatement(Model):
         )  # expression?  # ???
 
     def to_source(self):
-        if_statement = f"if {self.condition} {{ " f"    {self.body} " f"}}"
+        if_statement = f"if {self.condition} {{ \n    {self.body}\n}}"
         if self.else_clause != None:
             if_statement += f" else {{\n    {self.else_clause} \n}}"
         return dedent(if_statement)
@@ -194,6 +194,44 @@ class PrintStatement(Model):
     def to_source(self):
         return f"print {self.expression};"
 
+
+class LessThan(Model): #  Is this an operator or what?
+    def __init__(self, left, right):
+        super().__init__(left=left, right=right)
+
+    def to_source(self):
+        return f'{self.left} < {self.right}'
+
+
+class GreaterThan(Model):
+    def __init__(self, left, right):
+        super().__init__(left=left, right=right)
+
+    def to_source(self):
+        return f'{self.left} > {self.right}'
+
+
+class LessThanEqual(Model):  # Is this an operator or what?
+    def __init__(self, left, right):
+        super().__init__(left=left, right=right)
+
+    def to_source(self):
+        return f'{self.left} <= {self.right}'
+
+
+class GreaterThanEqual(Model):
+    def __init__(self, left, right):
+        super().__init__(left=left, right=right)
+
+    def to_source(self):
+        return f'{self.left} >= {self.right}'
+
+
+# aliases
+Gt = GreaterThan
+Gte = GreaterThanEqual
+Lt = LessThan
+Lte = LessThanEqual
 
 class Program(Model):
     def __init__(self, *statements):
