@@ -45,6 +45,37 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+class Argument:
+    """
+    Example func mul(x int) {
+    """
+
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+
+    def __repr__(self):
+        return f"Argument({self.name}, {self.type})"
+
+    def to_source(self):
+        return f"{self.name} {self.type}"
+
+
+class Arguments:
+    """
+    Example func mul(x int, y int) {
+    """
+
+    def __init__(self, args):
+        self.args = args
+
+    def __repr__(self):
+        return f"Arguments({self.args})"
+
+    def to_source(self):
+        return ", ".join([s.to_source() for s in self.args])
+
+
 class FunctionDefinition:
     """
     Example func mul(x int, y int) int {

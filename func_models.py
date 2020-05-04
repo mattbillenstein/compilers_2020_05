@@ -54,7 +54,7 @@ model6 = Statements(
     [
         FunctionDefinition(
             "add",
-            Statements([Var("x", "int"), Var("y", "int")]),
+            Arguments([Argument("x", "int"), Argument("y", "int")]),
             Variable("int"),
             Statements([Print(BinOp("+", Variable("x"), Variable("y")))]),
         )
