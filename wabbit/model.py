@@ -146,13 +146,13 @@ def infer_type(value):
     ...
 
 class Const(Assignment):
-    def __init__(self, name, value=None, type_=None):
+    def __init__(self, name, value, type_=None):
         self._type = type_
         super().__init__(
             left=name,
             op='=',
             right=value,
-            type=type_ or self._infer_type(value)
+            type=type_ or infer_type(value)
         )
 
     def _infer_type(self):
@@ -162,8 +162,25 @@ class Const(Assignment):
         return f'const {self.left} {self.type} = {self.right};'
 
 class Var(Assignment):
-    def __init__(self, name, value=None, type_=None):
+    def __init__(self, name, value, type_=None):
         self._type = None
+        super().__init__(
+            left=name,
+            op='=',
+            right=value,
+            type=type_ or infer_type(value)
+        )
+
+    def to_source(self):
+        return f'var {self.left} {self.type} = {self.right};'
+
+class VarDeclaration(Model):
+    def __init__(self, name, type):
+        super().__init__(name=name, type=type)
+
+    def to_source(self):
+        return f'var {self.name} {self.type};'
+
 
 class IfStatement(Model):
     def __init__(self, condition, body, else_clause=None):
@@ -184,6 +201,7 @@ class PrintStatement(Model):
 
     def to_source(self):
         return f"print {self.expression};"
+
 
 class Program(Model):
     def __init__(self, *statements):
