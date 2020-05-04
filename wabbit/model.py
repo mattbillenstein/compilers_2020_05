@@ -1,33 +1,63 @@
-class Integer:
-    """
-    Example: 42
-    """
+from dataclasses import dataclass
+from typing import Any
 
-    def __init__(self, value):
-        self.value = value
+
+@dataclass
+class Integer:
+    value: int
 
     def __repr__(self):
         return f"Integer({self.value})"
 
 
-class BinOp:
-    """
-    Example: left + right
-    """
+@dataclass
+class Float:
+    value: float
 
-    def __init__(self, op, left, right):
-        self.op = op
-        self.left = left
-        self.right = right
+    def __repr__(self):
+        return f"Float({self.value})"
+
+
+@dataclass
+class UnaryOp:
+    op: str
+    right: Any
+
+    def __repr__(self):
+        return f"UnaryOp({self.op}, {self.right})"
+
+
+@dataclass
+class BinOp:
+    op: str
+    left: Any
+    right: Any
 
     def __repr__(self):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
 
+@dataclass
+class PrintStatement:
+    expression: Any
+
+    def __repr__(self):
+        return f"PrintStatement({self.expression})"
+
+
+def print_source(program):
+    for statement in program or []:
+        print(to_source(statement))
+
+
 def to_source(node):
-    if isinstance(node, Integer):
+    if isinstance(node, (Integer, Float)):
         return repr(node.value)
+    elif isinstance(node, UnaryOp):
+        return f"{node.op}{to_source(node.right)}"
     elif isinstance(node, BinOp):
         return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
+    elif isinstance(node, PrintStatement):
+        return f"Print({to_source(node.expression)})"
     else:
         raise RuntimeError(f"Can't convert {node} to source")
