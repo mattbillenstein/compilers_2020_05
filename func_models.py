@@ -56,7 +56,7 @@ model6 = Statements(
             "add",
             Arguments([Argument("x", "int"), Argument("y", "int")]),
             Variable("int"),
-            Statements([Print(BinOp("+", Variable("x"), Variable("y")))]),
+            Statements([Return(BinOp("+", Variable("x"), Variable("y")))]),
         )
     ]
 )

@@ -192,6 +192,21 @@ class Print:
         return f"print {self.value.to_source()}"
 
 
+class Return:
+    """
+    Example: return 3
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Return({self.value})"
+
+    def to_source(self):
+        return f"return {self.value.to_source()}"
+
+
 class Float:
     """
     Example: 3.14
