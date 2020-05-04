@@ -26,16 +26,16 @@
 # not. All you know is that an assignment operator definitely requires
 # both of those parts.  DON'T OVERTHINK IT.  Further details will be
 # filled in as the project evolves.
-# 
+#
 # Work on this file in conjunction with the top-level
 # "script_models.py" file.  Go look at that file and see what program
-# samples are provided.  Then, figure out what those programs look like 
+# samples are provided.  Then, figure out what those programs look like
 # in terms of data structures.
 #
 # There is no "right" solution to this part of the project other than
 # the fact that a program has to be represented as some kind of data
-# structure that's not "text."   You could use classes. You could use 
-# tuples. You could make a bunch of nested dictionaries like JSON. 
+# structure that's not "text."   You could use classes. You could use
+# tuples. You could make a bunch of nested dictionaries like JSON.
 # The key point: it must be a data structure.
 #
 # Starting out, I'd advise against making this file too fancy. Just
@@ -46,38 +46,80 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Integer:
-    '''
+from types import SimpleNamespace
+
+
+class Model(SimpleNamespace):
+    def to_source(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            + ", ".join(
+                "{key}={value}".format(key=key, value=repr(value))
+                for key, value in self.__dict__.items()
+            )
+            + ")"
+        )
+
+
+class Integer(Model):
+    """
     Example: 42
-    '''
+    """
+
     def __init__(self, value):
-        self.value = value
+        super().__init__(value=value)
 
-    def __repr__(self):
-        return f'Integer({self.value})'
+    def to_source(self):
+        return f"{self.value}"
 
-class BinOp:
-    '''
+
+class Float(Model):
+    """
+    Example: 42.0
+    """
+    def __init__(self, value):
+        super().__init__(value=value)
+
+
+class BinOp(Model):
+    """
     Example: left + right
-    '''
-    def __init__(self, op, left, right):
-        self.op = op
-        self.left = left
-        self.right = right
+    """
 
-    def __repr__(self):
-        return f'BinOp({self.op}, {self.left}, {self.right})'
+    def __init__(self, op, left, right):
+        super().__init__(op=op, left=left, right=right)
+
+    def to_source(self):
+        return f"{self.left} {self.op} {self.right}"
+
+
+class Assignment(BinOp):
+    def __init__(self, name, value):
+        super().__init__(left=name, right=value, op="=")
+
+
+class IfStatement(Model):
+    def __init__(self, condition, body):
+        self.condition = condition  # expression?
+        self.body = body  # ???
+
+
+class PrintStatement(Model):
+    def __init__(self, expression):
+        super().__init__(expression=expression)
+
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
+
 def to_source(node):
-    if isinstance(node, Integer):
-        return repr(node.value)
-    elif isinstance(node, BinOp):
-        return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-    else:
-        raise RuntimeError(f"Can't convert {node} to source")
-
-
-
-    
+    node.to_source()
+    # if isinstance(node, Integer):
+    #     return repr(node.value)
+    # elif isinstance(node, BinOp):
+    #     return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
+    # else:
+    #     raise RuntimeError(f"Can't convert {node} to source")
