@@ -50,9 +50,35 @@ func main() int {
 }
 '''
 
-model6 = None
+model6 = [
+        FuncDeclStatement('add', [['x', 'int'], ['y', 'int']], 'int', [
+            ReturnStatement(BinOp('+', Location('x'), Location('y'))),
+        ]),
+        FuncDeclStatement('mul', [['x', 'int'], ['y', 'int']], 'int', [
+            ReturnStatement(BinOp('*', Location('x'), Location('y'))),
+        ]),
+        FuncDeclStatement('factorial', [['n', 'int']], 'int', [
+            ConditionalStatement(BinOp('==', Location('n'), Int(0)), [
+                ReturnStatement(Int(1)),
+            ], [
+                ReturnStatement(FuncCall('mul', [Location('n'), FuncCall('factorial', [FuncCall('add', [Location('n'), UnOp('-', Int(1))])])]))
+            ]),
+        ]),
+        FuncDeclStatement('print_factorials', [['last', 'int']], 'int', [
+            AssignStatement(DeclLocation('x', False), Int(0)),
+            ConditionalLoopStatement(BinOp('<', Location('x'), Location('last')), [
+                PrintStatement(FuncCall('factorial', [Location('x')])),
+                AssignStatement(Location('x'), FuncCall('add', [Location('x'), Int(1)]))
+            ])
+        ]),
+        FuncDeclStatement('main', [], 'int', [
+            AssignStatement(DeclLocation('result', False), FuncCall('print_factorials', [Int(10)])),
+            ReturnStatement(Int(0))
+        ]),
+]
 
-# print(to_source(model6))
+print(source6)
+print(to_source(model6))
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 

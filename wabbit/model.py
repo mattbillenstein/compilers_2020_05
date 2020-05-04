@@ -217,6 +217,7 @@ class ConditionalStatement(StatementNode):
         ret += '}'
         return ret
 
+
 class ConditionalLoopStatement(StatementNode):
     '''
     Example:
@@ -268,11 +269,54 @@ class ExpressionStatement(StatementNode):
         return str(self.statement)
 
     def to_source(self):
-        return self.statement.to_source() 
+        return self.statement.to_source()
+
+
+class FuncCall(ExpressionNode):
+    def __init__(self, name: str, args: List[ExpressionNode]):
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return 'FuncCall(' + str(self.name) + ', ' + str(self.args) + ')'
+
+    def to_source(self):
+        args = ', '.join(to_source(arg) for arg in self.args)
+        return self.name + '(' + args + ')'
+
+
+class FuncDeclStatement(StatementNode):
+    def __init__(self, name: str, args: List[List[str]], retval: str, body: List[StatementNode]):
+        self.name = name
+        self.retval = retval
+        self.args = args
+        self.body = body
+
+    def __repr__(self):
+        return 'FuncDeclStatement(' + str(self.name) + ', ' + str(self.args) + ')'
+
+    def to_source(self):
+        args = []
+        for arg in self.args:
+            args.append(' '.join(arg))
+        return 'func ' + self.name + '(' + ', '.join(args) + ') ' + self.retval + ' {\n' + to_source(self.body, indent=1) + '}'
+
+
+class ReturnStatement(StatementNode):
+    def __init__(self, retval: ExpressionNode):
+        self.retval = retval
+
+    def __repr__(self):
+        return 'ReturnStatement(' + str(self.retval) + ')'
+
+    def to_source(self):
+        return 'return ' + self.retval.to_source()
+
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 
-def to_repr(node, indent = 0):
+def to_repr(node, indent=0):
     if isinstance(node, list):
         # list of nodes
         return '[' + ', '.join(map(to_repr, node)) + ']'
@@ -287,7 +331,10 @@ def to_source(node, indent=0, joiner=';\n'):
         for n in node:
             ret += indent * '\t'
             ret += to_source(n)
-            ret += joiner
+            if isinstance(n, (FuncDeclStatement, ConditionalStatement)):
+                ret += '\n'
+            else:
+                ret += joiner
         return ret
     else:
         # individual statement
