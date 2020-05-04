@@ -7,9 +7,9 @@
    the height of the ball on the first 10 bounces. 
  */
    
-const initial_height = 100.0;
-const rebound = 0.6;
-const total_bounces = 10;
+const initial_height = 0.01;
+const rebound = 2.0;
+const total_bounces = 20;
 
 func main() int {
    var bounce int = 0;
