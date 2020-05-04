@@ -56,9 +56,9 @@ model7 = Statements(
                 )
             ),
         ),
-        Assignment(Var("x"), FunctionCall("Fraction", Integer(1), Integer(4))),
-        Assignment(Var("y"), FunctionCall("Fraction", Integer(3), Integer(8))),
-        Assignment(Var("c"), FunctionCall("frac_mul", Variable("x"), Variable("y"))),
+        Var("x", None, FunctionCall("Fraction", Integer(1), Integer(4))),
+        Var("y", None, FunctionCall("Fraction", Integer(3), Integer(8))),
+        Var("c", None, FunctionCall("frac_mul", Variable("x"), Variable("y"))),
         Print(Variable("c.numerator")),
         Print(Variable("c.denominator")),
         Assignment(
@@ -198,11 +198,9 @@ model8 = Statements(
                 )
             ),
         ),
-        Assignment(Var("a"), EnumLocation("Number", "Integer", Arguments(Integer(42)))),
-        Assignment(Var("b"), EnumLocation("Number", "Float", Arguments(Float(3.7)))),
-        Assignment(
-            Var("c"), FunctionCall("add", Arguments(Variable("a"), Variable("b")))
-        ),
+        Var("a", None, EnumLocation("Number", "Integer", Arguments(Integer(42)))),
+        Var("b", None, EnumLocation("Number", "Float", Arguments(Float(3.7)))),
+        Var("c", None, FunctionCall("add", Arguments(Variable("a"), Variable("b")))),
         If(
             Let(
                 Assignment(

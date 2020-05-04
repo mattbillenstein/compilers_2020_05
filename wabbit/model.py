@@ -461,19 +461,29 @@ class Var(Definition):
     Example: var foo
     """
 
-    def __init__(self, value, type=None):
+    def __init__(self, name, type, value):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        assert (
+            value is None
+            or isinstance(value, Expression)
+            or isinstance(value, Location)
+        )
+        assert not (type is None and value is None)
+        self.name = name
         self.value = value
         self.type = type
 
     def __repr__(self):
-        if self.type:
-            return f"Var({self.value}, {self.type})"
-        return f"Var({self.value})"
+        return f"Var({self.name}, {self.type}, {self.value})"
 
     def to_source(self):
+        base = f"var {self.name}"
         if self.type:
-            return f"var {self.value} {self.type}"
-        return f"var {self.value}"
+            base += f" {self.type}"
+        if self.value:
+            base += f" = {self.value.to_source()}"
+        return base
 
 
 class Let(Definition):

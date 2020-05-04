@@ -94,7 +94,7 @@ model6 = Statements(
             None,
             Statements(
                 [
-                    Assignment(Var("x"), Integer(0)),
+                    Var("x", None, Integer(0)),
                     While(
                         BinOp("<", Variable("x"), Variable("last")),
                         Statements(
@@ -116,9 +116,7 @@ model6 = Statements(
             Variable("int"),
             Statements(
                 [
-                    Assignment(
-                        Var("result"), FunctionCall("print_factorials", Integer(10))
-                    ),
+                    Var("result", None, FunctionCall("print_factorials", Integer(10))),
                     Return(Integer(0)),
                 ]
             ),

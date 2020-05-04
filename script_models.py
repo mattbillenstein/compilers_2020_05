@@ -76,7 +76,7 @@ source2 = """
 model2 = Statements(
     [
         Assignment(Const("pi"), Float(3.14159)),
-        Var("tau", "float"),
+        Var("tau", "float", None),
         Assignment(Variable("tau"), BinOp("*", Float(2.0), Variable("pi"))),
         Print(Variable("tau")),
     ]
@@ -100,8 +100,8 @@ source3 = """
 
 model3 = Statements(
     [
-        Assignment(Var("a", "int"), Integer(2)),
-        Assignment(Var("b", "int"), Integer(3)),
+        Var("a", "int", Integer(2)),
+        Var("b", "int", Integer(3)),
         If(
             BinOp("<", Variable("a"), Variable("b")),
             Print(Variable("a")),
@@ -131,8 +131,8 @@ source4 = """
 model4 = Statements(
     [
         Assignment(Const("n"), Integer(10)),
-        Assignment(Var("x", "int"), Integer(1)),
-        Assignment(Var("fact", "int"), Integer(1)),
+        Var("x", "int", Integer(1)),
+        Var("fact", "int", Integer(1)),
         While(
             BinOp("<", Variable("x"), Variable("y")),
             Statements(
@@ -164,13 +164,14 @@ source5 = """
 
 model5 = Statements(
     [
-        Assignment(Var("x"), Integer(37)),
-        Assignment(Var("y"), Integer(42)),
-        Assignment(
-            Var("x"),
+        Var("x", None, Integer(37)),
+        Var("y", None, Integer(42)),
+        Var(
+            "x",
+            None,
             Block(
                 [
-                    Assignment(Var("t"), Variable("y")),
+                    Var("t", None, Variable("y")),
                     Assignment(Variable("y"), Variable("x")),
                     Variable("t"),
                 ]
