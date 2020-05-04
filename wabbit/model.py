@@ -45,6 +45,22 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
+class FunctionDefinition:
+    """
+    Example func mul(x int, y int) int {
+    }
+    """
+
+    def __init__(self, name, args=None, return_type=None, body=None):
+        self.name = name
+        self.args = args
+        self.return_type = return_type
+        self.body = body
+
+        def __repr__(self):
+            return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
+
+
 class Block:
     """
     Example x = { var t = y; y = x; t; }; // Compound expression.
@@ -55,6 +71,10 @@ class Block:
 
     def __repr__(self):
         return f"Block({self.statements})"
+
+    def to_source(self):
+        joined_statements = "; ".join([s.to_source() for s in self.statements])
+        return f"{{ {joined_statements} }}"
 
 
 class Statements:
@@ -70,6 +90,9 @@ class Statements:
     def __repr__(self):
         return f"Statements({self.statements})"
 
+    def to_source(self):
+        return "\n".join([s.to_source() for s in self.statements])
+
 
 class If:
     """
@@ -84,6 +107,9 @@ class If:
     def __repr__(self):
         return f"If({self.test}, {self.when_true}, {self.when_false})"
 
+    def to_source(self):
+        return f"if {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}} else {{\n   {self.when_false.to_source()}\n}}"
+
 
 class While:
     """
@@ -96,6 +122,9 @@ class While:
 
     def __repr__(self):
         return f"While({self.test}, {self.when_true})"
+
+    def to_source(self):
+        return f"while {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}}"
 
 
 class Assignment:
@@ -110,6 +139,9 @@ class Assignment:
     def __repr__(self):
         return f"Assignment({self.location}, {self.expression})"
 
+    def to_source(self):
+        return f"{self.location.to_source()} = {self.expression.to_source()}"
+
 
 class Print:
     """
@@ -121,6 +153,9 @@ class Print:
 
     def __repr__(self):
         return f"Print({self.value})"
+
+    def to_source(self):
+        return f"print {self.value.to_source()}"
 
 
 class Float:
@@ -134,6 +169,9 @@ class Float:
     def __repr__(self):
         return f"Float({self.value})"
 
+    def to_source(self):
+        return repr(self.value)
+
 
 class Const:
     """
@@ -145,6 +183,9 @@ class Const:
 
     def __repr__(self):
         return f"Const({self.value})"
+
+    def to_source(self):
+        return f"const {self.value}"
 
 
 class Var:
@@ -161,6 +202,11 @@ class Var:
             return f"Var({self.value}, {self.type})"
         return f"Var({self.value})"
 
+    def to_source(self):
+        if self.type:
+            return f"var {self.value} {self.type}"
+        return f"var {self.value}"
+
 
 class Variable:
     """
@@ -172,6 +218,9 @@ class Variable:
 
     def __repr__(self):
         return f"Variable({self.value})"
+
+    def to_source(self):
+        return self.value
 
 
 class Integer:
@@ -185,6 +234,9 @@ class Integer:
     def __repr__(self):
         return f"Integer({self.value})"
 
+    def to_source(self):
+        return repr(self.value)
+
 
 class UnaryOp:
     """
@@ -197,6 +249,9 @@ class UnaryOp:
 
     def __repr__(self):
         return f"UnaryOp({self.op}, {self.target})"
+
+    def to_source(self):
+        return f"{self.op}{self.target.to_source()}"
 
 
 class BinOp:
@@ -212,40 +267,16 @@ class BinOp:
     def __repr__(self):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
+    def to_source(self):
+        return f"{self.left.to_source()} {self.op} {self.right.to_source()}"
+
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 
 def to_source(node):
-    if isinstance(node, Statements):
-        return "\n".join([to_source(s) for s in node.statements])
-    if isinstance(node, Block):
-        joined_statements = "; ".join([to_source(s) for s in node.statements])
-        return f"{{ {joined_statements} }}"
-    elif isinstance(node, Integer):
-        return repr(node.value)
-    elif isinstance(node, Const):
-        return f"const {node.value}"
-    elif isinstance(node, Variable):
-        return node.value
-    elif isinstance(node, Var):
-        if node.type:
-            return f"var {node.value} {node.type}"
-        return f"var {node.value}"
-    elif isinstance(node, Assignment):
-        return f"{to_source(node.location)} = {to_source(node.expression)}"
-    elif isinstance(node, Float):
-        return repr(node.value)
-    elif isinstance(node, Print):
-        return f"print {to_source(node.value)}"
-    elif isinstance(node, If):
-        return f"if {to_source(node.test)} {{\n   {to_source(node.when_true)}\n}} else {{\n   {to_source(node.when_false)}\n}}"
-    elif isinstance(node, While):
-        return f"while {to_source(node.test)} {{\n   {to_source(node.when_true)}\n}}"
-    elif isinstance(node, UnaryOp):
-        return f"{node.op}{to_source(node.target)}"
-    elif isinstance(node, BinOp):
-        return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
-    else:
+    try:
+        print(node.to_source())
+    except:
         raise RuntimeError(f"Can't convert {node} to source")
 
