@@ -1,0 +1,98 @@
+/* 
+mandel_struct.wb
+*/
+
+/* Some library functions for warmup */
+func abs(x float) float {
+    if x < 0.0 {
+        return -x;
+    } else {
+        return x;
+    }
+}
+
+func sqrt(x float) float {
+    var guess = 1.0;
+    var nextguess = 0.0;
+    while true {
+        nextguess = (guess + (x / guess)) / 2.0;
+	if (abs(nextguess-guess)/guess) < 0.000000001 {
+	    break;
+        }
+	guess = nextguess;
+    }
+    return guess;
+}
+
+/* Complex number math */
+struct Complex {
+    real float;
+    imag float;
+}
+
+func add(a Complex, b Complex) Complex {
+    return Complex(a.real + b.real, a.imag + b.imag);
+}
+
+func mul(a Complex, b Complex) Complex {
+    return Complex(a.real * b.real - a.imag * b.imag,
+                   a.real * b.imag + b.real * a.imag);
+}
+
+func magnitude(x Complex) float {
+    return sqrt(x.real * x.real + x.imag * x.imag);
+}
+
+enum InMandel {
+    Yes;
+    No(int);    // The int indicates "badness"
+}
+
+func in_mandelbrot(c Complex, limit int) InMandel {
+    var z = Complex(0.0, 0.0);
+    var n = 0;
+    while n < limit {
+        z = add(mul(z, z), c);
+        if magnitude(z) > 4.0 {
+            return InMandel::No(n);
+        }
+        n = n + 1;
+    }
+    return InMandel::Yes;
+}
+
+const xmin = -2.0;
+const xmax = 1.0;
+const ymin = -1.5;
+const ymax = 1.5;
+const width = 80.0;
+const height = 40.0;
+const threshhold = 1000;
+
+func mandel() int {
+     var dx = Complex((xmax - xmin)/width, 0.0);
+     var dy = Complex(0.0, -(ymax - ymin)/height);
+     var c  = Complex(xmin, ymax);
+
+     while c.imag >= ymin {
+         c.real = xmin;
+         while c.real < xmax {
+             print match in_mandelbrot(c, threshhold) {
+                 Yes => '*';
+                 No(_) => '.';
+             };
+             c = add(c, dx);
+         }
+         print '\n';
+         c = add(c, dy);
+     }
+     return 0;
+}
+
+func main() int {
+    return mandel();
+}
+
+
+
+

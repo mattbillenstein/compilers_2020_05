@@ -1,0 +1,30 @@
+/* nested.wb
+
+   See if nested structures work.
+*/
+
+struct Point {
+    x int;
+    y int;
+}
+
+struct Line {
+    p1 Point;
+    p2 Point;
+}
+
+var segment = Line(Point(2, 3), Point(10, 13));
+print segment.p1.x;        // 2
+print segment.p1.y;        // 3
+segment.p2.y = 21;         // Nested element reassignment
+segment.p1 = Point(4, 5);  // Reassignment of an entire struct element
+
+func midpoint(s Line) Point {
+    return Point((s.p1.x + s.p2.x)/2, (s.p1.y + s.p2.y)/2);
+}
+
+var m = midpoint(segment);
+print m.x;      // 7
+print m.y;      // 13
+
+
