@@ -42,12 +42,21 @@ var c = add_fraction(a, b);
 print_fraction(c);
 */
 
+func print_point(p Point) int {
+  print '(';
+  print p.x;
+  print ',';
+  print ' ';
+  print p.y;
+  print ')';
+}
+
 var p1 = Point(20.0, 25.0);
 var p2 = Point(40.0, 55.0);
 var mid = midpoint(p1, p2);
 print mid.x;
 print mid.y;
-
+print_point(mid);
 
 
 /* Define a struct Point that represent a point (x, y) in 2D.
