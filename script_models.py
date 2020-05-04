@@ -124,19 +124,31 @@ if source3 != repr3:
 #
 
 source4 = '''
-    const n = 10;
-    var x int = 1;
-    var fact int = 1;
+const n = 10;
+var x int = 1;
+var fact int = 1;
+while x < n {
+\tfact = fact * x;
+\tprint fact;
+\tx = x + 1;
+}'''
 
-    while x < n {
-        fact = fact * x;
-        print fact;
-        x = x + 1;
-    }
-'''
+model4 = [
+        AssignStatement(DeclLocation('n', None, True), Int(10)),
+        AssignStatement(DeclLocation('x', 'int', True), Int(1)),
+        AssignStatement(DeclLocation('fact', 'int', True), Int(1)),
+        ConditionalLoopStatement(BinOp('<', Location('x'), Location('n')), [
+            AssignStatement(Location('fact'), BinOp('*', Location('fact'), Location('x'))),
+            PrintStatement(Location('fact')),
+            AssignStatement(Location('x'), BinOp('+', Location('x'), Int(1)))
+        ]),
+]
 
-model4 = None
-# print(to_source(model4))
+repr4 = to_source(model4)
+if source4 != repr4:
+    print('err')
+    print(repr4)
+    print(source4) 
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of

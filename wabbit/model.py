@@ -140,7 +140,7 @@ class AssignStatement(StatementNode):
         return f'Assign({self.location}, {self.expr})'
 
     def to_source(self):
-        return f'{self.location.to_source()} = {self.expr.to_source()};'
+        return self.location.to_source() + ' = ' + self.expr.to_source() + ';\n'
 
 
 class BinOp(ExpressionNode):
@@ -185,7 +185,7 @@ class PrintStatement(StatementNode):
         return f'Print({self.expr})'
 
     def to_source(self):
-        return f'print {to_source(self.expr)};'
+        return f'print {to_source(self.expr)};\n'
 
 
 class ConditionalStatement(StatementNode):
@@ -205,8 +205,8 @@ class ConditionalStatement(StatementNode):
 
     def __repr__(self):
         ret = f'ConditionalStatement({{self.cond.to_source()}},' 
-        ret += '[' + to_source(self.blockT) + '], '
-        ret += '[' + to_source(self.blockF) + '])'
+        ret += '[' + to_repr(self.blockT) + '], '
+        ret += '[' + to_repr(self.blockF) + '])'
         return ret
 
     def to_source(self):
@@ -217,7 +217,36 @@ class ConditionalStatement(StatementNode):
         ret += '}'
         return ret
 
+class ConditionalLoopStatement(StatementNode):
+    '''
+    Example:
+    while EXPR {
+        BLOCK
+    } 
+    '''
+
+    def __init__(self, cond: ExpressionNode, block: List[StatementNode]):
+        self.cond = cond
+        self.block = block
+
+    def __repr__(self):
+        return f'ConditionalLoopStatement(' + self.cond.to_source() + ', [' + to_repr(self.block) + '])'
+
+    def to_source(self):
+        ret = 'while ' + self.cond.to_source() + ' {\n'
+        ret += to_source(self.block, indent=1)
+        ret += '}'
+        return ret
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
+
+
+def to_repr(node, indent = 0):
+    if isinstance(node, list):
+        # list of nodes
+        return '[' + ', '.join(map(to_repr, node)) + ']'
+    else:
+        return str(node)
 
 
 def to_source(node, indent=0):
@@ -228,9 +257,6 @@ def to_source(node, indent=0):
             ret += indent * '\t'
             ret += to_source(n)
         return ret
-    elif isinstance(node, StatementNode):
-        return node.to_source() + ';\n'
-    elif node is None:
-        return "None"
     else:
+        # individual statement
         return node.to_source()
