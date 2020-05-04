@@ -45,7 +45,39 @@
 # The following classes are used for the expression example in script_models.py.
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
-class Argument:
+class Node:
+    """
+    Top-level class for all model elements/nodes
+    """
+
+    pass
+
+
+class Statement(Node):
+    pass
+
+
+class Expression(Node):
+    pass
+
+
+class Definition(Node):
+    """
+    A definition of some kind e.g. var/const
+    """
+
+    pass
+
+
+class Location(Node):
+    """
+    A place to put something
+    """
+
+    pass
+
+
+class Argument(Definition):
     """
     Example func mul(x int) {
     """
@@ -61,7 +93,7 @@ class Argument:
         return f"{self.name} {self.type}"
 
 
-class Arguments:
+class Arguments(Expression):
     """
     Example func mul(x int, y int) {
     """
@@ -76,7 +108,7 @@ class Arguments:
         return ", ".join([s.to_source() for s in self.args])
 
 
-class FunctionCall:
+class FunctionCall(Expression):
     """
     Example mul(n, 5)
     """
@@ -93,7 +125,7 @@ class FunctionCall:
         return f"{self.name}({args})"
 
 
-class FunctionDefinition:
+class FunctionDefinition(Definition):
     """
     Example func mul(x int, y int) int {
     }
@@ -125,7 +157,7 @@ class FunctionDefinition:
         return f"func {self.name}({args}) {return_type} {{ \n {body}\n}}"
 
 
-class Block:
+class Block(Expression):
     """
     Example x = { var t = y; y = x; t; }; // Compound expression.
     """
@@ -141,7 +173,7 @@ class Block:
         return f"{{ {joined_statements} }}"
 
 
-class Statements:
+class Statements(Statement):
     """
     Example:
     var a int;
@@ -158,12 +190,15 @@ class Statements:
         return "\n".join([s.to_source() for s in self.statements])
 
 
-class If:
+class If(Statement):
     """
     Example if x < y
     """
 
     def __init__(self, test, when_true, when_false):
+        assert isinstance(test, Expression)
+        assert isinstance(when_true, Statement)
+        assert isinstance(when_false, Statement)
         self.test = test
         self.when_true = when_true
         self.when_false = when_false
@@ -175,12 +210,14 @@ class If:
         return f"if {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}} else {{\n   {self.when_false.to_source()}\n}}"
 
 
-class While:
+class While(Statement):
     """
     Example while x < y
     """
 
     def __init__(self, test, when_true):
+        assert isinstance(test, Expression)
+        assert isinstance(when_true, Statement)
         self.test = test
         self.when_true = when_true
 
@@ -191,7 +228,7 @@ class While:
         return f"while {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}}"
 
 
-class Assignment:
+class Assignment(Statement):
     """
     Example: foo = 7
     """
@@ -207,7 +244,7 @@ class Assignment:
         return f"{self.location.to_source()} = {self.expression.to_source()}"
 
 
-class Print:
+class Print(Statement):
     """
     Example: print 3
     """
@@ -222,7 +259,7 @@ class Print:
         return f"print {self.value.to_source()}"
 
 
-class Return:
+class Return(Statement):
     """
     Example: return 3
     """
@@ -237,7 +274,7 @@ class Return:
         return f"return {self.value.to_source()}"
 
 
-class Float:
+class Float(Expression):
     """
     Example: 3.14
     """
@@ -252,7 +289,7 @@ class Float:
         return repr(self.value)
 
 
-class Const:
+class Const(Definition):
     """
     Example: const bar
     """
@@ -267,7 +304,7 @@ class Const:
         return f"const {self.value}"
 
 
-class Var:
+class Var(Definition):
     """
     Example: var foo
     """
@@ -287,7 +324,7 @@ class Var:
         return f"var {self.value}"
 
 
-class Variable:
+class Variable(Location):
     """
     Example: pi
     """
@@ -302,7 +339,7 @@ class Variable:
         return self.value
 
 
-class Integer:
+class Integer(Expression):
     """
     Example: 42
     """
@@ -317,7 +354,7 @@ class Integer:
         return repr(self.value)
 
 
-class UnaryOp:
+class UnaryOp(Expression):
     """
     Example: -32
     """
@@ -333,7 +370,7 @@ class UnaryOp:
         return f"{self.op}{self.target.to_source()}"
 
 
-class BinOp:
+class BinOp(Expression):
     """
     Example: left + right
     """
