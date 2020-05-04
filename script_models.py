@@ -34,7 +34,7 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-print(to_source(expr_model))
+# print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -57,7 +57,7 @@ model1 = [
     PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), Integer(-4)))),
 ]
 
-print(to_source(model1))
+# print(to_source(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -72,9 +72,14 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = [
+    Const('pi', Float(3.14159)),
+    Var('tau', 'float'),
+    Assign('tau', BinOp('*', Float(2.0), Variable('pi'))),
+    PrintStatement(Variable('tau')),
+]
 
-#print(to_source(model2))
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of

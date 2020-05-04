@@ -82,6 +82,37 @@ class PrintStatement:
     def __repr__(self):
         return f'PrintStatement({self.node_to_print})'
 
+class Const:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return f'Const({self.name}, {self.value})'
+
+class Var:
+    def __init__(self, name, myType):
+        self.name = name
+        self.myType = myType
+
+    def __repr__(self):
+        return f'Var({self.name}, {self.myType})'
+
+class Assign:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return f'Assign({self.name}, {self.value})'
+
+class Variable:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return f'Variable({self.name})'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
@@ -90,11 +121,19 @@ def to_source(node):
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
     elif isinstance(node, list):
-        return ('\n').join([to_source(x) for x in node])
+        return ('\n').join([f'{to_source(x)};' for x in node])
     elif isinstance(node, PrintStatement):
         return f'print {to_source(node.node_to_print)}'
     elif isinstance(node, Float):
         return f'{node.value}'
+    elif isinstance(node, Const):
+        return f'const {node.name} = {to_source(node.value)}'
+    elif isinstance(node, Var):
+        return f'var {node.name} {node.myType}'
+    elif isinstance(node, Assign):
+        return f'{node.name} = {to_source(node.value)}'
+    elif isinstance(node, Variable):
+        return f'{node.name}'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
