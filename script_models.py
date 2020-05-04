@@ -8,7 +8,7 @@ from wabbit.model import (
     BinOp,
     ConstDef,
     VarDef,
-    PrintStatement,
+    Print,
     print_source,
 )
 
@@ -29,10 +29,10 @@ source1 = """
 """
 
 model1 = [
-    PrintStatement(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
-    PrintStatement(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
-    PrintStatement(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
-    PrintStatement(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))),
+    Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
+    Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
+    Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+    Print(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))),
 ]
 
 print_source(model1)
@@ -52,7 +52,7 @@ model2 = [
     ConstDef("pi", 3.14159),
     VarDef("tau", "float"),
     Assignment("tau", BinOp("*", Float(2.0), Name("pi"))),
-    PrintStatement(Name("tau")),
+    Print(Name("tau")),
 ]
 
 print_source(model2)

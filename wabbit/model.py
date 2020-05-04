@@ -56,7 +56,7 @@ class Assignment(Node):
 
 
 @dataclass
-class PrintStatement(Node):
+class Print(Node):
     expression: Any
 
 
@@ -91,7 +91,7 @@ def _to_source(node):
     elif isinstance(node, Assignment):
         return " ".join([node.location, "=", _to_source(node.value)])
 
-    elif isinstance(node, PrintStatement):
+    elif isinstance(node, Print):
         return " ".join(["print", _to_source(node.expression)])
 
     else:
