@@ -78,8 +78,10 @@ class Metal:
             op, *args = self.instructions[self.registers["PC"]]
             # Uncomment to debug what's happening
             # print(self.registers["PC"], op, self._format_args(args))
+            *args, log_fn = args if args and callable(args[-1]) else args + [lambda self: ""]
             self.registers["PC"] += 1
             getattr(self, op)(*args)
+            print(log_fn(self), flush=True)
             self.registers["R0"] = 0  # R0 is always 0 (even if you change it)
         return
 
