@@ -198,6 +198,20 @@ model8 = Statements(
                 )
             ),
         ),
+        Assignment(Var("a"), EnumLocation("Number", "Integer", Arguments(Integer(42)))),
+        Assignment(Var("b"), EnumLocation("Number", "Float", Arguments(Float(3.7)))),
+        Assignment(
+            Var("c"), FunctionCall("add", Arguments(Variable("a"), Variable("b")))
+        ),
+        If(
+            Let(
+                Assignment(
+                    FunctionCall("Float", Arguments(Variable("x"),)), Variable("c")
+                )
+            ),
+            Print(Variable("x")),
+            Print(Float(0.0)),
+        ),
     ]
 )
 print(to_source(model8))

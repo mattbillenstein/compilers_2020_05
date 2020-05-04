@@ -61,9 +61,10 @@ class Expression(Node):
     pass
 
 
-class Definition(Node):
+class Definition(Statement):
     """
     A definition of some kind e.g. var/const
+    Usually mixed in with statements. These are a special type of statement.
     """
 
     pass
@@ -347,7 +348,7 @@ class If(Statement):
     """
 
     def __init__(self, test, when_true, when_false):
-        assert isinstance(test, Expression)
+        assert isinstance(test, Expression) or isinstance(test, Definition)
         assert isinstance(when_true, Statement)
         assert isinstance(when_false, Statement)
         self.test = test
@@ -473,6 +474,26 @@ class Var(Definition):
         if self.type:
             return f"var {self.value} {self.type}"
         return f"var {self.value}"
+
+
+class Let(Definition):
+    """
+    Example: let foo
+    """
+
+    def __init__(self, value, type=None):
+        self.value = value
+        self.type = type
+
+    def __repr__(self):
+        if self.type:
+            return f"Let({self.value}, {self.type})"
+        return f"Let({self.value})"
+
+    def to_source(self):
+        if self.type:
+            return f"let {self.value.to_source()} {self.type}"
+        return f"let {self.value.to_source()}"
 
 
 class Variable(Location):
