@@ -34,7 +34,9 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print('0')
+print(to_source(expr_model))
+print()
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -57,7 +59,9 @@ model1 = [
     PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), Integer(-4)))),
 ]
 
-# print(to_source(model1))
+print('1')
+print(to_source(model1))
+print()
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -79,7 +83,9 @@ model2 = [
     PrintStatement(Variable('tau')),
 ]
 
+print('2')
 print(to_source(model2))
+print()
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -95,9 +101,16 @@ source3 = '''
     }
 '''
 
-model3 = None
+model3 = [
+    Assign(Var('a', 'int'), Integer(2)),
+    Assign(Var('b', 'int'), Integer(3)),
+    # If(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),]),
+    IfElse(Compare('<', Variable('a') , Variable('b')), [PrintStatement(Variable('a')),], [PrintStatement(Variable('b')),]),
+]
 
-# print(to_source(model3))
+print(3)
+print(to_source(model3))
+print()
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.

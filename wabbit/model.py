@@ -113,6 +113,32 @@ class Variable:
     def __repr__(self):
         return f'Variable({self.name})'
 
+class Compare:
+    def __init__(self, op, lhs, rhs):
+        self.op = op
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __repr__(self):
+        return f'Compare({self.op}, {self.lhs}, {self.rhs})'
+
+class If:
+    def __init__(self, condition, consequence):
+        self.condition = condition
+        self.consequence = consequence
+
+    def __repr__(self):
+        return f'If({self.condition}, {self.consequence})'
+
+class IfElse:
+    def __init__(self, condition, consequence, otherwise):
+        self.condition = condition
+        self.consequence = consequence
+        self.otherwise = otherwise
+
+    def __repr__(self):
+        return f'If({self.condition}, {self.consequence}, {self.otherwise})'
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
@@ -131,9 +157,23 @@ def to_source(node):
     elif isinstance(node, Var):
         return f'var {node.name} {node.myType}'
     elif isinstance(node, Assign):
-        return f'{node.name} = {to_source(node.value)}'
+        if isinstance(node.name, str):
+            return f'{node.name} = {to_source(node.value)}'
+        return f'{to_source(node.name)} = {to_source(node.value)}'
     elif isinstance(node, Variable):
         return f'{node.name}'
+    elif isinstance(node, Compare):
+        return f'{to_source(node.lhs)} {node.op} {to_source(node.rhs)}'
+    elif isinstance(node, If):
+        return f'''if {to_source(node.condition)} {{
+    {to_source(node.consequence)}
+}}'''
+    elif isinstance(node, IfElse):
+        return f'''if {to_source(node.condition)} {{
+    {to_source(node.consequence)}
+}} else {{
+    {to_source(node.otherwise)}
+}}'''
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
