@@ -77,6 +77,23 @@ class Location(Node):
     pass
 
 
+class Struct(Definition):
+    """
+    Example struct Fraction { }
+    """
+
+    def __init__(self, name, *args):
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return f"Struct({self.name}, {repr(*self.args)})"
+
+    def to_source(self):
+        args = "\n".join([s.to_source() for s in self.args])
+        return f"struct {self.name} {{\n {args} \n }}"
+
+
 class Argument(Definition):
     """
     Example func mul(x int) {
@@ -98,7 +115,7 @@ class Arguments(Expression):
     Example func mul(x int, y int) {
     """
 
-    def __init__(self, args):
+    def __init__(self, *args):
         self.args = args
 
     def __repr__(self):

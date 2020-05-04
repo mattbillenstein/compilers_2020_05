@@ -54,19 +54,19 @@ model6 = Statements(
     [
         FunctionDefinition(
             "add",
-            Arguments([Argument("x", "int"), Argument("y", "int")]),
+            Arguments(Argument("x", "int"), Argument("y", "int")),
             Variable("int"),
             Statements([Return(BinOp("+", Variable("x"), Variable("y")))]),
         ),
         FunctionDefinition(
             "mul",
-            Arguments([Argument("x", "int"), Argument("y", "int")]),
+            Arguments(Argument("x", "int"), Argument("y", "int")),
             Variable("int"),
             Statements([Return(BinOp("*", Variable("x"), Variable("y")))]),
         ),
         FunctionDefinition(
             "factorial",
-            Arguments([Argument("n", "int")]),
+            Arguments(Argument("n", "int")),
             Variable("int"),
             Statements(
                 [
@@ -90,7 +90,7 @@ model6 = Statements(
         ),
         FunctionDefinition(
             "print_factorials",
-            Arguments([Argument("last", "int")]),
+            Arguments(Argument("last", "int")),
             None,
             Statements(
                 [

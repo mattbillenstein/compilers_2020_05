@@ -18,7 +18,7 @@ from wabbit.model import *
 # You'll need to support structure definition, creation, and usage with other
 # parts of your language such as functions.
 
-source7 = '''
+source7 = """
 struct Fraction {
    numerator int;
    denominator int;
@@ -37,9 +37,22 @@ c.numerator = c.numerator / 4;
 c.denominator = c.denominator / 4;
 print c.numerator;
 print c.denominator;
-'''
+"""
 
-model7 = None
+model7 = Statements(
+    [
+        Struct(
+            "Fraction", Argument("numerator", "int"), Argument("denominator", "int")
+        ),
+        FunctionDefinition(
+            "frac_mul",
+            Arguments(Argument("a", "Fraction"), Argument("b", "Fraction")),
+            Variable("Fraction"),
+        ),
+    ]
+)
+
+print(to_source(model7))
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.
@@ -48,7 +61,7 @@ model7 = None
 # and various forms of pattern matching including match, if let, and
 # while let.
 
-source8 = '''
+source8 = """
 enum MaybeNumber {
     No;
     Integer(int);
@@ -87,6 +100,6 @@ while let Integer(x) = a {
         a = Number::No;
     }
 }
-'''
+"""
 
 model8 = None
