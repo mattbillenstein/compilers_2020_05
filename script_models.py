@@ -6,8 +6,8 @@ from wabbit.model import (
     Name,
     UnaryOp,
     BinOp,
-    ConstDeclaration,
-    VarDeclaration,
+    ConstDef,
+    VarDef,
     PrintStatement,
     print_source,
 )
@@ -49,8 +49,8 @@ source2 = """
 """
 
 model2 = [
-    ConstDeclaration("pi", 3.14159),
-    VarDeclaration("tau", "float"),
+    ConstDef("pi", 3.14159),
+    VarDef("tau", "float"),
     Assignment("tau", BinOp("*", Float(2.0), Name("pi"))),
     PrintStatement(Name("tau")),
 ]

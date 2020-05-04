@@ -36,14 +36,14 @@ class BinOp(Node):
 
 
 @dataclass
-class ConstDeclaration(Node):
+class ConstDef(Node):
     name: str
     value: Union[int, float]
     type: str = None
 
 
 @dataclass
-class VarDeclaration(Node):
+class VarDef(Node):
     name: str
     type: str
     value: Any = None
@@ -79,10 +79,10 @@ def _to_source(node):
     elif isinstance(node, Name):
         return node.name
 
-    elif isinstance(node, ConstDeclaration):
+    elif isinstance(node, ConstDef):
         return " ".join(["const", node.name if node.name is not None else "", str(node.value)])
 
-    elif isinstance(node, VarDeclaration):
+    elif isinstance(node, VarDef):
         tokens = ["var", node.name, node.type]
         if node.value is not None:
             tokens.extend(["=", str(node.value)])
