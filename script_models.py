@@ -94,11 +94,11 @@ source2 = """
 model2 = Statements([
    ConstDefinition("pi", None, Float(3.14159)),
    VarDefinition("tau", "float", None),
-   AssignmentStatement(NamedLocation("tau"), BinOp('*', Float(2.0), NamedLocation("pi"))),
-   PrintStatement(NamedLocation("tau")),
+   AssignmentStatement(NamedLocation("tau"), BinOp('*', Float(2.0), LoadLocation(NamedLocation("pi")))),
+   PrintStatement(LoadLocation(NamedLocation("tau"))),
 ])
 
-print('------ Model 1')
+print('------ Model 2')
 print(model2.to_source())
 
 # ----------------------------------------------------------------------
@@ -115,9 +115,21 @@ source3 = '''
     }
 '''
 
-model3 = None
+model3 = Statements([
+        VarDefinition("a", "int", Integer(2)),
+        VarDefinition("b", "int", Integer(3)),
+        IfStatement(BinOp("<", LoadLocation(NamedLocation("a")), LoadLocation(NamedLocation("b"))),
+                    Statements([
+                       PrintStatement(LoadLocation(NamedLocation("a")))
+                       ]),
+                    Statements([
+                       PrintStatement(LoadLocation(NamedLocation("b")))
+                       ])
+                    ),
+        ])
 
-# print(to_source(model3))
+print('------ Model 3')
+print(model3.to_source())
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -135,8 +147,28 @@ source4 = '''
     }
 '''
 
-model4 = None
-# print(to_source(model4))
+model4 = Statements([
+        ConstDefinition('n', None, Integer(10)),
+        VarDefinition('x', 'int', Integer(1)),
+        VarDefinition('fact', 'int', Integer(1)),
+        WhileStatement(
+            BinOp('<', LoadLocation(NamedLocation('x')), LoadLocation(NamedLocation('n'))),
+            Statements([
+                    AssignmentStatement(NamedLocation('fact'),
+                                        BinOp('*',
+                                              LoadLocation(NamedLocation('fact')),
+                                              LoadLocation(NamedLocation('x')))),
+                    PrintStatement(LoadLocation(NamedLocation('fact'))),
+                    AssignmentStatement(NamedLocation('x'),
+                                        BinOp('+',
+                                              LoadLocation(NamedLocation('x')),
+                                              Integer(1))),
+                    ])
+            ),
+        ])
+
+print('------ Model 4')
+print(model4.to_source())
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -151,8 +183,21 @@ source5 = '''
     print y;
 '''
 
-model5 = None
-# print(to_source(model5))
+model5 = Statements([
+        VarDefinition('x', None, Integer(37)),
+        VarDefinition('y', None, Integer(42)),
+        AssignmentStatement(NamedLocation('x'),
+                            Compound(Statements([
+                                VarDefinition('t', None, LoadLocation(NamedLocation('y'))),
+                                AssignmentStatement(NamedLocation('y'), LoadLocation(NamedLocation('x'))),
+                                ExpressionStatement(LoadLocation(NamedLocation('t'))),
+                                ]))),
+        PrintStatement(LoadLocation(NamedLocation('x'))),
+        PrintStatement(LoadLocation(NamedLocation('y')))
+        ])
+
+print('------ Model 5')                                  
+print(model5.to_source())
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

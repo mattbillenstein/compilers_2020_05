@@ -46,7 +46,39 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-class Integer:
+# Top-level class for all model elements/nodes
+class Node:
+    pass
+
+# These are abstract classes used to group nodes into different categories.
+# This can be useful for organizing the model and our thoughts about the
+# model.  What kinds of nodes can be used in different places for instance.
+
+class Expression(Node):
+    '''
+    An expression is something that produces a value.
+    '''
+
+class Statement(Node):
+    '''
+    A statement is typically something that has a side-effect, but does NOT
+    produce a value.  For example, assigning a variable, printing, looping.
+    '''
+
+class Definition(Statement):
+    '''
+    A definition is something that defines a name.  For example, a variable 
+    declaration like "var x int".   Definitions are often mixed together
+    with statements.  So, maybe a special category of statement.
+    '''
+
+class Location(Node):
+    '''
+    A location represents a place to load/store values.  For example, a variable,
+    an object attribute, an index in an array, etc.
+    '''
+
+class Integer(Expression):
     '''
     Example: 42
     '''
@@ -59,7 +91,7 @@ class Integer:
     def to_source(self):
         return str(self.value)
 
-class Float:
+class Float(Expression):
     '''
     Example: 4.2
     '''
@@ -72,11 +104,13 @@ class Float:
     def to_source(self):
         return str(self.value)
 
-class BinOp:
+class BinOp(Expression):
     '''
     Example: left + right
     '''
-    def __init__(self, op, left, right):
+    def __init__(self, op, left:Expression, right:Expression):
+        assert isinstance(left, Expression)
+        assert isinstance(right, Expression)
         self.op = op
         self.left = left
         self.right = right
@@ -87,7 +121,7 @@ class BinOp:
     def to_source(self):
         return f'({self.left.to_source()} {self.op} {self.right.to_source()})'
         
-class UnaryOp:
+class UnaryOp(Expression):
     '''
     Example: -operand
     '''
@@ -101,7 +135,48 @@ class UnaryOp:
     def to_source(self):
         return f'({self.op} {self.operand.to_source()})'
 
-class Statements:
+# Does this need to be part of the model or not? 
+class Grouping(Expression):
+    '''
+    ( expression )      # Expression surrounded by parenthesis
+    '''
+    def __init__(self, expression):
+        self.expression = expression
+        
+    def __repr__(self):
+        return f'Grouping({self.expression})'
+
+    def to_source(self):
+        return f'({self.expression.to_source()})'
+
+class LoadLocation(Expression):
+    '''
+    Loading a value out of a location for use in an expression.
+    '''
+    def __init__(self, location):
+        self.location = location
+
+    def __repr__(self):
+        return f'LoadLocation({self.location})'
+
+    def to_source(self):
+        return self.location.to_source()
+
+class Compound(Expression):
+    '''
+    A series of statements serving as a single expression.
+    '''
+    def __init__(self, statements):
+        assert isinstance(statements, Statements)
+        self.statements = statements
+
+    def __repr__(self):
+        return f'Compound({self.statements})'
+
+    def to_source(self):
+        return '{\n' + self.statements.to_source() + '\n}'
+
+class Statements(Statement):
     '''
     Zero or more statements:
 
@@ -110,6 +185,8 @@ class Statements:
         ...
     '''
     def __init__(self, statements):
+        assert isinstance(statements, list)
+        assert all(isinstance(stmt, Statement) for stmt in statements)
         self.statements = statements
 
     def __repr__(self):
@@ -121,10 +198,10 @@ class Statements:
 # Example:   Assignment
 #
 #     a = 2 + 4;
-#
-#     location = expression;      
+#     
+#  location = expression;      
 
-class AssignmentStatement:
+class AssignmentStatement(Statement):
     def __init__(self, location, expression):
         self.location = location
         self.expression = expression
@@ -136,7 +213,7 @@ class AssignmentStatement:
         return f'{self.location.to_source()} = {self.expression.to_source()};'
 
 
-class ConstDefinition:
+class ConstDefinition(Definition):
     '''
     const name [type] = value;
     '''
@@ -151,7 +228,7 @@ class ConstDefinition:
     def to_source(self):
         return f'const {self.name} {self.type if self.type else ""} = {self.value.to_source()};'
 
-class VarDefinition:
+class VarDefinition(Definition):
     '''
     var name [type] [ = value];
     '''
@@ -169,11 +246,14 @@ class VarDefinition:
             src += f'= {self.value.to_source()}'
         return src
 
-class PrintStatement:
+class PrintStatement(Statement):
     '''
     print expression ;
     '''
     def __init__(self, expression):
+        # preventing:   print var x int;   # --> Error.  var x int is a statement
+        # allowed:      print 2 + 3;       # --> Expression.
+        assert isinstance(expression, Expression)     # Contract/safety check 
         self.expression = expression
 
     def __repr__(self):
@@ -182,20 +262,60 @@ class PrintStatement:
     def to_source(self):
         return f'print {self.expression.to_source()};'
 
-class IfStatement:
+class IfStatement(Statement):
     '''
     if test { consequence } else { alternative }
     '''
     def __init__(self, test, consequence, alternative):
+        assert isinstance(test, Expression)
+        assert isinstance(consequence, Statements)
+        assert isinstance(alternative, Statements)
         self.test = test
         self.consequence = consequence   #  What are these????  (Don't care now. Will refine as we work on it)
         self.alternative = alternative
+        
+    def __repr__(self):
+        return f'IfStatement({self.test}, {self.consequence}, {self.alternative})'
 
-class WhileStatement:
-    pass
+    def to_source(self):
+        # Enhancement.  Don't print else clause if empty.
+        return (f'if {self.test.to_source()}' + ' {\n' +
+                self.consequence.to_source() + '\n} else {\n' +
+                self.alternative.to_source() + '\n}')
 
+class WhileStatement(Statement):
+    '''
+    while test { body }
+    '''
+    def __init__(self, test, body):
+        assert isinstance(test, Expression)
+        assert isinstance(body, Statements)
+        self.test = test
+        self.body = body
 
-class NamedLocation:
+    def __repr__(self):
+        return f'WhileStatement({self.test}, {self.body})'
+
+    def to_source(self):
+        return (f'while {self.test.to_source()}' + ' {\n' +
+                self.body.to_source() + '\n}'
+                )
+
+# Wrapper around a expression to indicate usage as a statement
+class ExpressionStatement(Statement):
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __repr__(self):
+        return f'ExpressionStatement({self.expression})'
+    
+    def to_source(self):
+        return f'{self.expression.to_source()};'
+
+class NamedLocation(Location):
+    '''
+    A location representing a simple variable name like "x"
+    '''
     def __init__(self, name: str):
         self.name = name
         
@@ -205,6 +325,12 @@ class NamedLocation:
     def to_source(self):
         return str(self.name)
 
+# Future expansion (for structures)
+class DottedLocation(Location):
+    '''
+    a.b = 23
+    '''
+    
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 # Could this be a method on the classes?  Maybe. 
@@ -214,8 +340,13 @@ def to_source(node):
         return repr(node.value)
     elif isinstance(node, BinOp):
         return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+    elif isinstance(node, UnaryOp):
+        ...
+    elif isinstance(node, PrintStatement):
+        ...
     else:
         raise RuntimeError(f"Can't convert {node} to source")
+
 
 
 
