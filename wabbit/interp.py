@@ -15,7 +15,7 @@
 # So, the purpose of doing this is to pin down fine details as well as
 # our overall understanding of what needs to happen when programs run.
 #
-# We'll write our interpreter in Python.  The idea is relatively 
+# We'll write our interpreter in Python.  The idea is relatively
 # straightforward.  For each class in the model.py file, you're
 # going to write a function similar to this:
 #
@@ -23,18 +23,18 @@
 #        # Execute "node" in the environment "env"
 #        ...
 #        return result
-#   
+#
 # The input to the function will be an object from model.py (node)
 # along with an object respresenting the execution environment (env).
 # The function will then execute the node in the environment and return
 # a result.  It might also modify the environment (for example,
-# when executing assignment statements, variable definitions, etc.). 
+# when executing assignment statements, variable definitions, etc.).
 #
 # For the purposes of this projrect, assume that all programs provided
 # as input are "sound"--meaning that there are no programming errors
 # in the input.  Our purpose is not to create a "production grade"
 # interpreter.  We're just trying to understand how things actually
-# work when a program runs. 
+# work when a program runs.
 #
 # For testing, try running your interpreter on the models you
 # created in the example_models.py file.
@@ -47,6 +47,7 @@ import copy
 from collections import UserDict
 from collections import deque
 from contextlib import contextmanager
+
 logger = logging.getLogger(__name__)
 
 # Top level function that interprets an entire program. It creates the
@@ -54,18 +55,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-
 OPERATIONS = {
-    '+': operator.add,
-    '-': operator.sub,
-    '/': operator.truediv,
-    '*': operator.mul,
-    '==': operator.eq,
-    '!=': operator.ne,
-    '>': operator.gt,
-    '<': operator.le,
-    '>=': lambda a, b: operator.eq(a, b) or operator.gt(a, b),
-    '<=': lambda a, b: operator.eq(a, b) or operator.lt(a, b),
+    "+": operator.add,
+    "-": operator.sub,
+    "/": operator.truediv,
+    "*": operator.mul,
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    "<": operator.le,
+    ">=": lambda a, b: operator.eq(a, b) or operator.gt(a, b),
+    "<=": lambda a, b: operator.eq(a, b) or operator.lt(a, b),
 }
 
 
@@ -141,12 +141,17 @@ class Environment(UserDict):
         return locals_
 
     def __repr__(self):
-        return ''.join(repr(scope) for scope in list(self._scopes)[:-1]) + super().__repr__()
+        return (
+            "".join(repr(scope) for scope in list(self._scopes)[:-1])
+            + super().__repr__()
+        )
+
 
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = Environment()
     interpret(model, env)
+
 
 # Internal function to interpret a node in the environment
 @singledispatch
@@ -156,18 +161,17 @@ def interpret(node, env):
     raise RuntimeError(f"Can't interpret {node}")
 
 
-
 @interpret.register(Program)
-def interpret_program_node(program_node:Program, env:Environment):
-    logger.debug(f'Interpreting program node: {repr(program_node)}')
+def interpret_program_node(program_node: Program, env: Environment):
+    logger.debug(f"Interpreting program node: {repr(program_node)}")
     for statement in program_node.statements:
-        logger.debug(f'Interpreting program statement: {repr(statement)}')
+        logger.debug(f"Interpreting program statement: {repr(statement)}")
         interpret(statement, env)
 
 
 @interpret.register(BinOp)
-def interpret_binop_node(binop_node:BinOp, env:Environment):
-    logger.debug(f'Interpreting binop: {repr(binop_node)}')
+def interpret_binop_node(binop_node: BinOp, env: Environment):
+    logger.debug(f"Interpreting binop: {repr(binop_node)}")
     op = binop_node.op
     left = binop_node.left
     right = binop_node.right
@@ -177,13 +181,13 @@ def interpret_binop_node(binop_node:BinOp, env:Environment):
     if not operation:
         raise RuntimeError(f"Cannot interpret operation {op}")
     result = operation(leftval, rightval)
-    logger.debug(f'BinOp result: {result}')
+    logger.debug(f"BinOp result: {result}")
     return result
 
 
 @interpret.register(Compare)
-def interpret_compare_node(compare_node:Compare, env:Environment) -> bool:
-    logger.debug(f'Interpreting comparison node: {repr(compare_node)}')
+def interpret_compare_node(compare_node: Compare, env: Environment) -> bool:
+    logger.debug(f"Interpreting comparison node: {repr(compare_node)}")
     op = compare_node.op
     left = compare_node.left
     right = compare_node.right
@@ -194,13 +198,15 @@ def interpret_compare_node(compare_node:Compare, env:Environment) -> bool:
         raise RuntimeError(f"Cannot interpret operation {op}")
     result = operation(leftval, rightval)
     if not isinstance(result, bool):
-        raise RuntimeError(f"Comparison operation expected to return bool, got {type(result)}")
-    logger.debug(f'Comparison result: {result}')
+        raise RuntimeError(
+            f"Comparison operation expected to return bool, got {type(result)}"
+        )
+    logger.debug(f"Comparison result: {result}")
     return result
 
 
 @interpret.register(Assignment)
-def interpret_assignment_node(assignment_node:Assignment, env:Environment):
+def interpret_assignment_node(assignment_node: Assignment, env: Environment):
     name = assignment_node.location.name  # will probably have to change for structs
     value_expr = assignment_node.value
     value = interpret(value_expr, env)
@@ -208,7 +214,9 @@ def interpret_assignment_node(assignment_node:Assignment, env:Environment):
 
 
 @interpret.register(VariableDefinition)
-def interpret_variable_definition_node(variable_def_node: VariableDefinition, env: Environment):
+def interpret_variable_definition_node(
+    variable_def_node: VariableDefinition, env: Environment
+):
     name = variable_def_node.name
     type_ = variable_def_node.type
     value_expr = variable_def_node.value
@@ -221,17 +229,17 @@ def interpret_variable_definition_node(variable_def_node: VariableDefinition, en
 
 
 @interpret.register(Integer)
-def interpret_integer_node(integer_node:Integer, env:Environment):
+def interpret_integer_node(integer_node: Integer, env: Environment):
     return integer_node.value
 
 
 @interpret.register(Float)
-def interpret_float_node(float_node:Float, env:Environment):
+def interpret_float_node(float_node: Float, env: Environment):
     return float_node.value
 
 
 @interpret.register(ConstDefinition)
-def interpret_const_definition(const_def_node:ConstDefinition, env:Environment):
+def interpret_const_definition(const_def_node: ConstDefinition, env: Environment):
     name = const_def_node.name
     type_ = const_def_node.type
     value_expr = const_def_node.value
@@ -246,8 +254,9 @@ def interpret_print_statement(print_stmt_node, env):
     value = interpret(expr, env)
     print(value)
 
+
 @interpret.register(Identifier)
-def interpret_identifier_node(identifier_node:Identifier, env:Environment):
+def interpret_identifier_node(identifier_node: Identifier, env: Environment):
     name = identifier_node.name  # Probably going to have to change for structs
     return env[name]
 
@@ -259,7 +268,9 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
     alternative = if_statement_node.alternative
     condition_result = interpret(condition, env)
     if not isinstance(condition_result, bool):
-        raise RuntimeError(f"Expected bool from Condition result. Got {type(condition_result)}")
+        raise RuntimeError(
+            f"Expected bool from Condition result. Got {type(condition_result)}"
+        )
     if condition_result is True:
         interpret(consequent, env)
     elif condition_result is False and alternative is not None:
@@ -274,7 +285,7 @@ def interpret_clause_node(clause_node, env: Environment):
 
 
 @interpret.register(WhileLoop)
-def interpret_while_loop_node(while_loop_node:WhileLoop, env:Environment):
+def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
     logger.debug(f"Interpreting while loop {repr(while_loop_node)}")
     condition = while_loop_node.condition
     body = while_loop_node.body
@@ -282,7 +293,9 @@ def interpret_while_loop_node(while_loop_node:WhileLoop, env:Environment):
     while True:
         condition_result = interpret(condition, env)
         if not isinstance(condition_result, bool):
-            raise RuntimeError(f"Expected bool from Condition result. Got {type(condition_result)}")
+            raise RuntimeError(
+                f"Expected bool from Condition result. Got {type(condition_result)}"
+            )
         if condition_result is True:
             logger.debug(f"Condition evaluated True, executing body: {repr(body)}")
             interpret(body, env)
