@@ -70,7 +70,7 @@ class Definition(Statement):
     pass
 
 
-class Location(Node):
+class Location(Expression):
     """
     A place to put something
     """
@@ -307,6 +307,8 @@ class Assignment(Statement):
     """
 
     def __init__(self, location, expression):
+        assert isinstance(location, Location)
+        assert isinstance(expression, Expression)
         self.location = location
         self.expression = expression
 
@@ -320,6 +322,7 @@ class Print(Statement):
     """
 
     def __init__(self, value):
+        assert isinstance(value, Expression)
         self.value = value
 
     def __repr__(self):
@@ -332,7 +335,7 @@ class Return(Statement):
     """
 
     def __init__(self, value):
-        assert isinstance(value, Expression) or isinstance(value, Location)
+        assert isinstance(value, Expression)
         self.value = value
 
     def __repr__(self):
@@ -360,7 +363,7 @@ class Const(Definition):
     def __init__(self, name, type, value):
         assert isinstance(name, str)
         assert type is None or isinstance(type, str)
-        assert isinstance(value, Expression) or isinstance(value, Location)
+        assert isinstance(value, Expression)
         self.name = name
         self.type = type
         self.value = value
@@ -377,11 +380,7 @@ class Var(Definition):
     def __init__(self, name, type, value):
         assert isinstance(name, str)
         assert type is None or isinstance(type, str)
-        assert (
-            value is None
-            or isinstance(value, Expression)
-            or isinstance(value, Location)
-        )
+        assert value is None or isinstance(value, Expression)
         assert not (type is None and value is None)
         self.name = name
         self.value = value
@@ -398,7 +397,7 @@ class Let(Definition):
 
     def __init__(self, name, value):
         assert isinstance(name, str)
-        assert isinstance(value, Expression) or isinstance(value, Location)
+        assert isinstance(value, Expression)
         self.name = name
         self.value = value
 
@@ -439,7 +438,7 @@ class UnaryOp(Expression):
 
     def __init__(self, op, target):
         assert isinstance(op, str)
-        assert isinstance(target, Expression) or isinstance(target, Location)
+        assert isinstance(target, Expression)
         self.op = op
         self.target = target
 
@@ -454,8 +453,8 @@ class BinOp(Expression):
 
     def __init__(self, op, left, right):
         assert isinstance(op, str)
-        assert isinstance(left, Expression) or isinstance(left, Location)
-        assert isinstance(right, Expression) or isinstance(right, Location)
+        assert isinstance(left, Expression)
+        assert isinstance(right, Expression)
         self.op = op
         self.left = left
         self.right = right
