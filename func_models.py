@@ -7,7 +7,7 @@
 #     1. Function definitions.
 #     2. Function application.
 #     3. The return statement.
-# 
+#
 # This file contains a single example that you should represent
 # using your model.  Please see the following document for more information.
 #
@@ -50,10 +50,71 @@ func main() int {
 }
 '''
 
-model6 = None
+model6 = Statements([
+        Function(
+            'add',
+            Arguments([
+                Argument('x', 'int'),
+                Argument('y', 'int'),
+                ]),
+            'int',
+            Statements([
+                Return(BinOp('+', Variable('x'), Variable('y'))),
+                ])),
+        Function(
+            'mul',
+            Arguments([
+                Argument('x', 'int'),
+                Argument('y', 'int'),
+                ]),
+            'int',
+            Statements([
+                Return(BinOp('*', Variable('x'), Variable('y'))),
+                ])),
+        Function(
+            'factorial',
+            Arguments([
+                Argument('n', 'int'),
+                ]),
+            'int',
+            Statements([
+                IfElse(
+                    BinOp('==', Variable('n'), Integer(0)),
+                        Statements([
+                            Return(Integer(1)),
+                            ]),
+                        Statements([
+                            Return(FunctionInvocation('mul', InvokingArguments([
+                                InvokingArgument(Variable('n')),
+                                # InvokingArgument(FunctionInvocation(TODO)),
+                                ]))),
+                            ])
+                        )
+    # def __init__(self, condition, consequence, otherwise):
+    # if n == 0 {
+        # return 1;
+    # } else {
+        # return mul(n, factorial(add(n, -1)));
+    # }
+                ])),
+        Function(
+            'print_factorials',
+            Arguments([
+                Argument('last', 'int'),
+                ]),
+            None,
+            Statements([
+                ])),
+        Function(
+            'main',
+            Arguments([]),
+            'int',
+            Statements([
+                ])),
+    ])
 
-# print(to_source(model6))
+print(to_source(model6))
 
 # ----------------------------------------------------------------------
-# Bring it!  If you're here wanting even more, proceed to the file 
+# Bring it!  If you're here wanting even more, proceed to the file
 # "type_models.py".

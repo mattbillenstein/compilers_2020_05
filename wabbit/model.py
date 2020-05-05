@@ -49,6 +49,9 @@
 # TODO UnaryOp
 # TODO Grouping (for when they put parens around things to say which go first)
 # TODO implement is_correct for everything
+# TODO I guess all the language features that aren't tested in script_models...
+# TODO is_expression and is_assignable for Function, Arguments, Argument, Return, InvokingArguments, InvokingArgument, FunctionInvocation
+# TODO does is_correct call is_correct on child nodes? (should it? yes, right?, I mean, no if it's only checked on instantiation)
 
 def checkMe(n):
     ''''''
@@ -247,6 +250,102 @@ class CompoundExpression(Node):
     def is_correct(self):
         return isinstance(self.statements, Statements)
 
+class Function(Node):
+    def __init__(self, name, arguments, returnType, body):
+        self.name = name
+        self.arguments = arguments
+        self.returnType = returnType
+        self.body = body
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Function({self.name}, {self.arguments}, {self.returnType}, {self.body})'
+
+    def is_correct(self):
+        if not isinstance(self.name, str):
+            return False
+        if not isinstance(self.arguments, Arguments):
+            return False
+        if self.returnType is not None and not isinstance(self.returnType, str):
+            return False
+        return isinstance(self.body, Statements)
+
+class Arguments(Node):
+    def __init__(self, arguments):
+        super().__init__()
+        self.arguments = arguments
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Arguments({self.arguments})'
+
+    def is_correct(self):
+        return all([isinstance(each, Argument) and each.is_correct() for each in self.arguments])
+
+class Argument(Node):
+    def __init__(self, name, myType):
+        super().__init__()
+        self.name = name
+        self.myType = myType
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Argument({self.name}, {self.myType})'
+
+    def is_correct(self):
+        return isinstance(self.name, str) and isinstance(self.myType, str)
+
+class Return(Node):
+    def __init__(self, node):
+        super().__init__()
+        self.node = node
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Return({self.node})'
+
+    def is_correct(self):
+        # return isinstance(self.node, Node) and self.node.is_expression #TODO
+        return True
+
+class FunctionInvocation(Node):
+    def __init__(self, name, arguments):
+        super().__init__()
+        self.name = name
+        self.arguments = arguments
+        checkMe(self)
+
+    def __repr__(self):
+        return f'FunctionInvocation({self.name}, {self.arguments})'
+
+    def is_correct(self):
+        return isinstance(self.name, str) and isinstance(self.arguments, InvokingArguments)
+
+class InvokingArguments(Node):
+    def __init__(self, arguments):
+        super().__init__()
+        self.arguments = arguments
+        checkMe(self)
+
+    def __repr__(self):
+        return f'InvokingArguments({self.arguments})'
+
+    def is_correct(self):
+        print(self.arguments)
+        return all([isinstance(each, Node) for each in self.arguments])
+
+class InvokingArgument(Node):
+    def __init__(self, node):
+        super().__init__()
+        self.node = node
+        checkMe(self)
+
+    def __repr__(self):
+        return f'InvokingArgument({self.node})'
+
+    def is_correct(self):
+        return isinstance(self.node, Node) and self.node.is_expression
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 nesting_level = 0
@@ -307,6 +406,22 @@ def to_source(node):
 }}'''
     elif isinstance(node, CompoundExpression):
         return f'{{ {"; ".join([to_source(each) for each in node.statements.statements])}; }}'
+    elif isinstance(node, Function):
+        return f'''func {node.name}({to_source(node.arguments)}) {node.returnType} {{
+{to_source_nested_body(node.body)}
+}}'''
+    elif isinstance(node, Arguments):
+        return ', '.join([to_source(each) for each in node.arguments])
+    elif isinstance(node, Argument):
+        return f'{node.name} {node.myType}'
+    elif isinstance(node, Return):
+        return f'return {to_source(node.node)}'
+    elif isinstance(node, FunctionInvocation):
+        return f'{node.name}({to_source(node.arguments)})'
+    elif isinstance(node, InvokingArguments):
+        return ', '.join([to_source(a) for a in node.arguments])
+    elif isinstance(node, InvokingArgument):
+        return to_source(node.node)
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 
