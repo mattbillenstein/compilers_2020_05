@@ -86,33 +86,33 @@ class Token:
 
 import re
 
-def tokenize(text):
-    n = 0
-    while n < len(text):
-        if text[n] in {' ', '\t', '\n'}:    # Whitespace
-            n += 1;
-            continue                        # Skip
-
-        # Check for a comment.  /* .... bunch of random stuff ... */
-        if text[n:n+2] == '/*':
-            end = text.find("*/", n+2)
-            n = end + 2;
-            continue
-
-        # Question:
-        #    <=      --> TOKEN('LE')  or TOKEN('LT') TOKEN('EQ')
-        #    <       --> TOKEN('LT')   ??
-        if text[n] in {'+', '-', '*', '/'}:
-            yield Token('OP', text[n])
-            n += 1
-            continue
-
-        # Check for numbers
-        g = re.match(r'\d+', text[n:])
-        if g:
-            yield Token('NUMBER', g.group())
-            n += len(g.group())
-            continue
+# def tokenize(text):
+#     n = 0
+#     while n < len(text):
+#         if text[n] in {' ', '\t', '\n'}:    # Whitespace
+#             n += 1;
+#             continue                        # Skip
+#
+#         # Check for a comment.  /* .... bunch of random stuff ... */
+#         if text[n:n+2] == '/*':
+#             end = text.find("*/", n+2)
+#             n = end + 2;
+#             continue
+#
+#         # Question:
+#         #    <=      --> TOKEN('LE')  or TOKEN('LT') TOKEN('EQ')
+#         #    <       --> TOKEN('LT')   ??
+#         if text[n] in {'+', '-', '*', '/'}:
+#             yield Token('OP', text[n])
+#             n += 1
+#             continue
+#
+#         # Check for numbers
+#         g = re.match(r'\d+', text[n:])
+#         if g:
+#             yield Token('NUMBER', g.group())
+#             n += len(g.group())
+#             continue
 
 # Sample:
 #
@@ -126,20 +126,55 @@ def tokenize(text):
 from sly import Lexer      # Disclaimer: I created SLY
 
 class WabbitLexer(Lexer):
+    reflags = re.MULTILINE
+
     # Valid token names
     tokens = {
         PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
+        FLOAT, INTEGER, NAME, CHAR, PRINT, IF, CONST, VAR, ELSE, WHILE, BREAK, CONTINUE, COMMA,
+        LOOKUP
         }
     ignore = ' \t\n'       # Ignore these (between tokens)
+    ignore_comment = r'//.*'
+    ignore_block_comment = r'/\*((.|\n))*?\*/'
+    _escape_sequences = [
+        r'\\\\',
+        r"\\'",
+        r'\\\"',
+        r'\\a',
+        r'\\b',
+        r'\\f',
+        r'\\n',
+        r'\\r',
+        r'\\t',
+        r'\\v',
+        r'\\ooo',
+        r'\\xhh',
+    ]
 
     # Specify tokens as regex rules
+    COMMA = r','
     PLUS = r'\+'
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    DECIMAL = r'\d+\.\d+'       # 23.45
-    NUMBER = r'\d+'
+    FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'      # 23.45
+    INTEGER = r'\d+'
+    CHAR = r'\'([\s\S]|' + '|'.join(_escape_sequences) + r')\''
+    LOOKUP = r'\.[a-zA-Z_]+'
+    NAME = r'[a-zA-Z_]+'
+    print(CHAR)
+    NAME['print'] = PRINT
+    NAME['if'] = IF
+    NAME['const'] = CONST
+    NAME['var'] = VAR
+    NAME['else'] = ELSE
+    NAME['while'] = WHILE
+    NAME['break'] = BREAK
+    NAME['continue'] = CONTINUE
+
+
 
     # Put longer patterns first
     LE = r'<='
