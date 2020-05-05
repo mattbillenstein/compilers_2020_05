@@ -1,64 +1,108 @@
-# interp.py
-#
-# In order to write a compiler for a programming language, it helps to
-# have some kind of specification of how programs written in the
-# programming language are actually supposed to work. A language is
-# more than just "syntax" or a data model.  There has to be some kind
-# of operational semantics that describe what happens when a program
-# runs.
-#
-# One way to specify the operational semantics is to write a so-called
-# "definitional interpreter" that directly executes the data
-# model. This might seem like cheating--after all, our final goal is
-# not to write an interpreter, but a compiler. However, if you can't
-# write an interpreter, chances are you can't write a compiler either.
-# So, the purpose of doing this is to pin down fine details as well as
-# our overall understanding of what needs to happen when programs run.
-#
-# We'll write our interpreter in Python.  The idea is relatively 
-# straightforward.  For each class in the model.py file, you're
-# going to write a function similar to this:
-#
-#    def interpret_node_name(node, env):
-#        # Execute "node" in the environment "env"
-#        ...
-#        return result
-#   
-# The input to the function will be an object from model.py (node)
-# along with an object respresenting the execution environment (env).
-# The function will then execute the node in the environment and return
-# a result.  It might also modify the environment (for example,
-# when executing assignment statements, variable definitions, etc.). 
-#
-# For the purposes of this projrect, assume that all programs provided
-# as input are "sound"--meaning that there are no programming errors
-# in the input.  Our purpose is not to create a "production grade"
-# interpreter.  We're just trying to understand how things actually
-# work when a program runs. 
-#
-# For testing, try running your interpreter on the models you
-# created in the example_models.py file.
-#
+from dataclasses import dataclass
+import operator
+import sys
 
-from .model import *
+from typeguard import typechecked
 
-# Top level function that interprets an entire program. It creates the
-# initial environment that's used for storing variables.
+from wabbit.model import (
+    Assign,
+    BinOp,
+    ConstDef,
+    Float,
+    If,
+    Integer,
+    Name,
+    Node,
+    Print,
+    UnaryOp,
+    VarDef,
+    While,
+    Statements,
+)
 
-def interpret_program(model):
-    # Make the initial environment (a dict)
-    env = { }
-    interpret(model, env)
+OPERATORS = {
+    "+": operator.add,
+    "-": operator.sub,
+    "*": operator.mul,
+    "/": operator.truediv,
+    "<": operator.lt,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<=": operator.le,
+}
 
-# Internal function to interpret a node in the environment
-def interpret(node, env):
-    # Expand to check for different node types
-    ...
-    raise RuntimeError(f"Can't interpret {node}")
+UNARY_OPERATORS = {
+    "-": lambda x: -x,
+}
 
-                             
-                             
 
-        
-        
-        
+@dataclass
+class Interpreter:
+    env: dict
+
+    @typechecked
+    def visit(self, node: Node, **kwargs):
+        method_name = "visit_" + node.__class__.__name__
+        return getattr(self, method_name)(node, **kwargs)
+
+    @typechecked
+    def visit_Statements(self, node: Statements):
+        for statement in node.statements:
+            self.visit(statement)
+
+    @typechecked
+    def visit_Float(self, node: Float):
+        return node.value
+
+    @typechecked
+    def visit_Integer(self, node: Integer):
+        return node.value
+
+    @typechecked
+    def visit_Name(self, node: Name):
+        return self.env[node.name]
+
+    @typechecked
+    def visit_UnaryOp(self, node: UnaryOp):
+        right_val = self.visit(node.right)
+        return UNARY_OPERATORS[node.op](right_val)
+
+    @typechecked
+    def visit_BinOp(self, node: BinOp):
+        left_val = self.visit(node.left)
+        right_val = self.visit(node.right)
+        return OPERATORS[node.op](left_val, right_val)
+
+    @typechecked
+    def visit_ConstDef(self, node: ConstDef):
+        self.env[node.name] = node.value
+
+    @typechecked
+    def visit_VarDef(self, node: VarDef):
+        self.env[node.name] = node.value
+
+    @typechecked
+    def visit_Assign(self, node: Assign):
+        # TODO
+        self.env[node.location] = node.value
+
+    @typechecked
+    def visit_Print(self, node: Print):
+        sys.stdout.write(str(self.visit(node.expression)) + "\n")
+
+    @typechecked
+    def visit_If(self, node: If):
+        if self.visit(node.test):
+            return self.visit(node.then)
+        else:
+            return self.visit(node.else_)
+
+    @typechecked
+    def visit_While(self, node: While):
+        if self.visit(node.test):
+            return self.visit(node.then)
+
+
+@typechecked
+def interpret_program(node: Statements):
+    return Interpreter({}).visit(node)

@@ -3,6 +3,7 @@ from difflib import unified_diff
 from subprocess import Popen, PIPE
 
 from wabbit.check_syntax import check_syntax
+from wabbit.interp import interpret_program
 from wabbit.format_json import format_json
 from wabbit.format_source import format_source
 from wabbit.model import (
@@ -193,3 +194,5 @@ models.append(
 
 for i, (source, model) in enumerate(zip(sources, models)):
     check(source, model, i)
+
+print(interpret_program(models[0]))
