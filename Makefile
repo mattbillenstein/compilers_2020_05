@@ -10,7 +10,7 @@ lint:
 	@flake8 $(PYTHON_FILES)
 
 type-check:
-	@mypy --check-untyped-defs --config-file=tox.ini $(PYTHON_FILES)
+	@mypy --check-untyped-defs --config-file=tox.ini --no-color-output $(PYTHON_FILES)
 
 test: test-python
 
