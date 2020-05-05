@@ -108,6 +108,11 @@ def test_multiline_comment():
 def test_char():
     tokens = tokenize("'é' 'a' ")
     assert [(tok.type, tok.value) for tok in tokens] == [
-        ("CHAR", "'é'"),
-        ("CHAR", "'a'"),
+        ("CHAR", "é"),
+        ("CHAR", "a"),
     ]
+
+
+def test_dot():
+    tokens = tokenize("x.y")
+    assert [tok.type for tok in tokens] == ['NAME', 'DOT', 'NAME']

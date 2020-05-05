@@ -81,7 +81,7 @@ class WabbitLexer(Lexer):
 
     tokens = {CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
         NAME, FLOAT, INTEGER, CHAR, LE, GE, EQ, NE, LAND, LOR, PLUS, MINUS, TIMES,
-        DIVIDE, LT, GT, LNOT, ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE}
+        DIVIDE, LT, GT, LNOT, ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE, DOT}
 
     ignore_eol_comments = r'//.*'
     ignore_comments = r'/\*(.|\n)*?\*/'
@@ -104,6 +104,11 @@ class WabbitLexer(Lexer):
     FLOAT = r'(\d+\.\d*|\.\d+)'
     INTEGER = r'\d+'
     CHAR = "'.'"
+
+    @_(CHAR)
+    def CHAR(self, token):
+        token.value = token.value.replace("'", "")
+        return token
 
 # operators
 
@@ -130,6 +135,7 @@ class WabbitLexer(Lexer):
     RPAREN   = r'\)'
     LBRACE   = r'{'
     RBRACE   = r'}'
+    DOT      = r'\.'
 
 #     ignore = ' \t'
 
