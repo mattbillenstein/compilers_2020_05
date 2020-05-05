@@ -23,6 +23,7 @@
 
 
 from wabbit.model import *
+from wabbit.source_visitor import to_source
 
 def compare_source(source, expected):
     if source.strip('\n') != expected.strip('\n'):

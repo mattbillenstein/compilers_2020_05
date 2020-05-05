@@ -62,9 +62,6 @@ class Integer(Node):
     def __repr__(self):
         return f'Integer({self.value})'
 
-    def to_source(self):
-        return f'{self.value}'
-
 class Float(Node):
     '''
     Example: 42.0
@@ -75,9 +72,6 @@ class Float(Node):
 
     def __repr__(self):
         return f'Float({self.value})'
-
-    def to_source(self):
-        return f'{self.value}'
 
 class BinOp(Node):
     '''
@@ -94,9 +88,6 @@ class BinOp(Node):
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
-    def to_source(self):
-        return f'{to_source(self.left)} {self.op} {to_source(self.right)}'
-
 class UnaOp(Node):
     '''
     Example: left + right
@@ -109,9 +100,6 @@ class UnaOp(Node):
 
     def __repr__(self):
         return f'UnaOp({self.op}, {self.arg})'
-
-    def to_source(self):
-        return f'{self.op}{to_source(self.arg)}'
 
 class Block(Node):
     '''
@@ -130,16 +118,6 @@ class Block(Node):
     def __repr__(self):
         return f'Block({[_ for _ in self.statements]}, indent={indent})'
 
-    def to_source(self):
-        L = []
-        for stmt in self.statements:
-            s = to_source(stmt) + ('' if stmt.is_statement else ';')
-            # hack, split lines to add indent, then rejoin them...
-            lines = [self.indent + _ for _ in s.split('\n') if _.strip()]
-            s = '\n'.join(lines)
-            L.append(s)
-        return '\n'.join(L) + '\n'
-
 class Print(Node):
     '''
     Print is kinda a special case of a function call - optional parens
@@ -150,9 +128,6 @@ class Print(Node):
 
     def __repr__(self):
         return f'Print({self.arg})'
-
-    def to_source(self):
-        return f'print {to_source(self.arg)}'
 
 class Const(Node):
     def __init__(self, loc, arg, type=None):
@@ -166,10 +141,6 @@ class Const(Node):
     def __repr__(self):
         type = f', type={self.type}' if self.type is not None else ''
         return f'Const({self.loc}, {self.arg}{type})'
-
-    def to_source(self):
-        type = f' {self.type}' if self.type is not None else ''
-        return f'const {to_source(self.loc)}{type} = {to_source(self.arg)}'
 
 class Var(Node):
     def __init__(self, loc, arg=None, type=None):
@@ -185,11 +156,6 @@ class Var(Node):
         type = f', type={self.type}' if self.type is not None else ''
         return f'Var({self.loc}{self.arg}{self.type})'
 
-    def to_source(self):
-        arg = f' = {to_source(self.arg)}' if self.arg is not None else ''
-        type = f' {self.type}' if self.type is not None else ''
-        return f'var {to_source(self.loc)}{type}{arg}'
-
 class Assign(Node):
     def __init__(self, loc, arg):
         assert isinstance(loc, Node)
@@ -199,9 +165,6 @@ class Assign(Node):
 
     def __repr__(self):
         return f'Assign({self.loc}, {self.arg})'
-
-    def to_source(self):
-        return f'{to_source(self.loc)} = {to_source(self.arg)}'
 
 class If(Node):
     is_statement = True
@@ -218,10 +181,6 @@ class If(Node):
         els = f', {self.eblock}' if self.eblock is not None else ''
         return f'If({self.cond}, {self.block}{els})'
 
-    def to_source(self):
-        els = f' else {{\n{to_source(self.eblock)}}}' if self.eblock is not None else ''
-        return f'if {to_source(self.cond)} {{\n{to_source(self.block)}}}{els}'
-
 class While(Node):
     is_statement = True
 
@@ -234,9 +193,6 @@ class While(Node):
     def __repr__(self):
         return f'While({self.cond}, {self.block})'
 
-    def to_source(self):
-        return f'while {to_source(self.cond)} {{\n{to_source(self.block)}}}'
-
 class Compound(Node):
     def __init__(self, statements):
         assert isinstance(statements, list)
@@ -246,10 +202,6 @@ class Compound(Node):
     def __repr__(self):
         return f'Compound({[_ for _ in self.statements]})'
 
-    def to_source(self):
-        s = '; '.join(to_source(_) for _ in self.statements) + ';'
-        return f'{{ {s} }}'
-
 class Name(Node):
     def __init__(self, name):
         assert isinstance(name, str)
@@ -257,11 +209,3 @@ class Name(Node):
 
     def __repr__(self):
         return f'Name({self.name})'
-
-    def to_source(self):
-        return self.name
-
-# ------ Debugging function to convert a model into source code (for easier viewing)
-
-def to_source(node):
-    return node.to_source()
