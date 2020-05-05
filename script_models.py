@@ -34,7 +34,7 @@ expr_source = "2 + 3 * 4"
 expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -77,8 +77,7 @@ source2 = """
     print tau;
 """
 
-expr1 = ConstantDefinition(Name('pi'), None, Float(3.14159))
-
+expr1 = ConstantDefinition(Name('pi'), Type(None), Float(3.14159))
 expr2 = VariableDefinition(Name('tau'), Type('float'))
 expr3 = Assignment(Name('tau'), BinOp("*", Float(2.0), Name('pi')))
 expr4 = PrintStatement(Name('tau'))
@@ -108,7 +107,7 @@ expr3 = IfStatement(BinOp('<', Name('a'), Name('b')),
 
 model3 = Program(expr1, expr2, expr3)
 
-print(to_source(model3))
+# print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
