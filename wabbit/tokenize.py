@@ -126,7 +126,7 @@ class WabbitLexer(Lexer):
     RPAREN = r'\)'
     LBRACE = r'{'
     RBRACE = r'}'
-    CHAR = r"'.'"
+    CHAR = r"('.'|'\\n')"
     DOT = r'\.'
 
 
