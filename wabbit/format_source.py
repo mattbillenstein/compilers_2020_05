@@ -67,7 +67,7 @@ class SourceFormatter:
         if node.type is not None:
             tokens.append(node.type)
         if node.value is not None:
-            tokens.extend(["=", str(node.value)])
+            tokens.extend(["=", self.visit(node.value)])
         return " ".join(tokens)
 
     @typechecked

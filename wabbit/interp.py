@@ -86,12 +86,13 @@ class Interpreter:
 
     @typechecked
     def visit_VarDef(self, node: VarDef):
-        self.env[node.name] = node.value
+        if node.value is not None:
+            self.env[node.name] = self.visit(node.value)
 
     @typechecked
     def visit_Assign(self, node: Assign):
         # TODO
-        self.env[node.location] = node.value
+        self.env[node.location] = self.visit(node.value)
 
     @typechecked
     def visit_Print(self, node: Print):
