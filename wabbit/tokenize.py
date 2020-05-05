@@ -78,10 +78,10 @@ class WabbitLexer(Lexer):
     # Valid token names
     tokens = { 
         # Operators 
-        PLUS, MINUS, TIMES, DIVIDE, LT, LE, GT, GE, EQ, NE, LAND, LOR,
+        PLUS, MINUS, TIMES, DIVIDE, LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT,
           
         # Other symbols
-        ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
+        ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI, DOT, 
 
         # Numbers and characters
         INTEGER, FLOAT, CHAR,
@@ -99,7 +99,10 @@ class WabbitLexer(Lexer):
     def ignore_newline(self, tok):
         self.lineno += tok.value.count('\n')
 
-    ignore_block_comment = r'/\*(.|\n)*?\*/'
+    @_(r'/\*(.|\n)*?\*/')
+    def ignore_block_comment(self, tok):
+        self.lineno += tok.value.count('\n')
+    
     ignore_line_comment = r'//.*'
 
     # Numbers
@@ -125,13 +128,15 @@ class WabbitLexer(Lexer):
     NAME['false'] = FALSE
 
     # Character constants.   'x', '\'', '\n', '\xhh'.  Hard because of escape codes.
-    CHAR = r"'\.'"    # This is wrong, but partly right.  
+    CHAR = r"'(\\'|.)*?'"    # This matches any group of characters in-between '...' 
+                             # as well as an escaped \'.  
 
     # Specify tokens as regex rules
     PLUS = r'\+'
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
+    DOT = r'\.'
 
     # Put longer patterns first
     LE = r'<='
@@ -140,6 +145,9 @@ class WabbitLexer(Lexer):
     GT = r'>'
     EQ = r'=='
     NE = r'!='
+    LAND = r'\&\&'
+    LOR = r'\|\|'
+    LNOT = r'!'
     ASSIGN = r'='
     SEMI = r';'
     LPAREN =r'\('

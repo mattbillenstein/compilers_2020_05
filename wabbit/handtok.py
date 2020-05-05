@@ -111,6 +111,7 @@ _one_char = {
     '{' : 'LBRACE',
     '}' : 'RBRACE',
     ';' : 'SEMI',
+    '!' : 'LNOT',
     }
 
 # Keywords

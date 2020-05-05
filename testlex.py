@@ -5,10 +5,10 @@
 from wabbit.tokenize import tokenize
 
 def test_operators():
-    toks = list(tokenize("+ - * / < <= > >= == !="))
+    toks = list(tokenize("+ - * / < <= > >= == != && || !"))
     tok_types = [tok.type for tok in toks]
     assert tok_types == ['PLUS', 'MINUS', 'TIMES', 'DIVIDE',
-                         'LT', 'LE', 'GT', 'GE', 'EQ', 'NE']
+                         'LT', 'LE', 'GT', 'GE', 'EQ', 'NE', 'LAND', 'LOR', 'LNOT']
 
 def test_keywords():
     toks = list(tokenize("var const if print while else break continue true false"))
@@ -25,4 +25,8 @@ def test_block_comment1():
     toks = list(tokenize("/* comment1 */ 123 /* comment 2 */"))
     assert len(toks) == 1 and toks[0].type == 'INTEGER'
 
-#    2 /* comment */ + 3
+def test_char_const():
+    toks = list(tokenize("'x' 'y' '\\n' '\\''"))
+    tok_types = [tok.type for tok in toks]
+    assert all(ty == 'CHAR' for ty in tok_types)
+
