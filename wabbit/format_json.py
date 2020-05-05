@@ -23,7 +23,7 @@ class TreeFormatter:
             if hasattr(node, child):
                 data[child] = self.visit(getattr(node, child))
         if hasattr(node, "statements"):
-            data["statements"] = [self.visit(s) for s in node.statements]
+            data["statements"] = [self.visit(s) for s in node.statements]  # type: ignore
         data["type"] = node.__class__.__name__
         return data
 
