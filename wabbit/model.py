@@ -248,6 +248,18 @@ class Return(Node):
         return f'Return({self.value})'
 
 class Arg(Node):
+    '''arg of a function call'''
+    def __init__(self, name, type):
+        assert isinstance(name, Name)
+        assert isinstance(type, Type)
+        self.name = name
+        self.type = type
+
+    def __repr__(self):
+        return f'Arg({self.name}, {self.type})'
+
+class Field(Node):
+    '''field of a function struct'''
     def __init__(self, name, type):
         assert isinstance(name, Name)
         assert isinstance(type, Type)
@@ -299,6 +311,7 @@ class Enum(Node):
         return f'Enum({self.name}, {self.args})'
 
 class Member(Node):
+    '''member of an enum definition'''
     def __init__(self, name, type=None):
         assert isinstance(name, Name)
         assert isinstance(type, (Type, NoneType))
@@ -308,3 +321,14 @@ class Member(Node):
     def __repr__(self):
         type = f', {self.type}' if self.type is not None else ''
         return f'Member({self.name}{type})'
+
+class Attribute(Node):
+    def __init__(self, name, attr):
+        assert isinstance(name, Name)
+        assert isinstance(attr, Name)
+        self.name = name
+        self.attr = attr
+
+    def __repr__(self):
+        return f'Attribute({self.name}, {self.attr})'
+    

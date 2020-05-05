@@ -44,15 +44,15 @@ print c.denominator;
 
 model7 = Block([
     Struct(Name('Fraction'), [
-        Arg(Name('numerator'), Type('int')),
-        Arg(Name('denominator'), Type('int')),
+        Field(Name('numerator'), Type('int')),
+        Field(Name('denominator'), Type('int')),
     ]),
     Func(Name('frac_mul'),
         Block([
             Return(
                 Call(Name('Fraction'), [
-                    BinOp('*', Name('a.numerator'), Name('b.numerator')),
-                    BinOp('*', Name('a.denominator'), Name('b.denominator')),
+                    BinOp('*', Attribute(Name('a'), Name('numerator')), Attribute(Name('b'), Name('numerator'))),
+                    BinOp('*', Attribute(Name('a'), Name('denominator')), Attribute(Name('b'), Name('denominator'))),
                 ]),
             ),
         ], indent=' '*4),
@@ -62,12 +62,12 @@ model7 = Block([
     Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
     Var(Name('y'), Call(Name('Fraction'), [Integer(3), Integer(8)])),
     Var(Name('c'), Call(Name('frac_mul'), [Name('x'), Name('y')])),
-    Print(Name('c.numerator')),
-    Print(Name('c.denominator')),
-    Assign(Name('c.numerator'), BinOp('/', Name('c.numerator'), Integer(4))),
-    Assign(Name('c.denominator'), BinOp('/', Name('c.denominator'), Integer(4))),
-    Print(Name('c.numerator')),
-    Print(Name('c.denominator')),
+    Print(Attribute(Name('c'), Name('numerator'))),
+    Print(Attribute(Name('c'), Name('denominator'))),
+    Assign(Attribute(Name('c'), Name('numerator')), BinOp('/', Attribute(Name('c'), Name('numerator')), Integer(4))),
+    Assign(Attribute(Name('c'), Name('denominator')), BinOp('/', Attribute(Name('c'), Name('denominator')), Integer(4))),
+    Print(Attribute(Name('c'), Name('numerator'))),
+    Print(Attribute(Name('c'), Name('denominator'))),
 ])
 
 compare_source(model7, source7)

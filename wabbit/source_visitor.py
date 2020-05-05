@@ -15,6 +15,9 @@ class SourceVisitor:
     def visit_Name(self, node):
         return node.name
 
+    def visit_Attribute(self, node):
+        return f'{self.visit(node.name)}.{self.visit(node.attr)}'
+
     def visit_Type(self, node):
         return node.type
 
@@ -72,6 +75,11 @@ class SourceVisitor:
         return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
 
     def visit_Arg(self, node):
+        # arg of a function call
+        return f'{self.visit(node.name)} {self.visit(node.type)}'
+
+    def visit_Field(self, node):
+        # field of a struct
         return f'{self.visit(node.name)} {self.visit(node.type)}'
 
     def visit_Return(self, node):
@@ -92,6 +100,7 @@ class SourceVisitor:
     def visit_Member(self, node):
         type = f'({self.visit(node.type)})' if node.type else ''
         return f'{self.visit(node.name)}{type}'
+
 
 def to_source(node):
     return SourceVisitor().visit(node)
