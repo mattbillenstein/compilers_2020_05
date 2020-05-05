@@ -265,7 +265,7 @@ class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
         super().__init__(*statements)
 
     def to_source(self):
-        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '};'
+        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '}'
 
 
 class PrintStatement(Statement):
@@ -326,7 +326,7 @@ class VariableDefinition(Definition):
             src += f' {self.type}'
         if self.value is not None:
             src += f' = {self.value}'
-        return src
+        return f"{src};"
 
 
 class ConstDefinition(Definition):
