@@ -574,7 +574,7 @@ class BinOp(Expression):
 
 def to_source(node):
     try:
-        print(node.to_source())
+        return node.to_source()
     except:
         raise RuntimeError(f"Can't convert {node} to source")
 
