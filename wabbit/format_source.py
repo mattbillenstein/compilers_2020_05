@@ -72,22 +72,29 @@ class SourceFormatter:
     @typechecked
     def visit_If(self, node: If) -> str:
         # TODO: hard-coded indent=1
-        return f"""\
-if {self.visit(node.test)} {{
-{self.visit(node.then, level=1)}
-}} else {{
-{self.visit(node.else_, level=1)}
-}}
-"""
+        return """\
+if %s {
+%s
+} else {
+%s
+}
+""" % (
+            self.visit(node.test),
+            self.visit(node.then, level=1),
+            self.visit(node.else_, level=1),
+        )
 
     @typechecked
     def visit_While(self, node: While) -> str:
         # TODO: hard-coded indent=1
-        return f"""\
-while {self.visit(node.test)} {{
-{self.visit(node.then, level=1)}
-}}
-"""
+        return """\
+while %s {
+%s
+}
+""" % (
+            self.visit(node.test),
+            self.visit(node.then, level=1),
+        )
 
     @typechecked
     def visit_Statements(self, node: Statements, level=0) -> str:
