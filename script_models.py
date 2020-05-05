@@ -178,6 +178,8 @@ model4 = Statements([
 
 print('------ Model 4')
 print(to_source(model4))
+print('------ Interpret 4')
+interpret_program(model4)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -187,7 +189,7 @@ print(to_source(model4))
 source5 = '''
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression. 
+    x = { var t = y; y = x; t; };     // Compound expression.  What is scope of t?
     print x;
     print y;
 '''
@@ -205,8 +207,10 @@ model5 = Statements([
         PrintStatement(LoadLocation(NamedLocation('y')))
         ])
 
-print('------ Model 5')                                  
+print('------ Model 5')
 print(to_source(model5))
+print('------ Interpret 5')
+interpret_program(model5)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
