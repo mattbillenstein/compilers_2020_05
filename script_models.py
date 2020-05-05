@@ -2,6 +2,7 @@
 from difflib import unified_diff
 from subprocess import Popen, PIPE
 
+from wabbit.check_syntax import check_syntax
 from wabbit.format_source import format_source
 from wabbit.model import (
     Assign,
@@ -20,6 +21,7 @@ from wabbit.model import (
 
 
 def check(source, model):
+    check_syntax(model)
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
         diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
