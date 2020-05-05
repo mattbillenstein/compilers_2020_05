@@ -64,25 +64,23 @@ var y = sqrt(-2.0);
 
 
 func find_root(a float, b float, c float) MaybeFloat {
-	var det MaybeFloat;
-	var det_square float;
-	var root float;
+	var det = sqrt(b * b - 4.0 * a * c);
 
-	det_square = b * b - 4.0 * a * c;
-
-	if det_square < 0.0 {
-		return MaybeFloat::No;
-	}
-
-	det = MaybeFloat::Yes(sqrt(det_square));
-
-	return MaybeFloat::Yes(match det {
-		No => 0.0;
-		Yes(det) => (-b + det) / (2 * a);
-	})
+	return match det {
+		No => MaybeFloat::No;
+		Yes(val) => MaybeFloat::Yes((-b + val) / (2. * a));
+	};
 }
 
-var z = find_root(1., 2., 0.);
+var root = find_root(1., -5., 6.);
 
-// print(z)
+match root {
+	No => {print 'N'; };
+	Yes(r) => {print r;};
+};
 
+root = find_root(1., -5., 10.);
+match root {
+	No => {print 'N'; };
+	Yes(r) => {print r;};
+};
