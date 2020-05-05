@@ -47,17 +47,6 @@ class Interpreter:
         return getattr(self, method_name)(node, **kwargs)
 
     @typechecked
-    def visit_Statements(self, node: Statements):
-        for statement in node.statements:
-            self.visit(statement)
-
-    @typechecked
-    def visit_Block(self, node: Block):
-        for statement in node.statements.statements:
-            val = self.visit(statement)
-        return val
-
-    @typechecked
     def visit_Float(self, node: Float):
         return node.value
 
@@ -109,6 +98,17 @@ class Interpreter:
     def visit_While(self, node: While):
         if self.visit(node.test):
             return self.visit(node.then)
+
+    @typechecked
+    def visit_Statements(self, node: Statements):
+        for statement in node.statements:
+            self.visit(statement)
+
+    @typechecked
+    def visit_Block(self, node: Block):
+        for statement in node.statements.statements:
+            val = self.visit(statement)
+        return val
 
 
 @typechecked

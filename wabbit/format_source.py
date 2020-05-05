@@ -28,15 +28,6 @@ class SourceFormatter:
         return getattr(self, method_name)(node, **kwargs)
 
     @typechecked
-    def visit_Statements(self, node: Statements, level=0) -> str:
-        indent = " " * 4 * level
-        return "\n".join(indent + self.visit(stmnt) + ";" for stmnt in node.statements)
-
-    @typechecked
-    def visit_Block(self, node: Block, level=0) -> str:
-        return self.visit_Statements(node.statements, level)
-
-    @typechecked
     def visit_Float(self, node: Float) -> str:
         return str(node.value)
 
@@ -97,6 +88,20 @@ while {self.visit(node.test)} {{
 {self.visit(node.then, level=1)}
 }}
 """
+
+    @typechecked
+    def visit_Statements(self, node: Statements, level=0) -> str:
+        indent = " " * 4 * level
+        return "\n".join(indent + self.visit(stmnt) + ";" for stmnt in node.statements)
+
+    @typechecked
+    def visit_Block(self, node: Block, level=0) -> str:
+        return """{
+%s
+}
+""" % self.visit_Statements(
+            node.statements, level=level + 1
+        )
 
 
 @typechecked
