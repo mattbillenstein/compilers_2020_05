@@ -172,6 +172,8 @@ class BinOp(Expression):
     def __init__(self, op, left, right):
         assert isinstance(op, str)
         assert op in ('+', '-', '*', '/', '<', '<=', '=>', '>', '==', '!='), f"Operation {op} is invalid"
+        assert isinstance(left, Expression)
+        assert isinstance(right, Expression)
         super().__init__(op=op, left=left, right=right)
 
     def to_source(self):
