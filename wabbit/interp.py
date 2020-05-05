@@ -7,6 +7,7 @@ from typeguard import typechecked
 from wabbit.model import (
     Assign,
     BinOp,
+    Block,
     ConstDef,
     Float,
     If,
@@ -49,6 +50,12 @@ class Interpreter:
     def visit_Statements(self, node: Statements):
         for statement in node.statements:
             self.visit(statement)
+
+    @typechecked
+    def visit_Block(self, node: Block):
+        for statement in node.statements.statements:
+            val = self.visit(statement)
+        return val
 
     @typechecked
     def visit_Float(self, node: Float):

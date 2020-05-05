@@ -3,6 +3,7 @@ from typeguard import typechecked
 from wabbit.model import (
     Assign,
     BinOp,
+    Block,
     ConstDef,
     Float,
     If,
@@ -30,6 +31,10 @@ class SourceFormatter:
     def visit_Statements(self, node: Statements, level=0) -> str:
         indent = " " * 4 * level
         return "\n".join(indent + self.visit(stmnt) + ";" for stmnt in node.statements)
+
+    @typechecked
+    def visit_Block(self, node: Block, level=0) -> str:
+        return self.visit_Statements(node.statements, level)
 
     @typechecked
     def visit_Float(self, node: Float) -> str:

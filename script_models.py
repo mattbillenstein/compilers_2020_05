@@ -9,6 +9,7 @@ from wabbit.format_source import format_source
 from wabbit.model import (
     Assign,
     BinOp,
+    Block,
     ConstDef,
     Float,
     If,
@@ -188,7 +189,10 @@ models.append(
             VarDef("x", None, Integer(37)),
             VarDef("y", None, Integer(42)),
             Assign(
-                "x", Statements([VarDef("t", None, Name("y")), Assign("y", Name("x")), Name("t")])
+                "x",
+                Block(
+                    Statements([VarDef("t", None, Name("y")), Assign("y", Name("x")), Name("t")])
+                ),
             ),
             Print(Name("x")),
             Print(Name("y")),

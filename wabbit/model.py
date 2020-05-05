@@ -22,6 +22,11 @@ class Expression(Statement):
 
 
 @dataclass
+class Block(Expression):
+    statements: Statements
+
+
+@dataclass
 class Integer(Expression):
     value: int
 
