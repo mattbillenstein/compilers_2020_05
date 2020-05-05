@@ -73,6 +73,24 @@
 # ----------------------------------------------------------------------
 
 
+import re
+
+TOKENS = [
+    ("PLUS", r"\+"),
+]
+
+
+def tokenize(text):
+    text = text.rstrip()
+    while text:
+        for name, regexp in TOKENS:
+            if match := re.match(regexp, text):
+                yield name, match.string[: match.end()]
+                text = text[match.end() :]
+                break
+        else:
+            raise RuntimeError(f"Unrecognized input: {text[:10]}...")
+
 
 # Main program to test on input files
 def main(filename):
