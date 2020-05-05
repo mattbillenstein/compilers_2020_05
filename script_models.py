@@ -1,7 +1,5 @@
 # See https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
-from difflib import unified_diff
-from subprocess import Popen, PIPE
-
+import utils
 from wabbit.check_syntax import check_syntax
 from wabbit.interp import interpret_program
 from wabbit.format_json import format_json
@@ -23,20 +21,11 @@ from wabbit.model import (
 )
 
 
-def print_source(source, language="go"):
-    proc = Popen(["bat", "--language", language], stdin=PIPE)
-    proc.stdin.write(source.encode("utf-8"))  # type: ignore
-    proc.communicate()
-
-
 def check(source, model):
     check_syntax(model)
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
-        diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
-        proc = Popen(["delta"], stdin=PIPE)
-        proc.stdin.write(diff.encode("utf-8"))  # type: ignore
-        proc.communicate()
+        utils.delta(source, transpiled_source)
 
 
 def dump_json(model, label):
@@ -206,7 +195,7 @@ for i, (source, model) in enumerate(zip(sources, models)):
         "\n\n------------------------------------------------------------------------------------"
     )
     print(i, "\n")
-    print_source(source)
+    utils.bat(source)
     check(source, model)
     dump_json(model, i)
     print("Interpreter output:\n")
