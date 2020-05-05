@@ -51,7 +51,9 @@ from typing import List
 
 
 class Node():
-    pass
+    def __repr__(self):
+        argstr = ''
+        return "{}.{}<{}>({})".format(self.__class__.__module__, self.__class__.__name__, id(self), argstr)
 
 
 class ExpressionNode(Node):
@@ -76,9 +78,6 @@ class Location(ExpressionNode):
     def __repr__(self):
         return self.identifier
 
-    def to_source(self):
-        return self.identifier
-
 
 class DeclLocation(Location):
     '''
@@ -92,24 +91,11 @@ class DeclLocation(Location):
     def __repr__(self):
         return f'DeclLocation({self.identifier}, {str(self._type) or "None"}, {"True" if self.const else "False"}) '
 
-    def to_source(self):
-        ret = 'const' if self.const else 'var'
-        ret += ' ' + self.identifier
-        if self._type:
-            ret += ' ' + str(self._type)
-        return ret
-
 
 class ScalarNode(ExpressionNode):
     '''
     Example: 42
     '''
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(' + str(self.value) + ')'
-
-    def to_source(self):
-        return repr(self.value)
 
 
 class Int(ScalarNode):
@@ -139,9 +125,6 @@ class AssignStatement(StatementNode):
     def __repr__(self):
         return f'Assign({self.location}, {self.expr})'
 
-    def to_source(self):
-        return self.location.to_source() + ' = ' + self.expr.to_source()
-
 
 class BinOp(ExpressionNode):
     '''
@@ -155,9 +138,6 @@ class BinOp(ExpressionNode):
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
 
-    def to_source(self):
-        return f'{self.left.to_source()} {self.op} {self.right.to_source()}'
-
 
 class UnOp(ExpressionNode):
     '''
@@ -170,9 +150,6 @@ class UnOp(ExpressionNode):
     def __repr__(self):
         return f'UnOp({self.op}, {self.right})'
 
-    def to_source(self):
-        return f'{self.op}{self.right.to_source()}'
-
 
 class PrintStatement(StatementNode):
     '''
@@ -183,9 +160,6 @@ class PrintStatement(StatementNode):
 
     def __repr__(self):
         return f'Print({self.expr})'
-
-    def to_source(self):
-        return f'print {to_source(self.expr)}'
 
 
 class ConditionalStatement(StatementNode):
@@ -204,19 +178,10 @@ class ConditionalStatement(StatementNode):
         self.blockF = blockF
 
     def __repr__(self):
-        ret = f'ConditionalStatement({{self.cond.to_source()}},' 
+        ret = f'ConditionalStatement({{str(self.cond)}},' 
         ret += '[' + to_repr(self.blockT) + '], '
         ret += '[' + to_repr(self.blockF) + '])'
         return ret
-
-    def to_source(self):
-        ret = 'if ' + self.cond.to_source() + ' {\n'
-        ret += to_source(self.blockT, indent=1) 
-        ret += '} else {\n'
-        ret += to_source(self.blockF, indent=1)
-        ret += '}'
-        return ret
-
 
 class ConditionalLoopStatement(StatementNode):
     '''
@@ -231,14 +196,7 @@ class ConditionalLoopStatement(StatementNode):
         self.block = block
 
     def __repr__(self):
-        return f'ConditionalLoopStatement(' + self.cond.to_source() + ', [' + to_repr(self.block) + '])'
-
-    def to_source(self):
-        ret = 'while ' + self.cond.to_source() + ' {\n'
-        ret += to_source(self.block, indent=1)
-        ret += '}'
-        return ret
-
+        return f'ConditionalLoopStatement(' + str(self.cond) + ', [' + to_repr(self.block) + '])'
 
 class BlockExpression(ExpressionNode):
     '''
@@ -251,9 +209,6 @@ class BlockExpression(ExpressionNode):
 
     def __repr__(self):
         return to_repr(self.block)
-
-    def to_source(self):
-        return '{ ' + to_source(self.block, indent=0, joiner='; ') + '}'
 
 
 class ExpressionStatement(StatementNode):
@@ -268,21 +223,11 @@ class ExpressionStatement(StatementNode):
     def __repr__(self):
         return str(self.statement)
 
-    def to_source(self):
-        return self.statement.to_source()
-
 
 class FuncCall(ExpressionNode):
     def __init__(self, name: str, args: List[ExpressionNode]):
         self.name = name
         self.args = args
-
-    def __repr__(self):
-        return 'FuncCall(' + str(self.name) + ', ' + str(self.args) + ')'
-
-    def to_source(self):
-        args = ', '.join(to_source(arg) for arg in self.args)
-        return self.name + '(' + args + ')'
 
 
 class FuncDeclStatement(StatementNode):
@@ -292,25 +237,10 @@ class FuncDeclStatement(StatementNode):
         self.args = args
         self.body = body
 
-    def __repr__(self):
-        return 'FuncDeclStatement(' + str(self.name) + ', ' + str(self.args) + ')'
-
-    def to_source(self):
-        args = []
-        for arg in self.args:
-            args.append(' '.join(arg))
-        return 'func ' + self.name + '(' + ', '.join(args) + ') ' + self.retval + ' {\n' + to_source(self.body, indent=1) + '}'
-
 
 class ReturnStatement(StatementNode):
     def __init__(self, retval: ExpressionNode):
         self.retval = retval
-
-    def __repr__(self):
-        return 'ReturnStatement(' + str(self.retval) + ')'
-
-    def to_source(self):
-        return 'return ' + self.retval.to_source()
 
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
@@ -323,19 +253,3 @@ def to_repr(node, indent=0):
     else:
         return str(node)
 
-
-def to_source(node, indent=0, joiner=';\n'):
-    if isinstance(node, list):
-        # list of statements
-        ret = ''
-        for n in node:
-            ret += indent * '\t'
-            ret += to_source(n)
-            if isinstance(n, (FuncDeclStatement, ConditionalStatement)):
-                ret += '\n'
-            else:
-                ret += joiner
-        return ret
-    else:
-        # individual statement
-        return node.to_source()
