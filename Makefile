@@ -1,3 +1,4 @@
+PYTHON = ~/tmp/virtualenvs/compilers/bin/python
 PYTHON_FILES = wabbit/model.py script_models.py
 
 all: format lint type-check test
@@ -14,11 +15,11 @@ type-check:
 test: test-python
 
 test-python:
-	@python -m doctest $(PYTHON_FILES)
+	@$(PYTHON) -m doctest $(PYTHON_FILES)
 
 test-python-exercises:
 	@for f in exercises/python/warmup/*.py; do \
-		python $$f; \
+		$(PYTHON) $$f; \
 	done
 
 ELISP_FILES = $(shell fd .el$$ exercises)
