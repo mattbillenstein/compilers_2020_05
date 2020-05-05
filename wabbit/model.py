@@ -97,10 +97,6 @@ class Enum(Definition):
     def __repr__(self):
         return f"Enum({self.name}, {self.choices})"
 
-    def to_source(self):
-        args = ";\n".join([c.to_source() for c in self.choices])
-        return f"enum {self.name} {{\n{args};\n}}"
-
 
 class EnumChoice(Definition):
     """
@@ -118,11 +114,6 @@ class EnumChoice(Definition):
 
     def __repr__(self):
         return f"EnumChoice({self.name}, {self.type})"
-
-    def to_source(self):
-        if self.type:
-            return f"{self.name}({self.type})"
-        return f"{self.name}"
 
 
 class EnumLocation(Location):
@@ -144,11 +135,6 @@ class EnumLocation(Location):
 
     def __repr__(self):
         return f"EnumLocation({self.enum}, {self.location}, {self.args})"
-
-    def to_source(self):
-        if self.args:
-            return f"{self.enum}::{self.location}({self.args.to_source()})"
-        return f"{self.enum}::{self.location}"
 
 
 class MatchCondition:
@@ -174,9 +160,6 @@ class MatchCondition:
 
     def __repr__(self):
         return f"MatchCondition({self.choice}, {self.expression})"
-
-    def to_source(self):
-        return f"{self.choice.to_source()} => {self.expression.to_source()}"
 
 
 class Match:
@@ -204,10 +187,6 @@ class Match:
     def __repr__(self):
         return f"Match({self.test}, {self.conditions})"
 
-    def to_source(self):
-        args = ";\n".join([c.to_source() for c in self.conditions])
-        return f"match({self.test}) {{\n {args}; \n}}"
-
 
 class Struct(Definition):
     """
@@ -220,10 +199,6 @@ class Struct(Definition):
 
     def __repr__(self):
         return f"Struct({self.name}, {repr(*self.args)})"
-
-    def to_source(self):
-        args = "\n".join([s.to_source() for s in self.args])
-        return f"struct {self.name} {{\n {args} \n }}"
 
 
 class Argument(Definition):
@@ -238,9 +213,6 @@ class Argument(Definition):
     def __repr__(self):
         return f"Argument({self.name}, {self.type})"
 
-    def to_source(self):
-        return f"{self.name} {self.type}"
-
 
 class Arguments(Expression):
     """
@@ -252,9 +224,6 @@ class Arguments(Expression):
 
     def __repr__(self):
         return f"Arguments({self.args})"
-
-    def to_source(self):
-        return ", ".join([s.to_source() for s in self.args])
 
 
 class FunctionCall(Expression):
@@ -272,10 +241,6 @@ class FunctionCall(Expression):
     def __repr__(self):
         return f"FunctionCall({self.name}, {self.args})"
 
-    def to_source(self):
-        args = ", ".join([s.to_source() for s in self.args])
-        return f"{self.name}({args})"
-
 
 class FunctionDefinition(Definition):
     """
@@ -292,22 +257,6 @@ class FunctionDefinition(Definition):
     def __repr__(self):
         return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
 
-    def to_source(self):
-        if self.return_type:
-            return_type = self.return_type.to_source()
-        else:
-            return_type = f""
-        if self.body:
-            body = self.body.to_source()
-        else:
-            body = f""
-        if self.args:
-            args = self.args.to_source()
-
-        else:
-            args = f""
-        return f"func {self.name}({args}) {return_type} {{ \n {body}\n}}"
-
 
 class Block(Expression):
     """
@@ -319,10 +268,6 @@ class Block(Expression):
 
     def __repr__(self):
         return f"Block({self.statements})"
-
-    def to_source(self):
-        joined_statements = "; ".join([s.to_source() for s in self.statements])
-        return f"{{ {joined_statements} }}"
 
 
 class Statements(Statement):
@@ -337,9 +282,6 @@ class Statements(Statement):
 
     def __repr__(self):
         return f"Statements({self.statements})"
-
-    def to_source(self):
-        return "\n".join([s.to_source() for s in self.statements])
 
 
 class If(Statement):
@@ -358,9 +300,6 @@ class If(Statement):
     def __repr__(self):
         return f"If({self.test}, {self.when_true}, {self.when_false})"
 
-    def to_source(self):
-        return f"if {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}} else {{\n   {self.when_false.to_source()}\n}}"
-
 
 class While(Statement):
     """
@@ -376,9 +315,6 @@ class While(Statement):
     def __repr__(self):
         return f"While({self.test}, {self.when_true})"
 
-    def to_source(self):
-        return f"while {self.test.to_source()} {{\n   {self.when_true.to_source()}\n}}"
-
 
 class Assignment(Statement):
     """
@@ -392,9 +328,6 @@ class Assignment(Statement):
     def __repr__(self):
         return f"Assignment({self.location}, {self.expression})"
 
-    def to_source(self):
-        return f"{self.location.to_source()} = {self.expression.to_source()}"
-
 
 class Print(Statement):
     """
@@ -406,9 +339,6 @@ class Print(Statement):
 
     def __repr__(self):
         return f"Print({self.value})"
-
-    def to_source(self):
-        return f"print {self.value.to_source()}"
 
 
 class Return(Statement):
@@ -422,9 +352,6 @@ class Return(Statement):
     def __repr__(self):
         return f"Return({self.value})"
 
-    def to_source(self):
-        return f"return {self.value.to_source()}"
-
 
 class Float(Expression):
     """
@@ -436,9 +363,6 @@ class Float(Expression):
 
     def __repr__(self):
         return f"Float({self.value})"
-
-    def to_source(self):
-        return repr(self.value)
 
 
 class Const(Definition):
@@ -452,13 +376,10 @@ class Const(Definition):
     def __repr__(self):
         return f"Const({self.value})"
 
-    def to_source(self):
-        return f"const {self.value}"
-
 
 class Var(Definition):
     """
-    Example: var foo
+    Example: var name [type] [= value]
     """
 
     def __init__(self, name, type, value):
@@ -477,14 +398,6 @@ class Var(Definition):
     def __repr__(self):
         return f"Var({self.name}, {self.type}, {self.value})"
 
-    def to_source(self):
-        base = f"var {self.name}"
-        if self.type:
-            base += f" {self.type}"
-        if self.value:
-            base += f" = {self.value.to_source()}"
-        return base
-
 
 class Let(Definition):
     """
@@ -500,11 +413,6 @@ class Let(Definition):
             return f"Let({self.value}, {self.type})"
         return f"Let({self.value})"
 
-    def to_source(self):
-        if self.type:
-            return f"let {self.value.to_source()} {self.type}"
-        return f"let {self.value.to_source()}"
-
 
 class Variable(Location):
     """
@@ -516,9 +424,6 @@ class Variable(Location):
 
     def __repr__(self):
         return f"Variable({self.value})"
-
-    def to_source(self):
-        return self.value
 
 
 class Integer(Expression):
@@ -532,9 +437,6 @@ class Integer(Expression):
     def __repr__(self):
         return f"Integer({self.value})"
 
-    def to_source(self):
-        return repr(self.value)
-
 
 class UnaryOp(Expression):
     """
@@ -547,9 +449,6 @@ class UnaryOp(Expression):
 
     def __repr__(self):
         return f"UnaryOp({self.op}, {self.target})"
-
-    def to_source(self):
-        return f"{self.op}{self.target.to_source()}"
 
 
 class BinOp(Expression):
@@ -565,16 +464,6 @@ class BinOp(Expression):
     def __repr__(self):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
-    def to_source(self):
-        return f"{self.left.to_source()} {self.op} {self.right.to_source()}"
-
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
-
-
-def to_source(node):
-    try:
-        return node.to_source()
-    except:
-        raise RuntimeError(f"Can't convert {node} to source")
 

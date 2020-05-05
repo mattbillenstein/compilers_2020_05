@@ -21,6 +21,7 @@
 
 
 from wabbit.model import *
+from wabbit.to_source import to_source
 
 # ----------------------------------------------------------------------
 # Simple Expression

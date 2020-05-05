@@ -11,6 +11,7 @@
 #
 
 from wabbit.model import *
+from wabbit.to_source import to_source
 
 # -----------------------------------------------------------------------------
 # Program 7: Structures.  The following program defines and uses a structure.
