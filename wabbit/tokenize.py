@@ -109,9 +109,15 @@ class WabbitLexer(Lexer):
         LBRACE,
         RBRACE,
         SEMI,
+        CONST,
+        NAME,
+        PRINT,
+        CHAR,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
+    ignore_comment = r"\/\*.*\*\/"
 
+    CONST = r"const"
     # Specify tokens as regex rules
     PLUS = r"\+"
     MINUS = r"-"
@@ -119,6 +125,7 @@ class WabbitLexer(Lexer):
     DIVIDE = r"/"
     DECIMAL = r"\d+\.\d+"  # 23.45
     NUMBER = r"\d+"
+    CHAR = r"\'.*\'"
 
     # Put longer patterns first
     LE = r"<="
@@ -133,6 +140,14 @@ class WabbitLexer(Lexer):
     RPAREN = r"\)"
     LBRACE = r"{"
     RBRACE = r"}"
+
+    PRINT = r"print"
+    NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
+
+    @_(CHAR)
+    def CHAR(self, token):
+        token.value = token.value.replace("'", "")
+        return token
 
 
 def tokenize(text):
