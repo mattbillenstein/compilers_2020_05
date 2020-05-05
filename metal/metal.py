@@ -75,9 +75,17 @@ class Metal:
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
             # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
-            self.registers['PC'] += 1
-            getattr(self, op)(*args)
+            import sys
+            if len(sys.argv) > 1:
+                print(self.registers['PC'], op, args)
+                self.registers['PC'] += 1
+                getattr(self, op)(*args)
+                print('R1:', self.registers['R1'],'R2:', self.registers['R2'],'R3:', self.registers['R3'], self.memory[0], self.memory[1], self.memory[2])
+                print('R4:', self.registers['R4'],'R5:', self.registers['R5'],'R6:', self.registers['R6'])
+                input()
+            else:
+                self.registers['PC'] += 1
+                getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
         return
 
@@ -149,9 +157,9 @@ if __name__ == '__main__':
     prog1 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 4, 'R2'),
-              # More instructions here
-              # ...
-              # Print the result.  Change R1 to location of result.
+              ('CONST', 5, 'R3'),
+              ('ADD', 'R1', 'R2', 'R1'),
+              ('SUB', 'R1', 'R3', 'R1'),
               ('STORE', 'R1', 'R0', IO_OUT),    
               ('HALT',),
               ]
@@ -172,9 +180,11 @@ if __name__ == '__main__':
     prog2 = [ # Instructions here
               ('CONST', 3, 'R1'),
               ('CONST', 7, 'R2'),
-              # ...
-              # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
+              ('DEC', 'R2'),
+              ('ADD', 'R3', 'R1', 'R3'),
+              ('BZ', 'R2', 1),
+              ('JMP', 'PC', -4),
+              ('STORE', 'R3', 'R0', IO_OUT),
               ('HALT',),
             ]
 
@@ -208,18 +218,21 @@ if __name__ == '__main__':
     # would the branching/jump statements work?  
 
     prog3 = [
-        ('CONST', 5, 'R1'),       # n = 5
         # result = 1
         # while n > 0:
         #     result = mul(result,  n)
         #     n -= 1
-
-        #
-        # ... instructions here
-        # 
-
-        # print(result)
-        ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
+        ('CONST', 1, 'R1'), # result
+        ('CONST', 5, 'R2'), # n
+        ('BZ', 'R2', 7),
+        ('STORE', 'R1', 'R0', 100), # set arg0
+        ('STORE', 'R2', 'R0', 200), # set arg1
+        ('JMP', 'PC', 6),
+        ('XOR', 'R1', 'R1', 'R1'),
+        ('ADD', 'R1', 'R5', 'R1'),
+        ('DEC', 'R2'),
+        ('JMP', 'PC', -8),
+        ('STORE', 'R1', 'R0', IO_OUT),
         ('HALT',),
 
         # ----------------------------------
@@ -231,13 +244,18 @@ if __name__ == '__main__':
         #            result += y
         #            x -= 1
         #        return result
-        #
-        # ... instructions here
+        ('XOR', 'R5', 'R5', 'R5'),
+        ('LOAD', 'R0', 'R3', 100), # get arg0
+        ('LOAD', 'R0', 'R4', 200), # get arg1
+        ('DEC', 'R4'),
+        ('ADD', 'R5', 'R3', 'R5'),
+        ('BZ', 'R4', -12),
+        ('JMP', 'PC', -4),
     ]
 
-    print("PROGRAM 3::: Expected Output: 120")
-    machine.run(prog3)
-    print(":::PROGRAM 3 DONE")
+    #print("PROGRAM 3::: Expected Output: 120")
+    #machine.run(prog3)
+    #print(":::PROGRAM 3 DONE")
     
     # ----------------------------------------------------------------------
     # Problem 4: Ultimate Challenge
@@ -259,9 +277,92 @@ if __name__ == '__main__':
     #    print(fact(5))
 
     prog4 = [
-        # Print result (assumed to be in R1)
-        ('STORE', 'R1', 'R0', IO_OUT),
-        ('HALT',)
+        # init
+        ('CONST', 0x1000, 'R6'), # SP = 0x1000
+        ('CONST', 3, 'R5'),
+
+        # main
+        ('CONST', 5, 'R1'),          # set N
+        ('STORE', 'R1', 'R0', 100),
+        ('ADD', 'PC', 'R5', 'R4'),
+        ('DEC', 'R6'),
+        ('STORE', 'R4', 'R6', 0),
+        ('JMP', 'R0', 39),
+        ('INC', 'R6'),
+        ('LOAD', 'R0', 'R3', 0),
+        ('STORE', 'R3', 'R0', IO_OUT),
+        ('HALT',),
+
+        # mul (addr = 12)
+        ('DEC', 'R6'),
+        ('STORE', 'R1', 'R6', 0),    # save R1
+        ('DEC', 'R6'),
+        ('STORE', 'R2', 'R6', 0),    # save R2
+        ('LOAD', 'R0', 'R1', 100),   # get arg0
+        ('LOAD', 'R0', 'R2', 200),   # get arg1
+        
+        ('CMP', 'R0', 'R1', 'R3'),   # if x > 0
+        ('BZ', 'R3', 2),
+        ('XOR', 'R3', 'R3', 'R3'),
+        ('JMP', 'PC', 10),           # jmp to return
+
+        # return y + mul(x-1, y)
+        ('DEC', 'R1'),
+        ('STORE', 'R1', 'R0', 100),  # set arg0
+        ('STORE', 'R2', 'R0', 200),  # set arg1
+        ('ADD', 'PC', 'R5', 'R4'),
+        ('DEC', 'R6'),
+        ('STORE', 'R4', 'R6', 0),
+        ('JMP', 'R0', 12),           # call mul
+        ('INC', 'R6'),
+        ('LOAD', 'R0', 'R3', 0),
+        ('ADD', 'R2', 'R3', 'R3'),
+
+        # return
+        ('STORE', 'R3', 'R0', 0),    # set return value
+        ('LOAD', 'R6', 'R2', 0),     # load R2
+        ('INC', 'R6'),
+        ('LOAD', 'R6', 'R1', 0),     # load R1
+        ('INC', 'R6'),
+        ('LOAD', 'R6', 'R3', 0),
+        ('JMP', 'R3', 0),            # return
+
+        # fact (addr = 39)
+        ('DEC', 'R6'),
+        ('STORE', 'R1', 'R6', 0),    # save R1
+        ('DEC', 'R6'),
+        ('STORE', 'R2', 'R6', 0),    # save R2
+        ('LOAD', 'R0', 'R1', 100),   # get arg0
+        ('BZ', 'R1', 17),
+
+        ('ADD', 'R0', 'R1', 'R2'),
+        ('DEC', 'R2'),
+        ('STORE', 'R2', 'R0', 100),
+        ('ADD', 'PC', 'R5', 'R4'),
+        ('DEC', 'R6'),
+        ('STORE', 'R4', 'R6', 0),
+        ('JMP', 'R0', 39),           # call fact
+        ('INC', 'R6'),
+        ('LOAD', 'R0', 'R2', 0),
+        
+        ('STORE', 'R1', 'R0', 100),
+        ('STORE', 'R2', 'R0', 200),
+        ('ADD', 'PC', 'R5', 'R4'),
+        ('DEC', 'R6'),
+        ('STORE', 'R4', 'R6', 0),
+        ('JMP', 'R0', 12),           # call mul
+        ('INC', 'R6'),
+        ('JMP', 'PC', 2),
+
+        ('CONST', 1, 'R3'),
+        ('STORE', 'R3', 'R0', 0),    # set return value
+
+        ('LOAD', 'R6', 'R2', 0),     # load R2
+        ('INC', 'R6'),
+        ('LOAD', 'R6', 'R1', 0),     # load R1
+        ('INC', 'R6'),
+        ('LOAD', 'R6', 'R3', 0),
+        ('JMP', 'R3', 0),            # return
         ]
 
     print("PROGRAM 4::: Expected Output: 120")
