@@ -94,7 +94,7 @@ class WabbitLexer(Lexer):
         MINUS,
         TIMES,
         DIVIDE,
-        NUMBER,
+        INTEGER,
         LT,
         LE,
         EQ,
@@ -113,18 +113,26 @@ class WabbitLexer(Lexer):
         NAME,
         PRINT,
         CHAR,
+        VAR,
+        WHILE,
+        TRUE,
+        FALSE,
+        IF,
+        CONTINUE,
+        BREAK,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
     ignore_comment = r"\/\*.*\*\/"
 
     CONST = r"const"
+    VAR = r"var"
     # Specify tokens as regex rules
     PLUS = r"\+"
     MINUS = r"-"
     TIMES = r"\*"
     DIVIDE = r"/"
     DECIMAL = r"\d+\.\d+"  # 23.45
-    NUMBER = r"\d+"
+    INTEGER = r"\d+"
     CHAR = r"\'.*\'"
 
     # Put longer patterns first
@@ -141,12 +149,23 @@ class WabbitLexer(Lexer):
     LBRACE = r"{"
     RBRACE = r"}"
 
+    WHILE = r"while"
+    BREAK = r"break"
+    CONTINUE = r"continue"
+    IF = r"if"
+    TRUE = r"true"
+    FALSE = r"false"
     PRINT = r"print"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 
     @_(CHAR)
     def CHAR(self, token):
         token.value = token.value.replace("'", "")
+        return token
+
+    @_(INTEGER)
+    def INTEGER(self, token):
+        token.value = int(token.value)
         return token
 
 
