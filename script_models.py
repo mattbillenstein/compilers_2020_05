@@ -80,7 +80,7 @@ source2 = """
 
 model2 = Block([
     Const(Name('pi'), Float(3.14159)),
-    Var(Name('tau'), type='float'),
+    Var(Name('tau'), type=Type('float')),
     Assign(Name('tau'), BinOp('*', Float(2.0), Name('pi'))),
     Print(Name('tau')),
 ], indent=' '*4)
@@ -102,8 +102,8 @@ source3 = '''
 '''
 
 model3 = Block([
-    Var(Name('a'), Integer(2), type='int'),
-    Var(Name('b'), Integer(3), type='int'),
+    Var(Name('a'), Integer(2), Type('int')),
+    Var(Name('b'), Integer(3), Type('int')),
     If(
         BinOp('<', Name('a'), Name('b')),
         Block([Print(Name('a'))], indent=' '*4),
@@ -130,8 +130,8 @@ source4 = '''
 
 model4 = Block([
     Const(Name('n'), Integer(10)),
-    Var(Name('x'), Integer(1), type='int'),
-    Var(Name('fact'), Integer(1), type='int'),
+    Var(Name('x'), Integer(1), Type('int')),
+    Var(Name('fact'), Integer(1), Type('int')),
     While(
         BinOp('<', Name('x'), Name('n')),
         Block([

@@ -44,8 +44,8 @@ print c.denominator;
 
 model7 = Block([
     Struct(Name('Fraction'), [
-        Arg(Name('numerator'), 'int'),
-        Arg(Name('denominator'), 'int'),
+        Arg(Name('numerator'), Type('int')),
+        Arg(Name('denominator'), Type('int')),
     ]),
     Func(Name('frac_mul'),
         Block([
@@ -56,8 +56,8 @@ model7 = Block([
                 ]),
             ),
         ], indent=' '*4),
-        [Arg(Name('a'), 'Fraction'), Arg(Name('b'), 'Fraction')],
-        ret_type='Fraction',
+        [Arg(Name('a'), Type('Fraction')), Arg(Name('b'), Type('Fraction'))],
+        ret_type=Type('Fraction'),
     ),
     Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
     Var(Name('y'), Call(Name('Fraction'), [Integer(3), Integer(8)])),
@@ -123,18 +123,18 @@ while let Integer(x) = a {
 model8 = Block([
     Enum(Name('Number'), [
         Member(Name('No')),
-        Member(Name('Integer'), 'int'),
-        Member(Name('Float'), 'float'),
+        Member(Name('Integer'), Type('int')),
+        Member(Name('Float'), Type('float')),
     ]),
     Func(Name('add'),
         Block([
-            Return(
-                Match(Name('a'), [
-                ]),
-            ),
+#            Return(
+#                Match(Name('a'), [
+#                ]),
+#            ),
         ]),
-        [Arg(Name('a'), 'Number'), Arg(Name('b'), 'Number')],
-        ret_type='Number',
+        [Arg(Name('a'), Type('Number')), Arg(Name('b'), Type('Number'))],
+        ret_type=Type('Number'),
     ),
 ])
 

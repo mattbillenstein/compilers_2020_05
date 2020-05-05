@@ -51,6 +51,22 @@ NoneType = type(None)
 class Node:
     is_statement = False
 
+class Name(Node):
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
+
+    def __repr__(self):
+        return f'Name({self.name})'
+
+class Type(Node):
+    def __init__(self, type):
+        assert isinstance(type, str)
+        self.type = type
+
+    def __repr__(self):
+        return f'Type({self.type})'
+
 class Integer(Node):
     '''
     Example: 42
@@ -134,7 +150,7 @@ class Const(Node):
     def __init__(self, loc, arg, type=None):
         assert isinstance(loc, Node)
         assert isinstance(arg, Node)
-        assert isinstance(type, (str, NoneType))
+        assert isinstance(type, (Type, NoneType))
         self.loc = loc
         self.arg = arg
         self.type = type
@@ -147,7 +163,7 @@ class Var(Node):
     def __init__(self, loc, arg=None, type=None):
         assert isinstance(loc, Node)
         assert isinstance(arg, (Node, NoneType))
-        assert isinstance(type, (str, NoneType))
+        assert isinstance(type, (Type, NoneType))
         self.loc = loc
         self.arg = arg
         self.type = type
@@ -203,14 +219,6 @@ class Compound(Node):
     def __repr__(self):
         return f'Compound({self.statements})'
 
-class Name(Node):
-    def __init__(self, name):
-        assert isinstance(name, str)
-        self.name = name
-
-    def __repr__(self):
-        return f'Name({self.name})'
-
 class Func(Node):
     is_statement = True
 
@@ -220,7 +228,7 @@ class Func(Node):
         args = args or []
         assert isinstance(args, list)
         assert all(isinstance(_, Node) for _ in args)
-        assert isinstance(ret_type, (NoneType, str))
+        assert isinstance(ret_type, (Type, NoneType))
         self.name = name
         self.args = args
         self.ret_type = ret_type
@@ -242,7 +250,7 @@ class Return(Node):
 class Arg(Node):
     def __init__(self, name, type):
         assert isinstance(name, Name)
-        assert isinstance(type, str)
+        assert isinstance(type, Type)
         self.name = name
         self.type = type
 
@@ -293,7 +301,7 @@ class Enum(Node):
 class Member(Node):
     def __init__(self, name, type=None):
         assert isinstance(name, Name)
-        assert isinstance(type, (str, NoneType))
+        assert isinstance(type, (Type, NoneType))
         self.name = name
         self.type = type
 

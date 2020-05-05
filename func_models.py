@@ -59,15 +59,15 @@ model6 = Block([
         Block([
             Return(BinOp('+', Name('x'), Name('y'))),
         ], indent=' '*4),
-        [Arg(Name('x'), 'int'), Arg(Name('y'), 'int')],
-        'int',
+        [Arg(Name('x'), Type('int')), Arg(Name('y'), Type('int'))],
+        Type('int'),
     ),
     Func(Name('mul'),
         Block([
             Return(BinOp('*', Name('x'), Name('y'))),
         ], indent=' '*4),
-        [Arg(Name('x'), 'int'), Arg(Name('y'), 'int')],
-        'int',
+        [Arg(Name('x'), Type('int')), Arg(Name('y'), Type('int'))],
+        Type('int'),
     ),
     Func(Name('factorial'),
         Block([
@@ -89,8 +89,8 @@ model6 = Block([
                 ], indent=' '*4),
             ),
         ], indent=' '*4),
-        [Arg(Name('n'), 'int')],
-        'int',
+        [Arg(Name('n'), Type('int'))],
+        Type('int'),
     ),
     Func(Name('print_factorials'),
         Block([
@@ -103,14 +103,14 @@ model6 = Block([
             ),
         ], indent=' '*4),
 
-        [Arg(Name('last'), 'int')],
+        [Arg(Name('last'), Type('int'))],
     ),
     Func(Name('main'),
         Block([
             Var(Name('result'), Call(Name('print_factorials'), [Integer(10)])),
             Return(Integer(0)),
         ], indent=' '*4),
-        ret_type='int',
+        ret_type=Type('int'),
     ),
 ])
 

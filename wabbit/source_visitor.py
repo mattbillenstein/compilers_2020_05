@@ -7,6 +7,12 @@ class SourceVisitor:
         m = getattr(self, f'visit_{node.__class__.__name__}')
         return m(node)
 
+    def visit_Name(self, node):
+        return node.name
+
+    def visit_Type(self, node):
+        return node.type
+
     def visit_Integer(self, node):
         return f'{node.value}'
 
@@ -33,12 +39,12 @@ class SourceVisitor:
         return f'print {self.visit(node.arg)}'
 
     def visit_Const(self, node):
-        type = f' {node.type}' if node.type is not None else ''
+        type = f' {self.visit(node.type)}' if node.type is not None else ''
         return f'const {self.visit(node.loc)}{type} = {self.visit(node.arg)}'
 
     def visit_Var(self, node):
         arg = f' = {self.visit(node.arg)}' if node.arg is not None else ''
-        type = f' {node.type}' if node.type is not None else ''
+        type = f' {self.visit(node.type)}' if node.type is not None else ''
         return f'var {self.visit(node.loc)}{type}{arg}'
 
     def visit_Assign(self, node):
@@ -55,16 +61,13 @@ class SourceVisitor:
         s = '; '.join(self.visit(_) for _ in node.statements) + ';'
         return f'{{ {s} }}'
 
-    def visit_Name(self, node):
-        return node.name
-
     def visit_Func(self, node):
         args = ', '.join(self.visit(_) for _ in node.args)
-        type = f' {node.ret_type}' if node.ret_type else ''
+        type = f' {self.visit(node.ret_type)}' if node.ret_type else ''
         return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
 
     def visit_Arg(self, node):
-        return f'{self.visit(node.name)} {node.type}'
+        return f'{self.visit(node.name)} {self.visit(node.type)}'
 
     def visit_Return(self, node):
         return f'return {self.visit(node.value)}'
@@ -82,7 +85,7 @@ class SourceVisitor:
         return f'enum {self.visit(node.name)} {{\n{args}}}\n'
 
     def visit_Member(self, node):
-        type = f'({node.type})' if node.type else ''
+        type = f'({self.visit(node.type)})' if node.type else ''
         return f'{self.visit(node.name)}{type}'
 
 def to_source(node):
