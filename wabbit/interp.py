@@ -48,15 +48,114 @@ from .model import *
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = { }
-    interpret(model, env)
+    return interpret(model, env)
 
-# Internal function to interpret a node in the environment
+@singledispatch
 def interpret(node, env):
-    # Expand to check for different node types
-    ...
     raise RuntimeError(f"Can't interpret {node}")
 
-                             
+rule = interpret.register     # Decorator shortcut
+
+@rule(Statements)
+def interpret_statements(node, env):
+    for stmt in node.statements:
+        interpret(stmt, env)
+
+@rule(Integer)
+def interpret_integer(node, env):
+    # Do the operation
+    return node.value
+
+@rule(Float)
+def interpret_float(node, env):
+    return node.value
+
+@rule(BinOp)
+def interpet_binop(node, env):
+    leftval = interpret(node.left, env)     # Do the left
+    rightval = interpret(node.right, env)   # Do the right
+    # Do the operation
+    if node.op == '+':
+        return leftval + rightval
+    elif node.op == '-':
+        return leftval - rightval
+    elif node.op == '*':
+        return leftval * rightval
+    elif node.op == '/':
+        # Caution: Behavior of division on integers vs floats. (What is Wabbit spec)
+        return leftval / rightval
+    elif node.op == '<':
+        return leftval < rightval
+    elif node.op == '<=':
+        return leftval <= rightval
+    elif node.op == '>':
+        return leftval > rightval
+    elif node.op == '>=':
+        return leftval >= rightval
+    elif node.op == '==':
+        return leftval == rightval
+    elif node.op == '!=':
+        return leftval != rightval
+    else:
+        raise RuntimeError(f'Unsupported operator {node.op}')
+
+@rule(UnaryOp)
+def interpret_unary_op(node, env):
+    opval = interpret(node.operand, env)
+    if node.op == '+':
+        return opval
+    elif node.op == '-':
+        return -opval
+    else:
+        raise RuntimeError(f'Unsupported operator {node.op}')
+
+@rule(LoadLocation)
+def interpret_load_location(node, env):
+    # Feels wrong. Having to look inside location to get a name.
+    # Think about.
+    return env[node.location.name]
+
+@rule(PrintStatement)
+def interpret_print_statement(node, env):
+    value = interpret(node.expression, env)
+    print(value)
+
+@rule(ConstDefinition)
+def interpret_const_definition(node, env):
+    value = interpret(node.value, env)
+    env[node.name] = value
+
+@rule(VarDefinition)
+def interpret_var_definition(node, env):
+    if node.value:
+        value = interpret(node.value, env)
+    else:
+        # What if there's no value????
+        # Is there a default value?  If so, what is it?
+        value = 0   # ???
+    env[node.name] = value
+
+@rule(AssignmentStatement)
+def interpret_assignment(node, env):
+    '''
+    location = expression;
+    '''
+    exprval = interpret(node.expression, env)     # Right side
+    # This feels wrong.  Having to go down two levels into a "location"
+    # to get the name.  Think about.
+    env[node.location.name] = exprval
+
+@rule(IfStatement)
+def interprete_if_statement(node, env):
+    # if test { consequence }
+    testval = interpret(node.test, env)     # Figure out the test
+    if testval:
+        interpret(node.consequence, env)
+    else:
+        interpret(node.alternative, env)
+
+
+
                              
 
         

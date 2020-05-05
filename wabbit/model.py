@@ -331,6 +331,9 @@ def to_source(node):
 
 # Visitor Pattern
 class NodeVisitor:
+    def __init__(self):
+        self.env = { } 
+
     def visit(self, node):
         methname = f'visit_{node.__class__.__name__}'   
         getattr(self, methname)(node)   # A bit more natural for Python

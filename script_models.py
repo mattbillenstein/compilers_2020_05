@@ -21,6 +21,7 @@
 
 
 from wabbit.model import *
+from wabbit.interp import interpret_program
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -36,6 +37,8 @@ expr_model  = BinOp('+', Integer(2),
 # Can you turn it back into source code?
 print('------ Simple Expression')
 print(to_source(expr_model))
+print("------ Interpret Expression")
+print(interpret_program(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -77,6 +80,8 @@ model1 = Statements([
 # print(to_source(model1))
 print('------ Model 1')
 print(to_source(model1))
+print("------ Interpret 1")
+interpret_program(model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -100,6 +105,8 @@ model2 = Statements([
 
 print('------ Model 2')
 print(to_source(model2))
+print('------ Interpret 2')
+interpret_program(model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -130,6 +137,8 @@ model3 = Statements([
 
 print('------ Model 3')
 print(to_source(model3))
+print('------ Interpret 3')
+interpret_program(model3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
