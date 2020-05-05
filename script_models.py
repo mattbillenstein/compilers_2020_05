@@ -24,6 +24,12 @@
 
 from wabbit.model import *
 
+def compare_source(source, expected):
+    if source.strip('\n') != expected.strip('\n'):
+        print(repr(source.strip('\n')))
+        print(repr(expected.strip('\n')))
+        raise ValueError('Mismatched Source')
+
 # ----------------------------------------------------------------------
 # Simple Expression
 #
@@ -39,8 +45,7 @@ expr_model  = Block([
     ),
 ])
 
-s = to_source(expr_model)
-assert s.strip('\n') == expr_source.strip('\n'), (s, expr_source)
+compare_source(to_source(expr_model), expr_source)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -63,8 +68,7 @@ model1 = Block([
     Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), Integer(-4))),
 ], indent=' '*4)
 
-s = to_source(model1) 
-assert s.strip('\n') == source1.strip('\n'), (s, source1)
+compare_source(to_source(model1), source1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -86,8 +90,7 @@ model2 = Block([
     Print(Name('tau')),
 ], indent=' '*4)
 
-s = to_source(model2)
-assert s.strip('\n') == source2.strip('\n'), (s, source2)
+compare_source(to_source(model2), source2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -113,8 +116,7 @@ model3 = Block([
     )
 ], indent=' '*4)
 
-s = to_source(model3)
-assert s.strip('\n') == source3.strip('\n'), (s, source3)
+compare_source(to_source(model3), source3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -145,8 +147,7 @@ model4 = Block([
     )
 ], indent=' '*4)
 
-s = to_source(model4)
-assert s.strip('\n') == source4.strip('\n'), (s, source4)
+compare_source(to_source(model4), source4)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -174,10 +175,8 @@ model5 = Block([
     Print(Name('y')),
 ], indent=' '*4)
 
-s = to_source(model5)
-assert s.strip('\n') == source5.strip('\n'), (s, source5)
+compare_source(to_source(model5), source5)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
-
