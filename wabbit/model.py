@@ -235,7 +235,7 @@ class Return(Node):
     def __init__(self, value):
         assert isinstance(value, Node)
         self.value = value
-    
+
     def __repr__(self):
         return f'Return({self.value})'
 
@@ -245,7 +245,7 @@ class Arg(Node):
         assert isinstance(type, str)
         self.name = name
         self.type = type
-    
+
     def __repr__(self):
         return f'Arg({self.name}, {self.type})'
 
@@ -257,7 +257,21 @@ class Call(Node):
         assert all(isinstance(_, Node) for _ in args)
         self.name = name
         self.args = args
-    
+
     def __repr__(self):
         args = (', ' + repr(self.args)) if self.args else ''
         return f'Call({self.name}{args})'
+
+class Struct(Node):
+    is_statement = True
+
+    def __init__(self, name, args):
+        assert isinstance(name, Name)
+        assert isinstance(args, list)
+        assert all(isinstance(_, Node) for _ in args)
+        assert len(args) > 0
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return f'Struct({self.name}, {self.args})'

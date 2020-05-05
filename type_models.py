@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # type_models.py
 #
 # The WabbitType language extends WabbitScript with support for
@@ -11,6 +13,7 @@
 #
 
 from wabbit.model import *
+from wabbit.source_visitor import compare_source
 
 # -----------------------------------------------------------------------------
 # Program 7: Structures.  The following program defines and uses a structure.
@@ -20,8 +23,8 @@ from wabbit.model import *
 
 source7 = '''
 struct Fraction {
-   numerator int;
-   denominator int;
+    numerator int;
+    denominator int;
 }
 
 func frac_mul(a Fraction, b Fraction) Fraction {
@@ -39,7 +42,35 @@ print c.numerator;
 print c.denominator;
 '''
 
-model7 = None
+model7 = Block([
+    Struct(Name('Fraction'), [
+        Arg(Name('numerator'), 'int'),
+        Arg(Name('denominator'), 'int'),
+    ]),
+    Func(Name('frac_mul'),
+        Block([
+            Return(
+                Call(Name('Fraction'), [
+                    BinOp('*', Name('a.numerator'), Name('b.numerator')),
+                    BinOp('*', Name('a.denominator'), Name('b.denominator')),
+                ]),
+            ),
+        ], indent=' '*4),
+        [Arg(Name('a'), 'Fraction'), Arg(Name('b'), 'Fraction')],
+        ret_type='Fraction',
+    ),
+    Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
+    Var(Name('y'), Call(Name('Fraction'), [Integer(3), Integer(8)])),
+    Var(Name('c'), Call(Name('frac_mul'), [Name('x'), Name('y')])),
+    Print(Name('c.numerator')),
+    Print(Name('c.denominator')),
+    Assign(Name('c.numerator'), BinOp('/', Name('c.numerator'), Integer(4))),
+    Assign(Name('c.denominator'), BinOp('/', Name('c.denominator'), Integer(4))),
+    Print(Name('c.numerator')),
+    Print(Name('c.denominator')),
+])
+
+compare_source(model7, source7)
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.
@@ -89,4 +120,6 @@ while let Integer(x) = a {
 }
 '''
 
-model8 = None
+model8 = Block([])
+
+compare_source(model8, source8)

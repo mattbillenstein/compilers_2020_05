@@ -73,6 +73,10 @@ class SourceVisitor:
         args = ', '.join(self.visit(_) for _ in node.args)
         return f'{self.visit(node.name)}({args})'
 
+    def visit_Struct(self, node):
+        args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'
+        return f'struct {self.visit(node.name)} {{\n{args}}}\n'
+
 def to_source(node):
     return SourceVisitor().visit(node)
 
@@ -81,7 +85,16 @@ def compare_source(source, expected):
     if isinstance(source, Node):
         source = to_source(source)
 
-    if source.strip('\n') != expected.strip('\n'):
-        print(repr(source.strip('\n')))
-        print(repr(expected.strip('\n')))
+    s = source.strip('\n')
+    e = expected.strip('\n')
+    if s != e:
+        print(repr(s))
+        print(repr(e))
+        i = 0
+        for a, b in zip(s, e):
+            if a != b:
+                print(' ' * (i+1), '^')
+                print(a, b)
+                break
+            i += len(repr(a)) - 2
         raise ValueError('Mismatched Source')
