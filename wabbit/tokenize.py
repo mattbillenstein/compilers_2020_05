@@ -135,7 +135,7 @@ class WabbitLexer(Lexer):
         FLOAT, INTEGER, NAME, CHAR, PRINT, IF, CONST, VAR, ELSE, WHILE, BREAK, CONTINUE, COMMA,
         #LOOKUP,
         DCOLON,
-        DOT
+        DOT, FUNC, ARROW, MATCH, STRUCT, TRUE, FALSE, LOR, LAND, LNOT
         }
     ignore = ' \t\n'       # Ignore these (between tokens)
     ignore_comment = r'//.*'
@@ -177,10 +177,16 @@ class WabbitLexer(Lexer):
     NAME['while'] = WHILE
     NAME['break'] = BREAK
     NAME['continue'] = CONTINUE
+    NAME['func'] = FUNC
+    NAME['match'] = MATCH
+    NAME['struct'] = STRUCT
+    NAME['true'] = TRUE
+    NAME['false'] = FALSE
 
 
 
     # Put longer patterns first
+    ARROW = r'=>'
     LE = r'<='
     LT = r'<'               # Order matters a lot. Definition order is the order matches are tried.
     GE = r'>='
@@ -193,6 +199,9 @@ class WabbitLexer(Lexer):
     RPAREN = r'\)'
     LBRACE = r'{'
     RBRACE = r'}'
+    LOR = r'\|\|'
+    LAND = r'&&'
+    LNOT = r'!'
 
 def tokenize(text):
     lexer = WabbitLexer()
