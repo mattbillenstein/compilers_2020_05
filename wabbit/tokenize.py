@@ -98,7 +98,6 @@ class WabbitLexer(Lexer):
         LT,
         LE,
         EQ,
-        DECIMAL,
         GT,
         GE,
         EQ,
@@ -122,22 +121,21 @@ class WabbitLexer(Lexer):
         BREAK,
         FLOAT,
         ELSE,
+        LAND,
+        LOR,
+        LNOT,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
     ignore_line_comment = r"//.*"
     ignore_block_comment = r"/\*((.|\n))*?\*/"
 
-    CONST = r"const"
-    VAR = r"var"
     # Specify tokens as regex rules
     PLUS = r"\+"
     MINUS = r"-"
     TIMES = r"\*"
     DIVIDE = r"/"
-    DECIMAL = r"\d+\.\d+"  # 23.45
     FLOAT = r"(\d+\.\d*)|(\d*\.\d+)"
     INTEGER = r"\d+"
-    CHAR = r"\'.*\'"
 
     # Put longer patterns first
     LE = r"<="
@@ -152,20 +150,39 @@ class WabbitLexer(Lexer):
     RPAREN = r"\)"
     LBRACE = r"{"
     RBRACE = r"}"
+    LAND = r"&&"
+    LOR = r"\|\|"
+    LNOT = r"!"
 
-    ELSE = r"else"
-    WHILE = r"while"
-    BREAK = r"break"
-    CONTINUE = r"continue"
-    IF = r"if"
-    TRUE = r"true"
-    FALSE = r"false"
-    PRINT = r"print"
+    # Names/Identifies
+    # Text starting with a letter or '_', followed by any number number of
+    # letters, digits, or underscores.
+    # Examples:  'abc' 'ABC' 'abc123' '_abc' 'a_b_c'
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
+    # These are special cases. If the matched text for NAME exactly matches the
+    # supplied string the token type is changed to the value on the right
+    NAME["const"] = CONST
+    NAME["var"] = VAR
+    NAME["else"] = ELSE
+    NAME["while"] = WHILE
+    NAME["break"] = BREAK
+    NAME["continue"] = CONTINUE
+    NAME["if"] = IF
+    NAME["true"] = TRUE
+    NAME["false"] = FALSE
+    NAME["print"] = PRINT
+
+    CHAR = r"\'.{1,4}\'"
 
     @_(CHAR)
     def CHAR(self, token):
         token.value = token.value.replace("'", "")
+        if len(token.value) == 1:
+            return token
+
+        if token.value[0] != "\\":
+            self.error(token)
+
         return token
 
     @_(INTEGER)
