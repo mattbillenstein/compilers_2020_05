@@ -8,6 +8,7 @@ from wabbit.model import (
     If,
     Integer,
     Name,
+    Node,
     Print,
     UnaryOp,
     VarDef,
@@ -22,16 +23,16 @@ class SyntaxChecker:
     """
 
     @typechecked
-    def visit(self, node, **kwargs):
+    def visit(self, node: Node, **kwargs):
         method_name = "visit_" + node.__class__.__name__
         method = getattr(self, method_name, None)
         if method:
             method(node, **kwargs)
         else:
             if hasattr(node, "left"):
-                self.visit(node.left)
+                self.visit(node.left)  # type: ignore
             if hasattr(node, "right"):
-                self.visit(node.right)
+                self.visit(node.right)  # type: ignore
 
     @typechecked
     def visit_VarDef(self, node: VarDef):

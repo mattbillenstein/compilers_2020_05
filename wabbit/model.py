@@ -2,13 +2,17 @@ from dataclasses import dataclass
 from typing import Any, Union, Optional, List
 
 
-class Statement:
+class Node:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__dict__})"
 
 
+class Statement(Node):
+    pass
+
+
 @dataclass
-class Statements:
+class Statements(Node):
     statements: List[Statement]
 
 
