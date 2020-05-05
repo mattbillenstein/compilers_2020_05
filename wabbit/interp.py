@@ -47,18 +47,112 @@ from .model import *
 
 def interpret_program(model):
     # Make the initial environment (a dict)
-    env = { }
-    interpret(model, env)
+    env = {}
+    interpreter = Interpreter(env)
+    interpreter.run(model)
 
-# Internal function to interpret a node in the environment
-def interpret(node, env):
-    # Expand to check for different node types
-    ...
-    raise RuntimeError(f"Can't interpret {node}")
+class Storage():
+    def __init__(self, _type, const):
+        self._type = _type
+        self.const = const
 
-                             
-                             
 
-        
-        
-        
+class Interpreter(ModelVisitor):
+    def __init__(self, env):
+        self.env = env
+
+    def visit_Location(self, node):
+        return self.env[node.identifier]
+
+    def visit_DeclLocation(self, node):
+        if node.identifier in self.env.keys():
+            raise
+        self.env[node.identifier] = Storage(node._type, node.const)
+        return self.visit_Location(node)
+
+    def visit_ScalarNode(self, node):
+        return node.value
+
+    def visit_AssignStatement(self, node):
+        storage = node.location.visit(self)
+        storage.assign(node.value)
+        return node.value
+
+    def visit_BinOp(self, node):
+        lhs = node.left.visit(self)
+        rhs = node.right.visit(self)
+        if node.op == '>':
+            return lhs > rhs
+        elif node.op == '<':
+            return lhs < rhs
+        elif node.op == '==':
+            return lhs == rhs
+        elif node.op == '!=':
+            return lhs != rhs
+        elif node.op == '<=':
+            return lhs <= rhs
+        elif node.op == '>=':
+            return lhs >= rhs
+        elif node.op == '||':
+            return lhs or rhs  # XXX short-circuit
+        elif node.op == '&&':
+            return lhs and rhs  # XXX short-circuit
+        elif node.op == '+':
+            return lhs + rhs
+        elif node.op == '/':
+            return lhs / rhs
+        elif node.op == '*':
+            return lhs * rhs
+        elif node.op == '-':
+            return lhs - rhs
+        else:
+            raise
+
+    def visit_UnOp(self, node):
+        rhs = node.right.visit(self)
+        if node.op == '!':
+            return not rhs
+        elif node.op == '+':
+            return rhs
+        elif node.op == '-':
+            return rhs * -1
+        else:
+            raise
+
+    def visit_PrintStatement(self, node):
+        print(node.expr.visit(self))
+        return None
+
+    def visit_ConditionalStatement(self, node):
+        block = None
+        if node.cond.visit(self):
+            block = self.blockT
+        else:
+            block = self.blockF
+        for stmt in block:
+            stmt.visit(self)
+        return None
+
+    def visit_ConditionalLoopStatement(self, node):
+        while node.cond.visit(self):
+            for stmt in node.block:
+                stmt.visit(self)
+        return None
+
+    def visit_BlockExpression(self, node):
+        ret = None
+        for stmt in node.block:
+            ret = stmt.visit(self)
+        return ret
+
+    def visit_ExpressionStatement(self, node):
+        return node.statement.visit(self)
+
+    def visit_FuncCall(self, node):
+        pass  # XXX
+
+    def visit_FuncDeclStatement(self, node):
+        pass  # XXX
+
+    def visit_ReturnStatement(self, node):
+        pass  # XXX

@@ -128,10 +128,10 @@ class AssignStatement(StatementNode):
     '''
     def __init__(self, location: Location, expr: ExpressionNode):
         self.location = location
-        self.expr = expr
+        self.value = value
 
     def __repr__(self):
-        return f'Assign({self.location}, {self.expr})'
+        return f'Assign({self.location}, {self.value})'
 
     def visit(self, visitor):
         return visitor.visit_AssignStatement(self)
