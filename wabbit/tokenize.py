@@ -1,7 +1,7 @@
-# tokenizer.py
+# wabbit/tokenize.py
 #
-# The role of a tokenizer is to turn raw text into recognized symbols 
-# known as tokens. 
+# The role of a tokenizer is to turn raw text into recognized symbols
+# known as tokens.
 #
 # The following set of tokens are defined for "WabbitScript".  Later
 # parts of the project require you to add more tokens.  The suggested
@@ -9,7 +9,7 @@
 #
 # Reserved Keywords:
 #     CONST   : 'const'
-#     VAR     : 'var'  
+#     VAR     : 'var'
 #     PRINT   : 'print'
 #     BREAK   : 'break'
 #     CONTINUE: 'continue'
@@ -50,7 +50,7 @@
 #     LAND     : '&&'
 #     LOR      : '||'
 #     LNOT     : '!'
-#    
+#
 # Miscellaneous Symbols
 #     ASSIGN   : '='
 #     SEMI     : ';'
@@ -66,8 +66,8 @@
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
-#      lineno: Illegal char 'c'         
-#      lineno: Unterminated character constant    
+#      lineno: Illegal char 'c'
+#      lineno: Unterminated character constant
 #      lineno: Unterminated comment
 #
 # ----------------------------------------------------------------------
@@ -75,11 +75,70 @@
 
 # High level function that takes input source text and turns it into tokens.
 # This is a natural place to use some kind of generator function.
+# Sample:
+#
+# for tok in tokenize("print 2 + 3 * 4;"):
+#     print(tok)
+#
+
+# Tokenizing is based solved.  Not interesting.
+# Tools available.
+
+from sly import Lexer  # Disclaimer: I created SLY
+
+
+class WabbitLexer(Lexer):
+    # Valid token names
+    tokens = {
+        PLUS,
+        MINUS,
+        TIMES,
+        DIVIDE,
+        NUMBER,
+        LT,
+        LE,
+        EQ,
+        DECIMAL,
+        GT,
+        GE,
+        EQ,
+        NE,
+        ASSIGN,
+        LPAREN,
+        RPAREN,
+        LBRACE,
+        RBRACE,
+        SEMI,
+    }
+    ignore = " \t\n"  # Ignore these (between tokens)
+
+    # Specify tokens as regex rules
+    PLUS = r"\+"
+    MINUS = r"-"
+    TIMES = r"\*"
+    DIVIDE = r"/"
+    DECIMAL = r"\d+\.\d+"  # 23.45
+    NUMBER = r"\d+"
+
+    # Put longer patterns first
+    LE = r"<="
+    LT = r"<"  # Order matters a lot. Definition order is the order matches are tried.
+    GE = r">="
+    GT = r">"
+    EQ = r"=="
+    NE = r"!="
+    ASSIGN = r"="
+    SEMI = r";"
+    LPAREN = r"\("
+    RPAREN = r"\)"
+    LBRACE = r"{"
+    RBRACE = r"}"
+
 
 def tokenize(text):
-    ...
-    yield tok
-    ...
+    lexer = WabbitLexer()
+    return lexer.tokenize(text)
+
 
 # Main program to test on input files
 def main(filename):
@@ -89,13 +148,9 @@ def main(filename):
     for tok in tokenize(text):
         print(tok)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
 
-    
-            
-        
-
-            
-    
