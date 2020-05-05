@@ -94,6 +94,13 @@ class ConditionalLoopStatement(StatementNode):
     cond: ExpressionNode
     block: List[StatementNode]
 
+@dataclass
+class ContinueLoopStatement(StatementNode):
+    pass
+
+@dataclass
+class BreakLoopStatement(StatementNode):
+    pass
 
 @dataclass
 class BlockExpression(ExpressionNode):

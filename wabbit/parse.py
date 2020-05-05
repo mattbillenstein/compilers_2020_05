@@ -1,127 +1,160 @@
-# parse.py
-#
-# Wabbit parser.  The parser needs to construct the data model or an
-# abstract syntax tree from text input.  The grammar shown here represents
-# WabbitScript--a subset of the full Wabbit language.  It's written as
-# a EBNF.  You will need to expand the grammar to include later features.
-#
-# Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
-#
-# The following conventions are used:
-# 
-#       ALLCAPS       --> A token
-#       { symbols }   --> Zero or more repetitions of symbols
-#       [ symbols ]   --> Zero or one occurences of symbols (optional)
-#       s | t         --> Either s or t (a choice)
-#
-#
-# statements : { statement }
-#
-# statement : print_statement
-#           | assignment_statement
-#           | variable_definition
-#           | const_definition
-#           | if_statement
-#           | while_statement
-#           | break_statement
-#           | continue_statement
-#           | expr
-#
-# print_statement : PRINT expr SEMI
-#
-# assignment_statement : location ASSIGN expr SEMI
-#
-# variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
-#                     | VAR NAME type [ ASSIGN expr ] SEMI
-#
-# const_definition : CONST NAME [ type ] ASSIGN expr SEMI
-#
-# if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
-#
-# while_statement : WHILE expr LBRACE statements RBRACE
-#
-# break_statement : BREAK SEMI
-#
-# continue_statement : CONTINUE SEMI
-#
-# expr : expr PLUS expr        (+)
-#      | expr MINUS expr       (-)
-#      | expr TIMES expr       (*)
-#      | expr DIVIDE expr      (/)
-#      | expr LT expr          (<)
-#      | expr LE expr          (<=)
-#      | expr GT expr          (>)
-#      | expr GE expr          (>=)
-#      | expr EQ expr          (==)
-#      | expr NE expr          (!=)
-#      | expr LAND expr        (&&)
-#      | expr LOR expr         (||)
-#      | PLUS expr
-#      | MINUS expr
-#      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
-#      | location
-#      | literal
-#      | LBRACE statements RBRACE 
-#       
-# literal : INTEGER
-#         | FLOAT
-#         | CHAR
-#         | TRUE
-#         | FALSE
-#         | LPAREN RPAREN   
-# 
-# location : NAME
-#
-# type      : NAME
-#
-# empty     :
-# ======================================================================
-
-# How to proceed:  
-#
-# At first glance, writing a parser might look daunting. The key is to
-# take it in tiny pieces.  Focus on one specific part of the language.
-# For example, the print statement.  Start with something really basic
-# like printing literals:
-#
-#     print 1;
-#     print 2.5;
-#
-# From there, expand it to handle expressions:
-#
-#     print 2 + 3 * -4;
-#
-# Then, expand it to include variable names
-#
-#     var x = 3;
-#     print 2 + x;
-#
-# Keep on expanding to more and more features of the language.  A good
-# trajectory is to follow the programs found in the top level
-# script_models.py file.  That is, write a parser that can recognize the
-# source code for each part and build the corresponding model.  You
-# will find yourself filling in pieces here throughout the project.
-# It's ok to work piecemeal.
-#
-# Usage of tools:
-#
-# If you are highly motivated and want to know how a parser works at a
-# low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
-#
-#    - SLY (https://github.com/dabeaz/sly), 
-#    - PLY (https://github.com/dabeaz/ply),
-#    - ANTLR (https://www.antlr.org).
-
 from .model import *
-from .tokenize import tokenize
+from .tokenize import tokenize, WabbitLexer
 
-# Top-level function that runs everything    
+from sly import Parser
+
+class WabbitParser(Parser):
+    tokens = WabbitLexer.tokens
+    precedence = (
+        ('left', PLUS, MINUS)
+        ('left', TIMES, DIVIDE)
+        ('left', LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT)
+    )
+    
+    def __init__(self):
+        self.names = {}
+
+    @_('{ statement }')
+    def statements():
+        pass
+
+    @_('print_statement')
+    def statement(self, p):
+        pass
+
+    @_('assignment_statement')
+    def statement():
+        pass
+
+    @_('variable_definition')
+    def statement():
+        pass
+
+    @_('if_statement')
+    def statement():
+        pass
+
+    @_('while_statement')
+    def statement():
+        pass
+
+    @_('break_statement')
+    def statement():
+        pass
+
+    @_('continue_statement')
+    def statement():
+        pass
+
+    @_('expr')
+    def statement():
+        pass
+
+    @_('PRINT expr SEMI')
+    def print_statement(self, p):
+        return PrintStatement(p.expr)
+
+    @_('location ASSIGN expr SEMI')
+    def assignment_statement(self, p):
+        return AssignStatement(p.location, p.expr)
+
+    @_('[ VAR | CONST ] NAME [ type ] [ ASSIGN expr ] SEMI')
+    def variable_definition(self, p):
+        return AssignStatement(DeclStorageLocation(p.NAME, p.type, p.VAR/p.CONST), p.expr)
+
+    @_('IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
+    def while_statement(self, p):
+        return ConditionalLoopStatement(p.expr, p.statements, p.statements)
+
+    @_('CONTINUE SEMI')
+    def continue_statement(self, p):
+        return ContinueLoopStatement()
+
+    @_('BREAK SEMI')
+    def break_statement(self, p):
+        return BreakLoopStatement()
+
+    @_('expr PLUS expr',
+       'expr MINUS expr',
+       'expr TIMES expr',
+       'expr DIVIDE expr',
+       'expr LT expr',
+       'expr LE expr',
+       'expr GT expr',
+       'expr GE expr',
+       'expr EQ expr',
+       'expr NE expr',
+       'expr LAND expr',
+       'expr LOR expr',
+       'expr LNOT expr')
+    def expr(self, p):
+        return BinOp(p[1], p.expr0, p.expr1)
+
+    @_('LPAREN expr RPAREN')
+    def expr(self, p):
+        return p.expr
+
+    @_('PLUS expr',
+       'MINUS expr',
+       'LNOT expr')
+    def expr(self, p):
+        return UnOp(p[1], p.expr)
+
+    @_('location')
+    def expr(self, p):
+        return NotImplementedError
+
+    @_('literal')
+    def expr(self, p):
+        return NotImplementedError
+
+    @_('LBRACE statements RBRACE')
+    def expr(self, p):
+        return BlockExpression(p.statements)
+
+    @_('INTEGER')
+    def literal(self, p):
+        return Integer(p.INTEGER)
+
+    @_('FLOAT')
+    def literal(self, p):
+        return Float(p.FLOAT)
+
+    @_('CHAR')
+    def literal(self, p):
+        return Char(p.CHAR)
+
+    @_('TRUE')
+    def literal(self, p):
+        return True
+
+    @_('FALSE')
+    def literal(self, p):
+        return False
+
+    @_('LPAREN RPAREN')
+    def literal(self, p):
+        return NotImplementedError
+
+    @_('NAME')
+    def location(self, p):
+        return NotImplementedError
+
+    @_('NAME')
+    def type(self, p):
+        return NotImplementedError
+
+    @_('')
+    def empty(self, p):
+        pass
+
+
+# Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
     model = parse_tokens(tokens)     # You need to implement this part
     return model
+
 
 # Example of a main program
 def parse_file(filename):
@@ -129,11 +162,14 @@ def parse_file(filename):
         text = file.read()
     return parse_source(text)
 
+
+def parse_tokens(tokens):
+    parser = WabbitParser()
+    return parser.parse(tokens)
+
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) != 2:
         raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
-    print(model)
-
-
+    print(parse_file(sys.argv[1]))
