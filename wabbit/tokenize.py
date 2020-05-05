@@ -72,30 +72,77 @@
 #
 # ----------------------------------------------------------------------
 
-
 import re
+
+import utils
 
 TOKENS = [
     ("PLUS", r"\+"),
+    ("MINUS", "-"),
+    ("TIMES", r"\*"),
+    ("DIVIDE", "/"),
+    ("LE", "<="),
+    ("LT", "<"),
+    ("GE", ">="),
+    ("GT", ">"),
+    ("EQ", "=="),
+    ("NE", "!="),
+    ("LNOT", "!"),
+    ("LAND", "&&"),
+    ("LOR", r"\|\|"),
 ]
+
+IGNORE = " "
+
+
+# def print(*args):
+#     pass
 
 
 def tokenize(text):
     text = text.rstrip()
     while text:
+        if match := re.match(IGNORE, text):
+            text = text[match.end() :]
+            continue
+
         for name, regexp in TOKENS:
             if match := re.match(regexp, text):
                 yield name, match.string[: match.end()]
                 text = text[match.end() :]
                 break
         else:
-            raise RuntimeError(f"Unrecognized input: {text[:10]}...")
+            raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
 
 
 def test_tokenizer():
-    test_cases = [("+", [("PLUS", "+")])]
+    test_cases = [
+        ("+", [("PLUS", "+")]),
+        ("+!", [("PLUS", "+"), ("LNOT", "!")]),
+        (
+            "+ - * / < <= > >= == != && || !",
+            [
+                ("PLUS", "+"),
+                ("MINUS", "-"),
+                ("TIMES", "*"),
+                ("DIVIDE", "/"),
+                ("LT", "<"),
+                ("LE", "<="),
+                ("GT", ">"),
+                ("GE", ">="),
+                ("EQ", "=="),
+                ("NE", "!="),
+                ("LAND", "&&"),
+                ("LOR", "||"),
+                ("LNOT", "!"),
+            ],
+        ),
+    ]
     for source, expected_tokens in test_cases:
-        assert list(tokenize(source)) == expected_tokens
+        actual_tokens = list(tokenize(source))
+        if actual_tokens != expected_tokens:
+            utils.delta(expected_tokens, actual_tokens)
+        assert actual_tokens == expected_tokens
 
 
 # Main program to test on input files
