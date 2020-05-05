@@ -51,7 +51,6 @@
 class Node:
     pass
 
-
 class Expression(Node):
     """An expression is something that can be used on the left-hand-side
     of an assignment.
@@ -61,12 +60,14 @@ class Expression(Node):
 
 class Statement(Node):
     """A statement is a single complete instruction"""
-    pass
+    def __init__(self):
+        raise NotImplementedError("Do you mean Statements (plural)?")
 
 
-class ManyStatements(Node):
-    """A collection of statements"""
+class Definition(Statement):
+    """A variable definition"""
     pass
+
 
 # =======================================================
 #
@@ -81,9 +82,14 @@ class Assignment(Statement):
     def __init__(self, location, expression):
         self.location = location
         self.expression = expression
+        self.is_valid()
 
     def __repr__(self):
         return f"Assignment({self.location}, {self.expression})"
+
+    def is_valid(self):
+        assert isinstance(self.location, Name)
+        assert isinstance(self.expression, Expression)
 
 
 class BinOp(Expression):
@@ -94,54 +100,84 @@ class BinOp(Expression):
         self.op = op
         self.left = left
         self.right = right
+        self.is_valid()
 
     def __repr__(self):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
+    def is_valid(self):
+        assert self.op in {'+', '*', '-', '/', '<', '>', '>=', '<=', '=='}
+        assert isinstance(self.left, Expression)
+        assert isinstance(self.right, Expression)
 
-class ConstantDefinition(Statement):
+class Const(Definition):
     """Examples:
         const pi = 3.14159;
         const tau float;
     """
     def __init__(self, location, type, expression):
-        assert isinstance(type, Type)
         self.type = type
         self.location = location
         self.expression = expression
+        self.is_valid()
 
     def __repr__(self):
         if self.type:
-            return ("ConstantDefinition(" +
+            return ("Const(" +
                 f"{self.location}, {self.type}, {self.expression})")
         else:
-            return ("ConstantDefinition(" +
+            return ("Const(" +
                 f"{self.location}, {self.expression})")
+
+    def is_valid(self):
+        assert isinstance(self.type, Type)
+        assert isinstance(self.location, Name)
+        assert isinstance(self.expression, Expression)
+
+
+class Compound(Expression):
+    '''
+    A series of statements or expressions serving as a single expression.
+    '''
+    def __init__(self, *statements):
+        self.statements = statements
+        self.is_valid()
+
+    def __repr__(self):
+        return f'Compound({self.statements})'
+
+    def is_valid(self):
+        assert all(isinstance(st, (Expression, Statement)) for st in self.statements)
 
 
 class Float(Expression):
     def __init__(self, value):
-        assert isinstance(value, float)
         self.value = value
 
     def __repr__(self):
         return f"Float({self.value})"
 
+    def is_valid(self):
+        assert isinstance(self.value, float)
 
-class IfStatement(Statement):
+
+class If(Statement):
     def __init__(self, condition, result, alternative=None):
-        assert isinstance(condition, Expression)
-        assert isinstance(result, (Statement, ManyStatements))
-        assert alternative is None or isinstance(alternative, (Statement, ManyStatements))
         self.condition = condition
         self.result = result
         self.alternative = alternative
+        self.is_valid()
 
     def __repr__(self):
         if self.alternative is None:
-            return (f"IfStatement({self.condition}, {self.result})")
+            return (f"If({self.condition}, {self.result})")
         else:
-            return (f"IfStatement({self.condition}, {self.result}), {self.alternative}")
+            return (f"If({self.condition}, {self.result}), {self.alternative}")
+
+    def is_valid(self):
+        assert isinstance(self.condition, Expression)
+        assert isinstance(self.result, (Statement, Statements))
+        assert self.alternative is None or isinstance(self.alternative, (Statement, Statements))
 
 
 class Integer(Expression):
@@ -149,11 +185,13 @@ class Integer(Expression):
     Example: 42
     """
     def __init__(self, value):
-        assert isinstance(value, int)
         self.value = value
 
     def __repr__(self):
         return f"Integer({self.value})"
+
+    def is_valid(self):
+        assert isinstance(self.value, int)
 
 
 class Name(Expression):
@@ -162,33 +200,44 @@ class Name(Expression):
     """
     def __init__(self, location):
         self.location = location
+        self.is_valid()
 
     def __repr__(self):
         return f"Name({self.location})"
 
-class Program(ManyStatements):
-    """
-    A collection of statements
-    """
-    def __init__(self, *statements):
-        self.statements = tuple(statements)
-        assert all(isinstance(st, Statement) for st in self.statements)
-
-    def __repr__(self):
-        lines = [to_source(st) for st in self.statements]
-        return f"Program{self.statements}"
+    def is_valid(self):
+        assert isinstance(self.location, str)
 
 
-class PrintStatement(Statement):
+class Print(Statement):
     """
     print expression
     """
     def __init__(self, expression):
-        assert isinstance(expression, (Expression, str))
         self.expression = expression
+        self.is_valid()
 
     def __repr__(self):
-        return f"PrintStatement({self.expression})\n"
+        return f"Print({self.expression})\n"
+
+    def is_valid(self):
+        assert isinstance(self.expression, (Expression, str))
+
+
+class Statements(Statement):
+    """
+    A sequence of statements
+    """
+    def __init__(self, *statements):
+        self.statements = statements
+        self.is_valid()
+
+    def __repr__(self):
+        lines = [to_source(st) for st in self.statements]
+        return f"Statements{self.statements}"
+
+    def is_valid(self):
+        assert all(isinstance(st, Statement) for st in self.statements)
 
 
 class Type(Node):
@@ -196,43 +245,69 @@ class Type(Node):
     Example: float
     """
     def __init__(self, type):
-        assert type is None or isinstance(type, str)
         self.type = type
+        self.is_valid()
 
     def __repr__(self):
         return f"Type({self.type})"
+
+    def is_valid(self):
+        assert self.type is None or isinstance(self.type, str)
 
 class UnaryOp(Expression):
     """
     Example: - value
     """
     def __init__(self, op, value):
-        assert isinstance(op, str)
-        assert isinstance(value, Expression)
         self.op = op
         self.value = value
+        self.is_valid()
 
     def __repr__(self):
         return f"UnaryOp({self.op}, {self.value})"
 
+    def is_valid(self):
+        assert self.op == "-"
+        assert isinstance(self.value, Expression)
 
-class VariableDefinition(Statement):
+
+class Var(Definition):
     """Examples:
         var int pi;
     """
-    def __init__(self, type, location, expression=''):
+    def __init__(self, location, type, expression=''):
         self.type = type
         self.location = location
         self.expression = expression
+        self.is_valid()
 
     def __repr__(self):
         if self.expression:
-            return ("VariableDefinition(" +
+            return ("Var(" +
                 f"{self.location}, {self.type}, {self.expression})")
         else:
-            return ("VariableDefinition(" +
+            return ("Var(" +
                 f"{self.location}, {self.type})")
 
+    def is_valid(self):
+        print("self.type = ", self.type)
+        assert isinstance(self.type, Type)
+        assert isinstance(self.location, Name)
+        assert isinstance(self.expression, (str, Expression))
+
+
+class While(Statement):
+    def __init__(self, condition, statements):
+        self.condition = condition
+        self.statements = statements
+        self.is_valid()
+
+    def __repr__(self):
+        return (f"While({self.condition}, {self.statements})")
+
+    def is_valid(self):
+        assert isinstance(self.condition, Expression)
+        assert isinstance(self.statements, (Statement, Statements))
 
 ######################## to_source ##################
 
@@ -255,20 +330,25 @@ def to_source_Assignment(node):
 def to_source_BinOp(node):
     return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
 
-@add(ConstantDefinition)
-def to_source_ConstantDefinition(node):
+@add(Const)
+def to_source_Const(node):
     parts = [f"const {to_source(node.location)}"]
     if to_source(node.type):
         parts.append(f" {to_source(node.type)}")
     parts.append(f" = {to_source(node.expression)}")
     return ''.join(parts) + ";"
 
+@add(Compound)
+def to_source_Compound(node):
+    statements = [to_source(s) for s in node.statements]
+    return "{ " + " ".join(statements) + " }"
+
 @add(Float)
 def to_source_Float(node):
     return repr(node.value)
 
-@add(IfStatement)
-def to_source_IfStatement(node):
+@add(If)
+def to_source_If(node):
     result = f"if {to_source(node.condition)} {{\n{to_source(node.result)}\n}}"
     if node.alternative is not None:
         result += f" else {{\n {to_source(node.alternative)}\n}}"
@@ -282,14 +362,12 @@ def to_source_Integer(node):
 def to_source_Name(node):
     return f"{node.location}"
 
-@add(PrintStatement)
-def to_source_PrintStatement(node):
+@add(Print)
+def to_source_Print(node):
     return f"print {to_source(node.expression)};"
 
-@add(Program)
-def to_source_Program(node):
-    for s in node.statements:
-        print(s)
+@add(Statements)
+def to_source_Statements(node):
     statements = [to_source(s) for s in node.statements]
     return "\n".join(statements)
 
@@ -303,10 +381,14 @@ def to_source_Type(node):
 def to_source_UnaryOp(node):
     return f"{node.op}{to_source(node.value)}"
 
-@add(VariableDefinition)
-def to_source_VariableDefinition(node):
-    parts = [f"var {to_source(node.type)}"]
-    parts.append(f" {to_source(node.location)}")
+@add(Var)
+def to_source_Var(node):
+    parts = [f"var {to_source(node.location)}"]
+    parts.append(f" {to_source(node.type)}")
     if node.expression:
         parts.append(f" = {to_source(node.expression)}")
     return ''.join(parts) + ";"
+
+@add(While)
+def to_source_While(node):
+    return f"while {to_source(node.condition)} {{\n{to_source(node.statements)}\n}}"

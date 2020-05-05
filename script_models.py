@@ -34,7 +34,7 @@ expr_source = "2 + 3 * 4"
 expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-print(to_source(expr_model))
+# print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -55,11 +55,11 @@ expr2 = BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
 expr3 = BinOp("+", UnaryOp("-", Integer(2)), Integer(3))
 expr4 = BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))
 
-model1 = Program(
-    PrintStatement(expr1),
-    PrintStatement(expr2),
-    PrintStatement(expr3),
-    PrintStatement(expr4)
+model1 = Statements(
+    Print(expr1),
+    Print(expr2),
+    Print(expr3),
+    Print(expr4)
     )
 
 # print(to_source(model1))
@@ -77,11 +77,11 @@ source2 = """
     print tau;
 """
 
-expr1 = ConstantDefinition(Name('pi'), Type(None), Float(3.14159))
-expr2 = VariableDefinition(Name('tau'), Type('float'))
+expr1 = Const(Name('pi'), Type(None), Float(3.14159))
+expr2 = Var(Name('tau'), Type('float'))
 expr3 = Assignment(Name('tau'), BinOp("*", Float(2.0), Name('pi')))
-expr4 = PrintStatement(Name('tau'))
-model2 = Program(expr1, expr2, expr3, expr4)
+expr4 = Print(Name('tau'))
+model2 = Statements(expr1, expr2, expr3, expr4)
 
 # print(to_source(model2))
 
@@ -99,13 +99,13 @@ source3 = """
     }
 """
 
-expr1 = VariableDefinition(Name('a'), Type('int'), Integer(2))
-expr2 = VariableDefinition(Name('b'), Type('int'), Integer(3))
-expr3 = IfStatement(BinOp('<', Name('a'), Name('b')),
-                    PrintStatement('a'),
-                    PrintStatement('b'))
+expr1 = Var(Name('a'), Type('int'), Integer(2))
+expr2 = Var(Name('b'), Type('int'), Integer(3))
+expr3 = If(BinOp('<', Name('a'), Name('b')),
+                    Print(Name('a')),
+                    Print(Name('b')))
 
-model3 = Program(expr1, expr2, expr3)
+model3 = Statements(expr1, expr2, expr3)
 
 # print(to_source(model3))
 
@@ -125,7 +125,17 @@ source4 = """
     }
 """
 
-model4 = None
+expr1 = Const(Name('n'), Type(None), Integer(10))
+expr2 = Var(Name('x'), Type('int'), Integer(1))
+expr3 = Var(Name('fact'), Type('int'), Integer(1))
+
+expr4 = Assignment(Name('fact'), BinOp("*", Name('fact'), Name('x')))
+expr5 = Print(Name('fact'))
+expr6 = Assignment(Name('x'), BinOp("+", Name('x'), Integer(1)))
+
+expr7 = While(BinOp('<', Name('x'), Name('n')), Statements(expr4, expr5, expr6))
+
+model4 = Statements(expr1, expr2, expr3, expr7)
 # print(to_source(model4))
 
 # ----------------------------------------------------------------------
@@ -136,13 +146,25 @@ model4 = None
 source5 = """
     var x = 37;
     var y = 42;
-    x = { var t = y; y = x; t; };     // Compound expression.
+    x = { var t = y; y = x; t; };
     print x;
     print y;
 """
 
-model5 = None
-# print(to_source(model5))
+expr1 = Var(Name('x'), Type(None), Integer(37))
+expr2 = Var(Name('y'), Type(None), Integer(42))
+
+expr3a = Var(Name('t'), Type(None), Name('y'))
+expr3b = Assignment(Name('y'), Name('x'))
+expr3c = Name('t')
+expr3 = Assignment(Name('x'), Compound(expr3a, expr3b, expr3c))
+
+expr4 = Print(Name('x'))
+expr5 = Print(Name('y'))
+
+
+model5 = Statements(expr1, expr2, expr3, expr4, expr5)
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
