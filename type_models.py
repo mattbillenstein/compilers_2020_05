@@ -203,20 +203,12 @@ model8 = Statements(
         Var("b", None, EnumLocation("Number", "Float", Arguments(Float(3.7)))),
         Var("c", None, FunctionCall("add", Arguments(Variable("a"), Variable("b")))),
         If(
-            Let(
-                Assignment(
-                    FunctionCall("Float", Arguments(Variable("x"),)), Variable("c")
-                )
-            ),
+            Let("c", FunctionCall("Float", Arguments(Variable("x"),))),
             Print(Variable("x")),
             Print(Float(0.0)),
         ),
         While(
-            Let(
-                Assignment(
-                    FunctionCall("Integer", Arguments(Variable("x"))), Variable("a")
-                )
-            ),
+            Let("a", FunctionCall("Integer", Arguments(Variable("x"))),),
             Statements(
                 [
                     Print(Variable("x")),

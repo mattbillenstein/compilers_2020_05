@@ -406,17 +406,17 @@ class Var(Definition):
 
 class Let(Definition):
     """
-    Example: let foo
+    Example: let name = value
     """
 
-    def __init__(self, value, type=None):
+    def __init__(self, name, value):
+        assert isinstance(name, str)
+        assert isinstance(value, Expression)
+        self.name = name
         self.value = value
-        self.type = type
 
     def __repr__(self):
-        if self.type:
-            return f"Let({self.value}, {self.type})"
-        return f"Let({self.value})"
+        return f"Let({self.name}, {self.value})"
 
 
 class Variable(Location):

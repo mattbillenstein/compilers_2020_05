@@ -153,9 +153,7 @@ def to_source_Var(node):
 
 @rule(Let)
 def to_source_Let(node):
-    if node.type:
-        return f"let {to_source(node.value)} {node.type}"
-    return f"let {to_source(node.value)}"
+    return f"let {node.name} = {to_source(node.value)}"
 
 
 @rule(Variable)
