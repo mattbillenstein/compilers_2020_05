@@ -34,7 +34,8 @@ expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
+print('------ Simple Expression')
+print(to_source(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -50,9 +51,32 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = None
+# Are we allowed to use built-in types like list, tuple, for the model?
+# Should everything be represented by a class definition (for consistency)?
 
-#print(to_source(model1))
+model1 = Statements([      
+    PrintStatement(BinOp('+',
+                         Integer(2),
+                         BinOp('*',
+                               Integer(3),
+                               UnaryOp('-', Integer(4))))),
+    PrintStatement(BinOp('-',
+                         Float(2.0),
+                         BinOp('/',
+                               Float(3.0),
+                               UnaryOp('-', Float(4.0))))),
+    PrintStatement(BinOp('+',
+                         UnaryOp('-', Integer(2)),
+                         Integer(3))),
+
+    PrintStatement(BinOp('+',
+                         BinOp('*', Integer(2), Integer(3)),
+                         UnaryOp('-', Integer(4)))),
+])
+
+# print(to_source(model1))
+print('------ Model 1')
+print(to_source(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -67,9 +91,15 @@ source2 = """
     print tau;
 """
 
-model2 = None
+model2 = Statements([
+   ConstDefinition("pi", None, Float(3.14159)),
+   VarDefinition("tau", "float", None),
+   AssignmentStatement(NamedLocation("tau"), BinOp('*', Float(2.0), LoadLocation(NamedLocation("pi")))),
+   PrintStatement(LoadLocation(NamedLocation("tau"))),
+])
 
-#print(to_source(model2))
+print('------ Model 2')
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -85,9 +115,21 @@ source3 = '''
     }
 '''
 
-model3 = None
+model3 = Statements([
+        VarDefinition("a", "int", Integer(2)),
+        VarDefinition("b", "int", Integer(3)),
+        IfStatement(BinOp("<", LoadLocation(NamedLocation("a")), LoadLocation(NamedLocation("b"))),
+                    Statements([
+                       PrintStatement(LoadLocation(NamedLocation("a")))
+                       ]),
+                    Statements([
+                       PrintStatement(LoadLocation(NamedLocation("b")))
+                       ])
+                    ),
+        ])
 
-# print(to_source(model3))
+print('------ Model 3')
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -97,7 +139,6 @@ source4 = '''
     const n = 10;
     var x int = 1;
     var fact int = 1;
-
     while x < n {
         fact = fact * x;
         print fact;
@@ -105,8 +146,28 @@ source4 = '''
     }
 '''
 
-model4 = None
-# print(to_source(model4))
+model4 = Statements([
+        ConstDefinition('n', None, Integer(10)),
+        VarDefinition('x', 'int', Integer(1)),
+        VarDefinition('fact', 'int', Integer(1)),
+        WhileStatement(
+            BinOp('<', LoadLocation(NamedLocation('x')), LoadLocation(NamedLocation('n'))),
+            Statements([
+                    AssignmentStatement(NamedLocation('fact'),
+                                        BinOp('*',
+                                              LoadLocation(NamedLocation('fact')),
+                                              LoadLocation(NamedLocation('x')))),
+                    PrintStatement(LoadLocation(NamedLocation('fact'))),
+                    AssignmentStatement(NamedLocation('x'),
+                                        BinOp('+',
+                                              LoadLocation(NamedLocation('x')),
+                                              Integer(1))),
+                    ])
+            ),
+        ])
+
+print('------ Model 4')
+print(to_source(model4))
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -121,10 +182,22 @@ source5 = '''
     print y;
 '''
 
-model5 = None
-# print(to_source(model5))
+model5 = Statements([
+        VarDefinition('x', None, Integer(37)),
+        VarDefinition('y', None, Integer(42)),
+        AssignmentStatement(NamedLocation('x'),
+                            Compound(Statements([
+                                VarDefinition('t', None, LoadLocation(NamedLocation('y'))),
+                                AssignmentStatement(NamedLocation('y'), LoadLocation(NamedLocation('x'))),
+                                ExpressionStatement(LoadLocation(NamedLocation('t'))),
+                                ]))),
+        PrintStatement(LoadLocation(NamedLocation('x'))),
+        PrintStatement(LoadLocation(NamedLocation('y')))
+        ])
+
+print('------ Model 5')                                  
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
-
