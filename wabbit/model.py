@@ -410,12 +410,12 @@ class Variable(Location):
     Example: pi
     """
 
-    def __init__(self, value):
-        assert isinstance(value, str)
-        self.value = value
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
 
     def __repr__(self):
-        return f"Variable({self.value})"
+        return f"Variable({self.name})"
 
 
 class Integer(Expression):

@@ -15,7 +15,7 @@
 # So, the purpose of doing this is to pin down fine details as well as
 # our overall understanding of what needs to happen when programs run.
 #
-# We'll write our interpreter in Python.  The idea is relatively 
+# We'll write our interpreter in Python.  The idea is relatively
 # straightforward.  For each class in the model.py file, you're
 # going to write a function similar to this:
 #
@@ -23,42 +23,127 @@
 #        # Execute "node" in the environment "env"
 #        ...
 #        return result
-#   
+#
 # The input to the function will be an object from model.py (node)
 # along with an object respresenting the execution environment (env).
 # The function will then execute the node in the environment and return
 # a result.  It might also modify the environment (for example,
-# when executing assignment statements, variable definitions, etc.). 
+# when executing assignment statements, variable definitions, etc.).
 #
 # For the purposes of this projrect, assume that all programs provided
 # as input are "sound"--meaning that there are no programming errors
 # in the input.  Our purpose is not to create a "production grade"
 # interpreter.  We're just trying to understand how things actually
-# work when a program runs. 
+# work when a program runs.
 #
 # For testing, try running your interpreter on the models you
 # created in the example_models.py file.
 #
 
+from functools import singledispatch
 from .model import *
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
+def get_default_value(type):
+    assert isinstance(type, str)
+    if type == "int":
+        return int(0)
+    if type == "float":
+        return float(0.0)
+    return RuntimeError(f"Default value for type {type} not specified")
 
-def interpret_program(model):
-    # Make the initial environment (a dict)
-    env = { }
-    interpret(model, env)
 
 # Internal function to interpret a node in the environment
+@singledispatch
 def interpret(node, env):
     # Expand to check for different node types
     ...
-    raise RuntimeError(f"Can't interpret {node}")
+    raise RuntimeError(f"Can't interpret {repr(node)}")
 
-                             
-                             
 
-        
-        
-        
+rule = interpret.register
+
+
+@rule(Integer)
+def interpret_Integer(node, env):
+    return int(node.value)
+
+
+@rule(Variable)
+def interpret_Variable(node, env):
+    loc_type, loc_value = env[node.name]
+    return loc_value
+
+
+@rule(Assignment)
+def interpret_Assignment(node, env):
+    rhs = interpret(node.expression, env)
+    loc_type, old_value = env[node.location.name]
+    if loc_type == "var":
+        env[node.location.name] = ("var", rhs)
+    else:
+        raise RuntimeError("Can't modify const")
+
+
+@rule(Const)
+def interpret_Const(node, env):
+    value = interpret(node.value, env)
+    env[node.name] = ("const", value)
+    return
+
+
+@rule(Var)
+def interpret_Var(node, env):
+    if node.value is not None:
+        value = interpret(node.value, env)
+        env[node.name] = ("var", value)
+    else:
+        env[node.name] = ("var", get_default_value(node.type))
+    return
+
+
+@rule(Float)
+def interpret_Float(node, env):
+    return float(node.value)
+
+
+@rule(Statements)
+def interpret_Statements(node, env):
+    for statement in node.statements:
+        interpret(statement, env)
+    return
+
+
+@rule(Print)
+def interpret_Print(node, env):
+    print(interpret(node.value, env))
+    return
+
+
+@rule(UnaryOp)
+def interpret_UnaryOp(node, env):
+    value = interpret(node.target, env)
+    if node.op == "-":
+        return -1 * value
+
+
+@rule(BinOp)
+def interpret_BinOp(node, env):
+    lhs = interpret(node.left, env)
+    rhs = interpret(node.right, env)
+    assert type(lhs) == type(rhs)
+    if node.op == "+":
+        return lhs + rhs
+    elif node.op == "*":
+        return lhs * rhs
+    elif node.op == "/":
+        return lhs / rhs
+    elif node.op == "-":
+        return lhs - rhs
+    raise RuntimeError(f"BinOp operation {node.op} not recognised")
+
+
+def interpret_program(node):
+    env = {}
+    interpret(node, env)

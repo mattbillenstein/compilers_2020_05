@@ -158,7 +158,7 @@ def to_source_Let(node):
 
 @rule(Variable)
 def to_source_Variable(node):
-    return node.value
+    return node.name
 
 
 @rule(UnaryOp)
