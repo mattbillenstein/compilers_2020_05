@@ -9,8 +9,10 @@ from sly import Lexer
 class WabbitLexer(Lexer):
     tokens = { IDENTIFIER, CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, INTEGER, FLOAT, CHAR,
             PLUS, MINUS, TIMES, DIVIDE, LTE, LT, GTE, GT, EQ, NE, LAND, LOR, LNOT, ASSIGN, SEMI, LPAREN, RPAREN,
-            LBRACE, RBRACE, MIDLINE_COMMENT, MULTILINE_COMMENT_START, MULTILINE_COMMENT_END}
+            LBRACE, RBRACE}
     ignore = ' \t\n'
+    ignore_multilinecomments = r'\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/'
+    ignore_midlinecomments = r'\/\/.*'
 
     IDENTIFIER = r'[A-Za-z_][A-Za-z0-9_]*'
     CONST = r'const'
@@ -48,10 +50,6 @@ class WabbitLexer(Lexer):
     RPAREN = r'\)'
     LBRACE = r'{'
     RBRACE = r'}'
-
-    MIDLINE_COMMENT = r'//'
-    MULTILINE_COMMENT_START = r'/\*'
-    MULTILINE_COMMENT_END = r'/\*\/'
 
 
 def tokenize(text):
