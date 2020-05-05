@@ -72,74 +72,66 @@
 #
 # ----------------------------------------------------------------------
 
-
-# High level function that takes input source text and turns it into tokens.
-# This is a natural place to use some kind of generator function.
-
-class Token:
-    def __init__(self, type, value):
-        self.type = type          # 'NUMBER'
-        self.value = value        # '12345'
-
-    def __repr__(self):
-        return f'Token({self.type}, {self.value})'
-
-import re
-
-def tokenize(text):
-    n = 0
-    while n < len(text):
-        if text[n] in {' ', '\t', '\n'}:    # Whitespace
-            n += 1;    
-            continue                        # Skip
-
-        # Check for a comment.  /* .... bunch of random stuff ... */
-        if text[n:n+2] == '/*':
-            end = text.find("*/", n+2)
-            n = end + 2;
-            continue
-
-        # Question:
-        #    <=      --> TOKEN('LE')  or TOKEN('LT') TOKEN('EQ')
-        #    <       --> TOKEN('LT')   ??
-        if text[n] in {'+', '-', '*', '/'}:
-            yield Token('OP', text[n])
-            n += 1
-            continue
-
-        # Check for numbers
-        g = re.match(r'\d+', text[n:])
-        if g:
-            yield Token('NUMBER', g.group())
-            n += len(g.group())
-            continue
-
-# Sample:
-# 
-# for tok in tokenize("print 2 + 3 * 4;"):
-#     print(tok)
-#
-
-# Tokenizing is based solved.  Not interesting.
-# Tools available.
-
 from sly import Lexer      # Disclaimer: I created SLY
 
 class WabbitLexer(Lexer):
     # Valid token names
     tokens = { 
-        PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
-        GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
+        # Operators 
+        PLUS, MINUS, TIMES, DIVIDE, LT, LE, GT, GE, EQ, NE, LAND, LOR,
+          
+        # Other symbols
+        ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
+
+        # Numbers and characters
+        INTEGER, FLOAT, CHAR,
+
+        # Identifiers
+        NAME,
+
+        # Special keywords
+        CONST, VAR, PRINT, IF, WHILE, ELSE, CONTINUE, BREAK, TRUE, FALSE,
         }
-    ignore = ' \t\n'       # Ignore these (between tokens)
+
+    ignore = ' \t'       # Ignore these (between tokens)
+
+    @_('\n+')
+    def ignore_newline(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    ignore_block_comment = r'/\*(.|\n)*?\*/'
+    ignore_line_comment = r'//.*'
+
+    # Numbers
+    FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'
+    INTEGER = r'\d+'
+
+    # Names/Identifiers
+    # PRINT = 'print'     # BAD IDEA.  Matches other words that start with "print"
+
+    NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'    # Variable name
+
+    # These are special cases. If the matched text for NAME exactly matches the supplied string
+    # the token type is changed to the value on the right
+    NAME['const'] = CONST
+    NAME['var'] = VAR
+    NAME['print'] = PRINT
+    NAME['if'] = IF
+    NAME['else'] = ELSE
+    NAME['while'] = WHILE
+    NAME['break'] = BREAK
+    NAME['continue'] = CONTINUE
+    NAME['true'] = TRUE
+    NAME['false'] = FALSE
+
+    # Character constants.   'x', '\'', '\n', '\xhh'.  Hard because of escape codes.
+    CHAR = r"'\.'"    # This is wrong, but partly right.  
 
     # Specify tokens as regex rules
     PLUS = r'\+'
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    DECIMAL = r'\d+\.\d+'       # 23.45
-    NUMBER = r'\d+'
 
     # Put longer patterns first
     LE = r'<='
@@ -154,6 +146,11 @@ class WabbitLexer(Lexer):
     RPAREN = r'\)'
     LBRACE = r'{'
     RBRACE = r'}'
+
+    def error(self, tok):
+        # Error function.  Called on illegal characters
+        print(f'Illegal character {tok.value[0]!r}')
+        self.index += 1     # Skip ahead one character
 
 def tokenize(text):
     lexer = WabbitLexer()
