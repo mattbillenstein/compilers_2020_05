@@ -50,11 +50,12 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-model1 = Program([Statement(PrintStatement(BinOp('+', Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4)))))),
-				Statement(PrintStatement(BinOp('-', Float(2.0), BinOp("*", Float(3.0), UnaryOp("-", Float(4.0)))))),
-				Statement(PrintStatement(BinOp('+', UnaryOp("-", Integer(2)), Integer(3)))),
-				Statement(PrintStatement(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))))
-])
+model1 = Statements(
+			PrintStatement(BinOp('+', Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
+			PrintStatement(BinOp('-', Float(2.0), BinOp("*", Float(3.0), UnaryOp("-", Float(4.0))))),
+			PrintStatement(BinOp('+', UnaryOp("-", Integer(2)), Integer(3))),
+			PrintStatement(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4))))
+)
 
 print("\n\nsource1:")
 print(to_source(model1))
@@ -72,12 +73,12 @@ source2 = """
     print tau;
 """
 
-model2 = Program([
-	Statement(Assignment(ConstDef(Var("pi")), Float(3.14159))),
-	Statement(VarDef("tau", "float")),
-	Statement(Assignment(Var("tau"), BinOp("+", Float(2.0), Var("pi")))),
-	Statement(PrintStatement(Var("tau")))
-])
+model2 = Statements(
+	ConstDef("pi", None, Float(3.14159)),
+	VarDef("tau", "float"),
+	Assignment(Var("tau"), BinOp("+", Float(2.0), Var("pi"))),
+	PrintStatement(Var("tau"))
+)
 
 print("\n\nsource2:")
 print(to_source(model2))
@@ -96,14 +97,14 @@ source3 = '''
     }
 '''
 
-model3 = Program([
-	Statement(Assignment(VarDef("a", "int"), Integer(2))),
-	Statement(Assignment(VarDef("b", "int"), Integer(3))),
+model3 = Statements(
+	VarDef("a", "int", Integer(2)),
+	VarDef("b", "int", Integer(3)),
 	IfConditional(BinOp("<", Var("a"), Var("b")), 
-				  Block([Statement(PrintStatement(Var("a")))]),
-				  Block([Statement(PrintStatement(Var("b")))]))
+				  Block(PrintStatement(Var("a"))),
+				  Block(PrintStatement(Var("b"))))
 
-])
+)
 
 print("\n\nsource3:")
 print(to_source(model3))
@@ -124,11 +125,21 @@ source4 = '''
     }
 '''
 
-model4 = Program([
+model4 = Statements(
+			ConstDef("n", None, Integer(10)), 
+			VarDef("x", "int", Integer(1)),
+			VarDef("fact", "int", Integer(1)),
+			While(BinOp("<", Var("x"), Var("n")), 
+				Block(
+					Assignment(Var("fact"), BinOp("*", Var("fact"), Var("x"))),
+					PrintStatement(Var("fact")),
+					Assignment(Var("x"), BinOp("+", Var("x"), Integer(1)))
+				)
+			)
+)
 
-])
-
-# print(to_source(model4))
+print("\n\nsource4:")
+print(to_source(model4))
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -143,14 +154,19 @@ source5 = '''
     print y;
 '''
 
-model5 = Program([
-	Statement(Assignment(VarDef("x"), Integer(37))),
-	Statement(Assignment(VarDef("y"), Integer(42))),
-	Statement(Assignment(Var("x"), Block([Statement(Assignment(VarDef("t"), Var("y"))), Statement(Assignment(Var("x"), Var("y"))), Statement(Var("t"))]))),
-	Statement(PrintStatement(Var("x"))),
-	Statement(PrintStatement(Var("y")))
-
-])
+model5 = Statements(
+	VarDef("x", None,  Integer(37)),
+	VarDef("y", None, Integer(42)),
+	Assignment(Var("x"), 
+				Block(
+						Assignment(Var("t"), LocationLookup(Var("y"))), 
+						Assignment(Var("x"), LocationLookup(Var("y"))), 
+						Var("t")
+						)
+			  ),
+	PrintStatement(Var("x")),
+	PrintStatement(Var("y"))
+)
 
 print("\n\nModel5:")
 print(to_source(model5))

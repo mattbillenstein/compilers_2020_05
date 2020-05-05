@@ -73,6 +73,9 @@ class Metal:
         self.registers['R7'] = len(self.memory) - 2
         self.running = True
         while self.running:
+            if self.registers['PC'] == 5: print("mul(%d, %d):" % (self.registers['R1'], self.registers['R2']))
+            if self.registers['PC'] == 22: print("fact(%d):" % self.registers['R1'])
+        		
             op, *args = self.instructions[self.registers['PC']]
             # Uncomment to debug what's happening
             print("%02d: %05s %20s ; %s" % (self.registers['PC'], op, args, self.registers))
@@ -345,7 +348,7 @@ if __name__ == '__main__':
 		
 		('BZ', 'R1', 9),
 		('DEC', 'R1'),
-		('LOAD', 'R7', 'R2', 1),		# y = n-1
+		('LOAD', 'R7', 'R2', 1),		# y = n
 		
 		('STORE', 'PC', 'R7', 0),	#	save retaddr
 		('JMP', 'PC', -9),			# 	CALL fact

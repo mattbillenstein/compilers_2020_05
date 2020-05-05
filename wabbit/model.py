@@ -47,11 +47,61 @@
 # if you want to go in a different direction with it.
 
 
-class Integer:
+# Base types
+
+class Node:
+	pass
+	
+	
+class Statement(Node):
+	'''
+	statement object
+	'''
+	
+class Expression(Node):
+	'''
+	somethig that produces a value
+	'''
+	
+class Literal(Expression):
+	'''
+	container for literals such as integers, floats, etc.
+	'''
+class Definition(Statement):
+	'''
+	used for defining things like names
+	'''
+	
+class Location(Expression):
+	'''
+	a place to store/load values
+	'''
+
+###
+### Highest level container
+###
+
+class Program(Node):
+	def __init__(self, stmts):
+		assert isinstance(stmts, Statements)
+		self.stmts = stmts
+		
+	def __repr__(self):
+		return f"Program({self.stmts})"
+		
+	def to_source(self):
+		return self.stmts.to_source();
+
+###
+### LITERAL-typed nodes
+###
+	
+class Integer(Literal):
 	'''
 	Example: 42
 	'''
 	def __init__(self, value):
+		assert isinstance(value, int)
 		self.value = value
 
 	def __repr__(self):
@@ -61,11 +111,12 @@ class Integer:
 		return repr(self.value)
 		
 	
-class Float:
+class Float(Literal):
 	'''
-	Example: 42
+	Example: 42.0
 	'''
 	def __init__(self, value):
+		assert isinstance(value, float)
 		self.value = value
 
 	def __repr__(self):
@@ -75,11 +126,46 @@ class Float:
 		return repr(self.value)
 		
 		
-class BinOp:
+class Char(Literal):
+	'''
+	Example: 'a'
+	'''
+	def __init__(self, value):
+		assert isinstance(value, str)
+		self.value = value
+
+	def __repr__(self):
+		return f'Char({self.value})'
+
+	def to_source(self):
+		return self.value
+		
+class Bool(Literal):
+	'''
+	Example: true
+	'''
+	def __init__(self, value):
+		assert isinstance(value, bool)
+		self.value = value
+
+	def __repr__(self):
+		return f'Bool({self.value})'
+
+	def to_source(self):
+		return str(self.value)
+	
+	
+###
+### Expressions
+###
+
+class BinOp(Expression):
 	'''
 	Example: left + right
 	'''
 	def __init__(self, op, left, right):
+		assert isinstance(left, Expression)
+		assert isinstance(right, Expression)
 		self.op = op
 		self.left = left
 		self.right = right
@@ -90,7 +176,7 @@ class BinOp:
 	def to_source(self):
 		return f'{self.left.to_source()} {self.op} {self.right.to_source()}'
 
-class UnaryOp:
+class UnaryOp(Expression):
 	'''
 	Example: left + right
 	'''
@@ -104,13 +190,35 @@ class UnaryOp:
 	def to_source(self):
 		return f'{self.op}{self.right.to_source()}'
 
+class LocationLookup(Expression):
+	'''
+	converts a location (expression) to a statement
+	'''
+	
+	def __init__(self, var):
+		assert isinstance(var, Location)
+		self.var = var
+		
+	def __repr__(self):
+		return f"LocationLookup({self.var})"
+		
+	def to_source(self):
+		return self.var.to_source()
+		
 
-class Assignment:
+###
+### Statements
+###
+
+		
+class Assignment(Statement):
 	'''
 	Example: a = 1 + 2
 	'''
 	
 	def __init__(self, left, right):
+		assert isinstance(left, Location)
+		assert isinstance(right, Expression)
 		self.left = left
 		self.right = right
 		
@@ -118,10 +226,10 @@ class Assignment:
 		return f'Assign({self.left}, {self.right})'
 		
 	def to_source(self):
-		return f'{self.left.to_source()} = {self.right.to_source()}'
+		return f'{self.left.to_source()} = {self.right.to_source()};'
 		
 		
-class PrintStatement:
+class PrintStatement(Statement):
 	def __init__(self, literal):
 		self.literal = literal
 		
@@ -129,77 +237,87 @@ class PrintStatement:
 		return f'PrintStatement({self.literal})'
 		
 	def to_source(self):
-		return f"print {self.literal.to_source()}"
+		return f"print {self.literal.to_source()};"
 
-class Program:
+		
+class Statements(Statement):
 	'''
-	Container for a program
+	Container for statements
 	'''
 	
-	def __init__(self, stmts):
+	def __init__(self, *args):
+		stmts = [x for x in args]
+		assert all(isinstance(x, Statement) for x in stmts)
 		self.stmts = stmts
 		
 	def __repr__(self):
-		return "Program(" + ",".join([repr(x) for x in self.stmts]) + ")"
+		return "Statements(" + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
 		return "\n".join([x.to_source() for x in self.stmts])
-	
-class Block:	
+
+class Block(Statement):	
 	'''
 	block of code
 	'''
 	
-	def __init__(self, stmts):
+	def __init__(self, *args):
+		stmts = [x for x in args]
+		assert all(isinstance(x, Statement) for x in stmts)
 		self.stmts = stmts
 		
 	def __repr__(self):
 		return "Block(" + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
-		return "{\n" + "\n".join([x.to_source() for x in self.stmts]) + "}\n"
+		return "{\n" + "\n".join([x.to_source() for x in self.stmts]) + "\n}\n"
 
-class Statement:
-	'''
-	adsfsadf;
-	'''
-	def __init__(self, expr):
-		self.expr = expr
-		
-	def __repr__(self):
-		return f"Expr({self.expr}"
-		
-	def to_source(self):
-		return f'{self.expr.to_source()};'
 	
-class ConstDef:
+class ConstDef(Statement):
 	'''
 	const a
 	'''
 	
-	def __init__(self, name):
-		self.name = name
-		
-	def __repr__(self):
-		return f"ConstDef({repr(self.name)})"
-		
-	def to_source(self):
-		return f"const {self.name.to_source()}"
-	
-
-class VarDef:
-	def __init__(self, name, vartype = ""):
+	def __init__(self, name, vartype, value):
+		assert isinstance(name, str)
+		assert vartype is None or isinstance(vartype, str)
+		assert isinstance(value, Expression)
 		self.name = name
 		self.vartype = vartype
-		
+		self.value = value		
+
 	def __repr__(self):
-		return f"VarDef({self.name}, {self.vartype})"
+		return f"ConstDef({self.name}, {self.vartype}, {self.value})"
 		
 	def to_source(self):
-		return f"var {self.name} {self.vartype} "
+		if self.vartype is None:
+			return f"const {self.name} = {self.value.to_source()};"
+		return f"const {self.name} {self.vartype} = {self.value.to_source()};"
+
+class VarDef(Statement):
+	def __init__(self, name, vartype, value = None):
+		assert isinstance(name, str)
+		assert vartype is None or isinstance(vartype, str)
+		assert value is None or isinstance(value, Expression)
+		assert not (vartype is None and value is None)
+		self.name = name
+		self.vartype = vartype
+		self.value = value
+		
+	def __repr__(self):
+		return f"VarDef({self.name}, {self.vartype}, {self.value})"
+		
+	def to_source(self):
+		src = f"var {self.name}"
+		if self.vartype is not None:
+			src += f" {self.vartype}"
+		if self.value is not None:
+			src += f" = {self.value.to_source()}"
+		src += ";"
+		return src
 	
 
-class Var:
+class Var(Location):
 	def __init__(self, name):
 		self.name = name
 		
@@ -210,8 +328,11 @@ class Var:
 		return f"{self.name}"
 
 
-class IfConditional:
+class IfConditional(Statement):
 	def __init__(self, condition, istrue, isfalse = None):
+		assert isinstance(condition, Expression)
+		assert isinstance(istrue, Statement)
+		assert isfalse is None or isinstance(isfalse, Statement)
 		self.condition = condition
 		self.istrue = istrue
 		self.isfalse = isfalse
@@ -222,10 +343,24 @@ class IfConditional:
 		return f"IfConditional({self.condition}, {self.istrue}, {self.isfalse})"
 		
 	def to_source(self):
-		output = f"if {self.condition.to_source()}\n{self.istrue.to_source()}"
+		output = f"if {self.condition.to_source()} {self.istrue.to_source()}"
 		if self.isfalse is not None:
-			output += f"{self.isfalse.to_source()}"
+			output += f"else {self.isfalse.to_source()}"
 		return output
+		
+
+class While(Statement):
+	def __init__(self, condition, todo):
+		assert isinstance(condition, Expression)
+		assert isinstance(todo, Statement)
+		self.condition = condition
+		self.todo = todo
+
+	def __repr__(self):
+		return f"While({self.condition}, {self.todo})"
+		
+	def to_source(self):
+		return f"while {self.condition.to_source()} {self.todo.to_source()}"
 		
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
