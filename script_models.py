@@ -54,6 +54,8 @@ source1 = """
     print 2 * 3 + -4;
 """
 
+# model1 = parse(source1)     # Want. A parser
+
 # Are we allowed to use built-in types like list, tuple, for the model?
 # Should everything be represented by a class definition (for consistency)?
 

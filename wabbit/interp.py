@@ -73,6 +73,10 @@ def interpret_integer(node, env):
 def interpret_float(node, env):
     return node.value
 
+@rule(Bool)
+def interpret_bool(node, env):
+    return node.value
+
 @rule(BinOp)
 def interpet_binop(node, env):
     leftval = interpret(node.left, env)     # Do the left
@@ -173,7 +177,8 @@ def interpret_assignment(node, env):
             e[node.location.name] = exprval    # <<<< Bothered. Violation of encapsulation. (node.location.name)
             return
 
-    # Make it here... undefined variable name
+    # Make it here... undefined variable name.  In reality, we're going to catch
+    # this somewhere else (in the type checker), but raising an exception is fine.
     raise RuntimeError("Undefined variable name")
     '''
     var x int = 0;  # env = [ {'x': 0 } ]
@@ -188,7 +193,6 @@ def interpret_assignment(node, env):
 def interprete_if_statement(node, env):
     # if test { consequence }
     testval = interpret(node.test, env)     # Figure out the test
-
     # If you return a value, is that a semantic feature of Wabbit? Could it be? Yes.
     if testval:
         return interpret(node.consequence, env.new_child())   # Create a nested environment (new_child)
