@@ -87,10 +87,20 @@ about a day in advance (an email notification will also be sent).
 * [Course Introduction](https://vimeo.com/414481789/f5cc08e05b) (20 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Compiler.pdf) 
 * [Part 0 - Preliminaries](https://vimeo.com/414482511/54dff477c1) (7 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Preliminaries.pdf)
 * [Part 1 - Structure of Programs](https://vimeo.com/414482772/bcf107cae6) (9 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/01Structure.pdf)
-
+* [Part 2 - Evaluation of Programs](https://vimeo.com/414763523/fb21573130) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/02Evaluation.pdf)
+* [Part 3 - Lexing](https://github.com/dabeaz/compilers_2020_05/raw/master/present/03Lexing.pdf) (PDF)
+* [Part 4 - Parsing](https://vimeo.com/414973515/c64a69c8bb) (26 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/04Parsing.pdf)
+ 
 ## Live Session Recordings
 
 Video recordings of live sessions will be posted here.
+
+**Day 1**
+
+* [Course Start, Project Demo](https://vimeo.com/414833210/68fdd7ea4a) (36 min)
+* [Wabbit Language, Project 1](https://vimeo.com/414844050/552c0dd4e8) (45 min)
+* [Project 1, Model Building](https://vimeo.com/414916917/186ecaa29e) (33 min)
+* [Project 1, Day End](https://vimeo.com/414947839/c0184b46bd) (47 min)
 
 
 
