@@ -79,10 +79,10 @@ source2 = """
 """
 
 model2 = Program(
-    Const("pi", Float(3.14159)),
-    VarDeclaration("tau", type="float"),
-    Var("tau", BinOp.mult(Float(2.0), Identifier("pi"))),
-    PrintStatement(Identifier("tau")),
+    ConstDefinition(name='pi', value=Float(3.14159)),
+    VariableDefinition(name='tau', type='float', value=None),
+    Assignment(location=Identifier(name='tau'), value=BinOp.mult(Float(2.0), Identifier(name='pi'))),
+    PrintStatement(expression=Identifier(name='tau'))
 )
 
 print(repr(model2))
@@ -103,13 +103,17 @@ source3 = """
 """
 
 model3 = Program(
-    Var(left="a", value=Integer(2), type_="int"),
-    Var(left="b", value=Integer(3), type_="int"),
+    VariableDefinition(name='a', type='int', value=Integer(2)),
+    VariableDefinition(name='b', type='int', value=Integer(3)),
     IfStatement(
-        condition=LessThan(Identifier("a"), Identifier("b")),
-        body=PrintStatement(Identifier("a")),  # Maybe body should be a 'Clause' instead
-        else_clause=PrintStatement(Identifier("b")),
-    ),
+        condition=Compare.lt(Identifier('a'), Identifier('b')),
+        consequent=Clause(
+            PrintStatement(expression=Identifier('a')),
+        ),
+        alternative=Clause(
+            PrintStatement(expression=Identifier('b'))
+        )
+    )
 )
 
 print(repr(model3))
@@ -132,17 +136,17 @@ source4 = """
 """
 
 model4 = Program(
-    Const(left="n", value=Integer(10)),
-    Var(left="x", value=Integer(1), type_="int"),
-    Var(left="fact", value=Integer(1), type_="int"),
+    ConstDefinition(name='n', value=Integer(10), type=None),
+    VariableDefinition(name='x', type='int', value=Integer(1)),
+    VariableDefinition(name='fact', type='int', value=Integer(1)),
     WhileLoop(
-        condition=LessThan(Identifier("x"), Identifier("n")),
+        condition=Compare.lt(left=Identifier('x'), right=Identifier('n')),
         body=Clause(
-            Assignment(left="fact", value=BinOp.mult(Identifier("fact"), Identifier("x"))),
-            PrintStatement(Identifier("fact")),
-            Assignment(left="x", value=BinOp.add(Identifier("x"), Integer(1))),
-        ),
-    ),
+            Assignment(location=Identifier('fact'), value=BinOp.mult(left=Identifier('fact'), right=Identifier('x'))),
+            PrintStatement(expression=Identifier('fact')),
+            Assignment(location=Identifier('x'), value=BinOp.add(left=Identifier('x'), right=Integer(1)))
+        )
+    )
 )
 
 print(repr(model4))
@@ -162,18 +166,15 @@ source5 = """
 """
 
 model5 = Program(
-    Var(left="x", value=Integer(37)),
-    Var(left="y", value=Integer(42)),
-    Assignment(
-        left="x",
-        value=CompoundExpr(
-            Var(left="t", value=Identifier("y")),
-            Assignment(left="y", value=Identifier("x")),
-            Identifier("t"),
-        ),
-    ),
-    PrintStatement(Identifier('x')),
-    PrintStatement(Identifier('y'))
+    VariableDefinition(name='x', type=None, value=Integer(37)),
+    VariableDefinition(name='y', type=None, value=Integer(42)),
+    Assignment(location=Identifier('x'),
+               value=CompoundExpr(
+                   VariableDefinition(name='t', type=None, value=Identifier('y')),
+                   Assignment(location=Identifier('y'), value=Identifier('x')),
+                   ExpressionStatement(expression=Identifier('t'))
+               )
+    )
 )
 print(repr(model5))
 print(to_source(model5))
