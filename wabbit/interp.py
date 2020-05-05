@@ -41,7 +41,9 @@
 #
 
 from functools import singledispatch
+from collections import ChainMap
 from .model import *
+from .errors import InterpreterException
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -51,7 +53,15 @@ def get_default_value(type):
         return int(0)
     if type == "float":
         return float(0.0)
-    return RuntimeError(f"Default value for type {type} not specified")
+    return InterpreterException(f"Default value for type {type} not specified")
+
+
+def interpret_program(node, env: ChainMap = None) -> ChainMap:
+    if env is None:
+        env = ChainMap({})
+    interpret(node, env)
+    # helpful for testing
+    return env
 
 
 # Internal function to interpret a node in the environment
@@ -59,7 +69,7 @@ def get_default_value(type):
 def interpret(node, env):
     # Expand to check for different node types
     ...
-    raise RuntimeError(f"Can't interpret {repr(node)}")
+    raise InterpreterException(f"Can't interpret {repr(node)}")
 
 
 rule = interpret.register
@@ -108,7 +118,7 @@ def interpret_Assignment(node, env):
     if loc_type == "var":
         env[node.location.name] = ("var", rhs)
     else:
-        raise RuntimeError("Can't modify const")
+        raise InterpreterException("Can't modify const")
 
 
 @rule(Const)
@@ -120,6 +130,8 @@ def interpret_Const(node, env):
 
 @rule(Var)
 def interpret_Var(node, env):
+    if env.get(node.name) is not None:
+        raise InterpreterException(f"Attempting to re-declare var {node.name}")
     if node.value is not None:
         value = interpret(node.value, env)
         env[node.name] = ("var", value)
@@ -151,6 +163,7 @@ def interpret_UnaryOp(node, env):
     value = interpret(node.target, env)
     if node.op == "-":
         return -1 * value
+    raise InterpreterException(f"UnaryOp operation {node.op} not recognised")
 
 
 @rule(BinOp)
@@ -170,9 +183,5 @@ def interpret_BinOp(node, env):
         return lhs < rhs
     elif node.op == ">":
         return lhs > rhs
-    raise RuntimeError(f"BinOp operation {node.op} not recognised")
+    raise InterpreterException(f"BinOp operation {node.op} not recognised")
 
-
-def interpret_program(node):
-    env = {}
-    interpret(node, env)
