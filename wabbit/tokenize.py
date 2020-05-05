@@ -133,7 +133,9 @@ class WabbitLexer(Lexer):
         PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
         FLOAT, INTEGER, NAME, CHAR, PRINT, IF, CONST, VAR, ELSE, WHILE, BREAK, CONTINUE, COMMA,
-        LOOKUP
+        #LOOKUP,
+        DCOLON,
+        DOT
         }
     ignore = ' \t\n'       # Ignore these (between tokens)
     ignore_comment = r'//.*'
@@ -159,11 +161,13 @@ class WabbitLexer(Lexer):
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
+    DCOLON = r':'
     FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'      # 23.45
     INTEGER = r'\d+'
     CHAR = r'\'([\s\S]|' + '|'.join(_escape_sequences) + r')\''
-    LOOKUP = r'\.[a-zA-Z_]+'
-    NAME = r'[a-zA-Z_]+'
+    DOT = "\."
+    #LOOKUP = r'\.[a-zA-Z_]([a-zA-Z_\d])*'
+    NAME = r'[a-zA-Z_]([a-zA-Z_\d])*'
     print(CHAR)
     NAME['print'] = PRINT
     NAME['if'] = IF
