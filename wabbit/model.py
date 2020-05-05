@@ -66,17 +66,17 @@ class Node:
         return True
 
 class Statements(Node):
-    def __init__(self, statements):
+    def __init__(self, children):
         super().__init__()
-        self.statements = statements
+        self.children = children
 
     def __repr__(self):
-        return f'Statements({self.statements})'
+        return f'Statements({self.children})'
 
     def is_correct(self):
-        if not isinstance(self.statements, list):
+        if not isinstance(self.children, list):
             return False
-        return all([isinstance(Node, x) and x.is_correct() for x in self.statements])
+        return all([isinstance(Node, x) and x.is_correct() for x in self.children])
 
 class Integer(Node):
     '''
@@ -138,11 +138,11 @@ class BinOp(Node):
 class PrintStatement(Node):
     def __init__(self, node_to_print):
         super().__init__()
-        self.node_to_print = node_to_print
+        self.child = node_to_print
         checkMe(self)
 
     def __repr__(self):
-        return f'PrintStatement({self.node_to_print})'
+        return f'PrintStatement({self.child})'
 
 class Const(Node):
     def __init__(self, name, value):
@@ -353,7 +353,7 @@ nesting_level = 0
 def to_source_list(l):
     global nesting_level
     indent = nesting_level * '    '
-    return ('\n').join([f'{indent}{to_source(x)};' for x in l.statements]) # TODO this leads to ';' after eg while statements
+    return ('\n').join([f'{indent}{to_source(x)};' for x in l.children]) # TODO this leads to ';' after eg while statements
 
 def to_source_node_or_list(x):
     if isinstance(x, list):
@@ -375,7 +375,7 @@ def to_source(node):
     elif isinstance(node, Statements):
         return to_source_list(node)
     elif isinstance(node, PrintStatement):
-        return f'print {to_source(node.node_to_print)}'
+        return f'print {to_source(node.child)}'
     elif isinstance(node, Float):
         return f'{node.value}'
     elif isinstance(node, Const):
@@ -405,7 +405,7 @@ def to_source(node):
 {to_source_nested_body(node.body)}
 }}'''
     elif isinstance(node, CompoundExpression):
-        return f'{{ {"; ".join([to_source(each) for each in node.statements.statements])}; }}'
+        return f'{{ {"; ".join([to_source(each) for each in node.statements.children])}; }}'
     elif isinstance(node, Function):
         return f'''func {node.name}({to_source(node.arguments)}) {node.returnType} {{
 {to_source_nested_body(node.body)}
