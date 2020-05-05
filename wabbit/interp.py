@@ -70,10 +70,35 @@ def interpret_Integer(node, env):
     return int(node.value)
 
 
+@rule(If)
+def interpret_If(node, env):
+    test = interpret(node.test, env)
+    if test:
+        interpret(node.when_true, env)
+    else:
+        interpret(node.when_false, env)
+
+
+@rule(While)
+def interpret_While(node, env):
+    test = True
+    while test:
+        test = interpret(node.test, env)
+        interpret(node.when_true, env)
+
+
 @rule(Variable)
 def interpret_Variable(node, env):
     loc_type, loc_value = env[node.name]
     return loc_value
+
+
+@rule(Block)
+def interpret_Block(node, env):
+    value = None
+    for statement in node.statements:
+        value = interpret(statement, env)
+    return value
 
 
 @rule(Assignment)
@@ -141,6 +166,10 @@ def interpret_BinOp(node, env):
         return lhs / rhs
     elif node.op == "-":
         return lhs - rhs
+    elif node.op == "<":
+        return lhs < rhs
+    elif node.op == ">":
+        return lhs > rhs
     raise RuntimeError(f"BinOp operation {node.op} not recognised")
 
 

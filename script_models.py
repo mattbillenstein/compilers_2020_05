@@ -35,8 +35,8 @@ expr_source = "2 + 3 * 4;"
 expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
-# interpret_program(expr_model)
+print(to_source(expr_model))
+interpret_program(expr_model)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -61,8 +61,8 @@ model1 = Statements(
     ]
 )
 
-# print(to_source(model1))
-# interpret_program(model1)
+print(to_source(model1))
+interpret_program(model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -86,8 +86,8 @@ model2 = Statements(
     ]
 )
 
-# print(to_source(model2))
-# interpret_program(model2)
+print(to_source(model2))
+interpret_program(model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -115,7 +115,7 @@ model3 = Statements(
     ]
 )
 
-# print(to_source(model3))
+print(to_source(model3))
 interpret_program(model3)
 
 # ----------------------------------------------------------------------
@@ -140,7 +140,7 @@ model4 = Statements(
         Var("x", "int", Integer(1)),
         Var("fact", "int", Integer(1)),
         While(
-            BinOp("<", Variable("x"), Variable("y")),
+            BinOp("<", Variable("x"), Variable("n")),
             Statements(
                 [
                     Assignment(
@@ -153,7 +153,8 @@ model4 = Statements(
         ),
     ]
 )
-# print(to_source(model4))
+print(to_source(model4))
+interpret_program(model4)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -187,7 +188,8 @@ model5 = Statements(
         Print(Variable("y")),
     ]
 )
-# print(to_source(model5))
+print(to_source(model5))
+interpret_program(model5)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
