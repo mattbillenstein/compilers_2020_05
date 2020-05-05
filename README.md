@@ -88,6 +88,8 @@ about a day in advance (an email notification will also be sent).
 * [Part 0 - Preliminaries](https://vimeo.com/414482511/54dff477c1) (7 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/00Preliminaries.pdf)
 * [Part 1 - Structure of Programs](https://vimeo.com/414482772/bcf107cae6) (9 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/01Structure.pdf)
 * [Part 2 - Evaluation of Programs](https://vimeo.com/414763523/fb21573130) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/02Evaluation.pdf)
+* [Part 3 - Lexing](https://github.com/dabeaz/compilers_2020_05/raw/master/present/03Lexing.pdf) (PDF)
+* [Part 4 - Parsing](https://vimeo.com/414973515/c64a69c8bb) (26 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/04Parsing.pdf)
  
 ## Live Session Recordings
 
