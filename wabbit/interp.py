@@ -70,9 +70,9 @@ OPERATIONS = {
 
 
 class Environment(UserDict):
-    def __init__(self, *args, __scopes=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._scopes = __scopes or deque()
+        self._scopes = deque()
         self._scopes.append(self)
 
     @property
