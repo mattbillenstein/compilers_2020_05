@@ -20,7 +20,7 @@ class Decompiler(ModelVisitor):
         return repr(node.value)
 
     def visit_AssignStatement(self, node):
-        return node.location.visit(self) + ' = ' + node.expr.visit(self)
+        return node.location.visit(self) + ' = ' + node.value.visit(self) + ';'
 
     def visit_BinOp(self, node):
         return ' '.join([node.left.visit(self), node.op, node.right.visit(self)])
@@ -29,50 +29,62 @@ class Decompiler(ModelVisitor):
         return node.op + node.right.visit(self)
 
     def visit_PrintStatement(self, node):
-        return 'print ' + node.expr.visit(self)
+        return 'print ' + node.expr.visit(self) + ';'
 
     def visit_ConditionalStatement(self, node):
-        ret = 'if ' + node.cond.visit(self) + ' {\n'
-        ret += self.to_source(node.blockT, indent=1) 
-        ret += '} else {\n'
-        ret += self.to_source(node.blockF, indent=1)
-        ret += '}'
+        ret = []
+        ret.append('if ' + node.cond.visit(self) + ' {')
+        for line in self.to_source(node.blockT, inner=True):
+            ret.append("\t" + line)
+        ret.append('} else {')
+        for line in self.to_source(node.blockF, inner=True):
+            ret.append("\t" + line)
+        ret.append('}')
         return ret
 
     def visit_ConditionalLoopStatement(self, node):
-        ret = 'while ' + node.cond.visit(self) + ' {\n'
-        ret += self.to_source(node.block, indent=1)
-        ret += '}'
+        ret = []
+        ret.append('while ' + node.cond.visit(self) + ' {')
+        for line in self.to_source(node.block, inner=True):
+            ret.append("\t" + line)
+        ret.append('}')
         return ret
 
     def visit_BlockExpression(self, node):
-        return '{ ' + self.to_source(node.block, indent=0, joiner='; ') + '}'
+        return '{ ' + ' '.join(self.to_source(node.block, inner=True)) + ' }'
 
     def visit_ExpressionStatement(self, node):
-        return node.statement.visit(self)
+        return node.statement.visit(self) + ';'
 
     def visit_FuncCall(self, node):
-        args = ', '.join(self.visit(arg) for arg in node.args)
+        args = ', '.join(arg.visit(self) for arg in node.args)
         return node.name + '(' + args + ')'
 
     def visit_FuncDeclStatement(self, node):
+        ret = []
         args = []
         for arg in node.args:
             args.append(' '.join(arg))
-        return 'func ' + node.name + '(' + ', '.join(args) + ') ' + node.retval + ' {\n' + self.to_source(node.body, indent=1) + '}'
+        ret.append('func ' + node.name + '(' + ', '.join(args) + ') ' + node.retval + ' {')
+        for line in self.to_source(node.body, inner=True):
+            ret.append("\t" + line)
+        ret.append('}')
+        return ret
 
     def visit_ReturnStatement(self, node):
-        return 'return ' + node.retval.visit(self)
+        return 'return ' + node.retval.visit(self) +';'
 
-    def to_source(self, block, indent=0, joiner=';\n'):
+    def to_source(self, block, inner=False):
         if not isinstance(block, list):
             return block.visit(self)
-        ret = ''
+        ret = []
         for node in block:
-            ret += indent * '\t'
-            ret += node.visit(self)
-            if isinstance(node, (FuncDeclStatement, ConditionalStatement, ConditionalLoopStatement)):
-                ret += '\n'
+            code = node.visit(self)
+            if isinstance(code, list):
+                ret.extend(code)
             else:
-                ret += joiner
-        return ret
+                ret.append(code)
+        if not inner:
+            return '\n'.join(ret)
+        else:
+            return ret

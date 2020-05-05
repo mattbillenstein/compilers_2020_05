@@ -126,7 +126,7 @@ class AssignStatement(StatementNode):
     '''
     Example: foo = EXPR
     '''
-    def __init__(self, location: Location, expr: ExpressionNode):
+    def __init__(self, location: Location, value: ExpressionNode):
         self.location = location
         self.value = value
 

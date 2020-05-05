@@ -54,8 +54,7 @@ class ScriptModels(unittest.TestCase):
         print 2 + 3 * -4;
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
-        print 2 * 3 + -4;
-        """)
+        print 2 * 3 + -4;""")
         
         model = [
             PrintStatement(BinOp('+', Int(2), BinOp('*', Int(3), UnOp('-', Int(4))))),
@@ -77,12 +76,11 @@ class ScriptModels(unittest.TestCase):
         const pi = 3.14159;
         var tau float;
         tau = 2.0 * pi;
-        print tau;
-        """)
+        print tau;""")
         
         model = [
             AssignStatement(DeclLocation('pi', None, True), Float(3.14159)),
-            DeclLocation('tau', 'float', False),
+            ExpressionStatement(DeclLocation('tau', 'float', False)),
             AssignStatement(Location('tau'), BinOp('*', Float(2.0), Location('pi'))),
             PrintStatement(Location('tau'))
         ]
@@ -100,8 +98,7 @@ class ScriptModels(unittest.TestCase):
         \tprint a;
         } else {
         \tprint b;
-        }
-        ''')
+        }''')
         
         model = [
             AssignStatement(DeclLocation('a', 'int', False), Int(2)),
@@ -128,8 +125,7 @@ class ScriptModels(unittest.TestCase):
         \tfact = fact * x;
         \tprint fact;
         \tx = x + 1;
-        }
-        ''')
+        }''')
         
         model = [
                 AssignStatement(DeclLocation('n', None, True), Int(10)),
@@ -155,8 +151,7 @@ class ScriptModels(unittest.TestCase):
         var y = 42;
         x = { var t = y; y = x; t; };
         print x;
-        print y;
-        ''')
+        print y;''')
         
         model = [
             AssignStatement(DeclLocation('x'), Int(37)),
