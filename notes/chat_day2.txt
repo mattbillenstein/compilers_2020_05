@@ -1,0 +1,138 @@
+greg에서 모두에게: (12:21 오전)
+ ok, there is something weirdly satisfying about getting the program to execute for the first time... admittedly its only expr_source, but still. :) 
+David Beazley에서 모두에게: (12:28 오전)
+ Yes. It's kind of cool! I have pushed work in progress to my branch (dabeaz). 
+David Beazley에서 모두에게: (12:38 오전)
+ https://github.com/dabeaz/compilers_2020_05/issues/10 For scoping..... I highly recommend looking at collections.ChainMap Stepping away for a moment. 
+David Beazley에서 모두에게: (12:50 오전)
+ Back 
+David Beazley에서 모두에게: (12:58 오전)
+ Will talk in about 5 minutes. 
+Jordan Adler에서 모두에게: (01:13 오전)
+ Python scoping overview: https://sebastianraschka.com/Articles/2014_python_scope_and_namespaces.html Perl scoping overview: https://www.plover.com/~mjd/perl/FAQs/Namespaces.html 
+David Beazley에서 모두에게: (01:48 오전)
+ http://python-history.blogspot.com/2009/02/adding-support-for-user-defined-classes.html That link talks about classes, but there is a big discussion about scope and "self" and other things. 
+David Beazley에서 모두에게: (01:51 오전)
+ Will talk about tokenizing in about 10-15 minutes.  The start of parsing Wabbit source code. Stepping away for a minute. 
+Dan Davison에서 모두에게: (02:00 오전)
+ For runtime type assertions, the @typechecked decorator from https://github.com/agronholm/typeguard is seeming good. 
+David Beazley에서 모두에게: (02:52 오전)
+ Will work on tokenizing for a bit. Also lunch hour. Watch the parsing video (if you get a chance) 
+Spencer Young에서 모두에게: (03:05 오전)
+ I'm pretty happy with my Environment/scoping implementation :) 
+Spencer Young에서 모두에게: (03:27 오전)
+ RE: Python classes and usage of "self" -- I recently did some digging on how `super()` is able to be used without any arguments. Turns out, this is implemented in the parser :-) 
+Spencer Young에서 모두에게: (03:29 오전)
+ So, in parsing, `super()` is automatically transformed into 'super(CLASS, self)' before it's even interpreted :-O 
+Jordan Adler에서 모두에게: (03:36 오전)
+ Yep!  That didn’t use to be true, btw 
+greg에서 모두에게: (03:36 오전)
+ i suck at regex... anyone have a good reference on which characters require escaping? 
+Spencer Young에서 모두에게: (03:36 오전)
+ I highly recommend regex101.com It's even aware of Python's flavor of regex :-) 
+greg에서 모두에게: (03:37 오전)
+ sweet. thanks! 
+Spencer Young에서 모두에게: (03:39 오전)
+ So uh. Sorry if I missed it, but I noticed that the WabbitLexer defines a set of tokens with names that don't exist. Why isn't this a problem? 
+David Beazley에서 모두에게: (03:40 오전)
+ Dark magic. 
+Spencer Young에서 모두에게: (03:40 오전)
+ 🔮 
+David Beazley에서 모두에게: (03:43 오전)
+ Nothing to see there.... move along.... 
+greg에서 모두에게: (03:44 오전)
+ for FLOAT... i can get the cases for 1.234, .234.... but i can't figure out how to make 1234. work without truncating things like 1.234 to 1.2 \d?\.\d* that's what i'm doing but if i go \d?\.\d? things go badly. 
+David Beazley에서 모두에게: (03:45 오전)
+ Can you move to GitHub issue? 
+greg에서 모두에게: (03:45 오전)
+ i can. but will i is the question. i will. 
+David Beazley에서 모두에게: (03:45 오전)
+ Ha! 
+David Beazley에서 모두에게: (03:45 오전)
+ (Matching floats is probably on many minds... good to keep a record) 
+Spencer Young에서 모두에게: (03:46 오전)
+ My first thought was using lookaheads 
+greg에서 모두에게: (03:47 오전)
+ https://github.com/dabeaz/compilers_2020_05/issues/12 wait.. it works now? why does it work now? i hate regex so much. i love the regex101 site.. thanks for that Spencer! 
+andre에서 모두에게: (03:48 오전)
+ @greg I share your feelings about regex 
+David Beazley에서 모두에게: (03:49 오전)
+ All problems.... better with regex 
+Naz Ahmed에서 모두에게: (03:50 오전)
+ I'm finding it useful to write unit tests for each of the .wb files in Scripts. Helping me catch cases when adding a new term breaks older ones 
+Spencer Young에서 모두에게: (03:51 오전)
+ I'm trying to work on comments :think: 
+greg에서 모두에게: (03:53 오전)
+ the multiline comments are my issue. feel free to share when you figure it out please :) 
+Spencer Young에서 모두에게: (03:53 오전)
+ Yeah. I got block comments working, but only if they're on a single line. Multi-line block comments are broken for me oh. Because * doesn't match line terminators :O 
+David Beazley에서 모두에게: (03:54 오전)
+ Will comment on github issue for it ;-) 
+Rex Suter에서 모두에게: (04:05 오전)
+ https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags 
+Spencer Young에서 모두에게: (04:10 오전)
+ Gotta be careful with looking for newline, since you could reach EOF with no newline at end of file :) 
+David Beazley에서 모두에게: (04:11 오전)
+ Good catch! 
+David Beazley에서 모두에게: (04:19 오전)
+ Tokenizing is a good place to start thinking about unit tests. 
+Jordan Adler에서 모두에게: (04:20 오전)
+ https://github.com/dabeaz/compilers_2020_05/blob/jmadler/script_models.py 
+greg에서 모두에게: (04:28 오전)
+ w00t! got the line numbers to increase. yay! 
+Spencer Young에서 모두에게: (04:29 오전)
+ Does wabbit support Unicode escape sequences like Python? 
+David Beazley에서 모두에게: (04:30 오전)
+ I'd say no.... 
+greg에서 모두에게: (04:44 오전)
+ this is how i did the CHAR... CHAR = r"'((\\')|(\\n)|(\\x[a-fA-F0-9]{1,2})|(.))'" 
+Naz Ahmed에서 모두에게: (04:44 오전)
+ This is how I got CHAR working: https://gist.github.com/nastynaz/359a0850f95df707ad516df7cdd2ce78 
+greg에서 모두에게: (04:44 오전)
+ seems to kind of catch all the contitions 
+David Beazley에서 모두에게: (04:56 오전)
+ Stepping away for a minute 
+Spencer Young에서 모두에게: (04:58 오전)
+ What about for escape sequences? eg: print '\n' 
+David Beazley에서 모두에게: (05:07 오전)
+ Back. 
+Spencer Young에서 모두에게: (05:15 오전)
+ Also, could a CHAR literal be empty? :thinking: 
+David Beazley에서 모두에게: (05:16 오전)
+ I say no. 
+greg에서 모두에게: (05:16 오전)
+ why are you trying to make life difficult Spencer!?!? ;p 
+Spencer Young에서 모두에게: (05:16 오전)
+ :) I'm trying to think if '''  is a valid literal or not Right now... my tokenizer says yes :) 
+David Beazley에서 모두에게: (05:17 오전)
+ So, here's a weird thing...... you could have the tokenizer return an empty CHAR like that.  Maybe a later stage of the compiler (like the parser) decides to issue an error message if it appears to be empty. 
+greg에서 모두에게: (05:32 오전)
+ going to step away for a minute... how much longer before the next topic? don't want to miss it! 
+David Beazley에서 모두에게: (05:33 오전)
+ Was thinking in about 27 minutes. Top of the hour. 
+David Beazley에서 모두에게: (05:33 오전)
+ DIscussion will be about how to turn this into a parser. Actually... coffee sounds like a good idea.... stepping away for a few minutes. 
+David Beazley에서 모두에게: (05:54 오전)
+ Will start discussing parsing in about 5-6 minutes. 
+Sam에서 모두에게: (07:18 오전)
+ cool 
+svpooni에서 모두에게: (07:26 오전)
+ E → E + E | E – E | T
+T → T * T | T / T | F
+F → (E) | number | name 
+Jordan Adler에서 모두에게: (07:31 오전)
+ How do you handle ‘{ statements }' 
+Rex Suter에서 모두에게: (07:32 오전)
+ @_(‘LPAREN statements RPAREN’) and then define a statements method? 
+Jordan Adler에서 모두에게: (07:33 오전)
+ No I mean the EBNF string ‘{statement}’, which is the definition of statements 
+Rex Suter에서 모두에게: (07:36 오전)
+ statements : { statement }  statement : print_statement 
+Spencer Young에서 모두에게: (07:36 오전)
+ sorry all, gotta drop :wave: 
+David Beazley에서 모두에게: (07:37 오전)
+ See ya! 
+Rex Suter에서 모두에게: (07:37 오전)
+ So doesn’t it avoid the problem by dropping the plural and not defining itself? 
+svpooni에서 모두에게: (07:37 오전)
+ That was cool dave ! Now I understand the grammar 
