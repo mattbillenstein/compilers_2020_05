@@ -120,9 +120,12 @@ class WabbitLexer(Lexer):
         IF,
         CONTINUE,
         BREAK,
+        FLOAT,
+        ELSE,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
-    ignore_comment = r"\/\*.*\*\/"
+    ignore_line_comment = r"//.*"
+    ignore_block_comment = r"/\*((.|\n))*?\*/"
 
     CONST = r"const"
     VAR = r"var"
@@ -132,6 +135,7 @@ class WabbitLexer(Lexer):
     TIMES = r"\*"
     DIVIDE = r"/"
     DECIMAL = r"\d+\.\d+"  # 23.45
+    FLOAT = r"(\d+\.\d*)|(\d*\.\d+)"
     INTEGER = r"\d+"
     CHAR = r"\'.*\'"
 
@@ -149,6 +153,7 @@ class WabbitLexer(Lexer):
     LBRACE = r"{"
     RBRACE = r"}"
 
+    ELSE = r"else"
     WHILE = r"while"
     BREAK = r"break"
     CONTINUE = r"continue"
