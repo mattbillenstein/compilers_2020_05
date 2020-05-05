@@ -57,27 +57,27 @@ class FuncModels(unittest.TestCase):
         
         model = [
                 FuncDeclStatement('add', [['x', 'int'], ['y', 'int']], 'int', [
-                    ReturnStatement(BinOp('+', Location('x'), Location('y'))),
+                    ReturnStatement(BinOp('+', StorageLocation('x'), StorageLocation('y'))),
                 ]),
                 FuncDeclStatement('mul', [['x', 'int'], ['y', 'int']], 'int', [
-                    ReturnStatement(BinOp('*', Location('x'), Location('y'))),
+                    ReturnStatement(BinOp('*', StorageLocation('x'), StorageLocation('y'))),
                 ]),
                 FuncDeclStatement('factorial', [['n', 'int']], 'int', [
-                    ConditionalStatement(BinOp('==', Location('n'), Int(0)), [
+                    ConditionalStatement(BinOp('==', StorageLocation('n'), Int(0)), [
                         ReturnStatement(Int(1)),
                     ], [
-                        ReturnStatement(FuncCall('mul', [Location('n'), FuncCall('factorial', [FuncCall('add', [Location('n'), UnOp('-', Int(1))])])]))
+                        ReturnStatement(FuncCall('mul', [StorageLocation('n'), FuncCall('factorial', [FuncCall('add', [StorageLocation('n'), UnOp('-', Int(1))])])]))
                     ]),
                 ]),
                 FuncDeclStatement('print_factorials', [['last', 'int']], 'int', [
-                    AssignStatement(DeclLocation('x', False), Int(0)),
-                    ConditionalLoopStatement(BinOp('<', Location('x'), Location('last')), [
-                        PrintStatement(FuncCall('factorial', [Location('x')])),
-                        AssignStatement(Location('x'), FuncCall('add', [Location('x'), Int(1)]))
+                    AssignStatement(DeclStorageLocation('x', False), Int(0)),
+                    ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('last')), [
+                        PrintStatement(FuncCall('factorial', [StorageLocation('x')])),
+                        AssignStatement(StorageLocation('x'), FuncCall('add', [StorageLocation('x'), Int(1)]))
                     ])
                 ]),
                 FuncDeclStatement('main', [], 'int', [
-                    AssignStatement(DeclLocation('result', False), FuncCall('print_factorials', [Int(10)])),
+                    AssignStatement(DeclStorageLocation('result', False), FuncCall('print_factorials', [Int(10)])),
                     ReturnStatement(Int(0))
                 ]),
         ]

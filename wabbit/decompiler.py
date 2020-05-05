@@ -6,10 +6,10 @@ class Decompiler(ModelVisitor):
     def __init__(self):
         return
 
-    def visit_Location(self, node):
+    def visit_StorageLocation(self, node):
         return node.identifier
 
-    def visit_DeclLocation(self, node):
+    def visit_DeclStorageLocation(self, node):
         ret = 'const' if node.const else 'var'
         ret += ' ' + node.identifier
         if node._type:

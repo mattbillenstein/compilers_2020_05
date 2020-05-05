@@ -79,10 +79,10 @@ class ScriptModels(unittest.TestCase):
         print tau;""")
         
         model = [
-            AssignStatement(DeclLocation('pi', None, True), Float(3.14159)),
-            ExpressionStatement(DeclLocation('tau', 'float', False)),
-            AssignStatement(Location('tau'), BinOp('*', Float(2.0), Location('pi'))),
-            PrintStatement(Location('tau'))
+            AssignStatement(DeclStorageLocation('pi', None, True), Float(3.14159)),
+            ExpressionStatement(DeclStorageLocation('tau', 'float', False)),
+            AssignStatement(StorageLocation('tau'), BinOp('*', Float(2.0), StorageLocation('pi'))),
+            PrintStatement(StorageLocation('tau'))
         ]
         self.assertEqual(self.decompiler.to_source(model), source)
 
@@ -101,12 +101,12 @@ class ScriptModels(unittest.TestCase):
         }''')
         
         model = [
-            AssignStatement(DeclLocation('a', 'int', False), Int(2)),
-            AssignStatement(DeclLocation('b', 'int', False), Int(3)),
-            ConditionalStatement(BinOp('<', Location('a'), Location('b')), [
-                    PrintStatement(Location('a'))
+            AssignStatement(DeclStorageLocation('a', 'int', False), Int(2)),
+            AssignStatement(DeclStorageLocation('b', 'int', False), Int(3)),
+            ConditionalStatement(BinOp('<', StorageLocation('a'), StorageLocation('b')), [
+                    PrintStatement(StorageLocation('a'))
                 ], [
-                    PrintStatement(Location('b'))
+                    PrintStatement(StorageLocation('b'))
                 ]
             ),
         ]
@@ -128,13 +128,13 @@ class ScriptModels(unittest.TestCase):
         }''')
         
         model = [
-                AssignStatement(DeclLocation('n', None, True), Int(10)),
-                AssignStatement(DeclLocation('x', 'int', False), Int(1)),
-                AssignStatement(DeclLocation('fact', 'int', False), Int(1)),
-                ConditionalLoopStatement(BinOp('<', Location('x'), Location('n')), [
-                    AssignStatement(Location('fact'), BinOp('*', Location('fact'), Location('x'))),
-                    PrintStatement(Location('fact')),
-                    AssignStatement(Location('x'), BinOp('+', Location('x'), Int(1)))
+                AssignStatement(DeclStorageLocation('n', None, True), Int(10)),
+                AssignStatement(DeclStorageLocation('x', 'int', False), Int(1)),
+                AssignStatement(DeclStorageLocation('fact', 'int', False), Int(1)),
+                ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('n')), [
+                    AssignStatement(StorageLocation('fact'), BinOp('*', StorageLocation('fact'), StorageLocation('x'))),
+                    PrintStatement(StorageLocation('fact')),
+                    AssignStatement(StorageLocation('x'), BinOp('+', StorageLocation('x'), Int(1)))
                 ]),
         ]
         
@@ -154,15 +154,15 @@ class ScriptModels(unittest.TestCase):
         print y;''')
         
         model = [
-            AssignStatement(DeclLocation('x'), Int(37)),
-            AssignStatement(DeclLocation('y'), Int(42)),
-            AssignStatement(Location('x'), BlockExpression([
-                AssignStatement(DeclLocation('t'), Location('y')),
-                AssignStatement(Location('y'), Location('x')),
-                ExpressionStatement(Location('t')),
+            AssignStatement(DeclStorageLocation('x'), Int(37)),
+            AssignStatement(DeclStorageLocation('y'), Int(42)),
+            AssignStatement(StorageLocation('x'), BlockExpression([
+                AssignStatement(DeclStorageLocation('t'), StorageLocation('y')),
+                AssignStatement(StorageLocation('y'), StorageLocation('x')),
+                ExpressionStatement(StorageLocation('t')),
                 ])),
-            PrintStatement(Location('x')),
-            PrintStatement(Location('y')),
+            PrintStatement(StorageLocation('x')),
+            PrintStatement(StorageLocation('y')),
                 ]
         self.assertEqual(self.decompiler.to_source(model), source)
 
