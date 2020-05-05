@@ -21,7 +21,7 @@
 
 
 from wabbit.model import *
-
+from wabbit.interp import interpret_program
 # ----------------------------------------------------------------------
 # Simple Expression
 #
@@ -56,14 +56,15 @@ source1 = """
 #           ]
 
 model1 = Program(
-    PrintStatement(BinOp.mult(BinOp.add(Integer(2), Integer(3)), Integer(-4))),
-    PrintStatement(BinOp.div(BinOp.subtract(Float(2.0), Float(3.0)), Float(-4.0))),
+    PrintStatement(BinOp.add(left=Integer(2), right=BinOp.mult(left=Integer(3), right=Integer(-4)))),
+    PrintStatement(BinOp.subtract(left=Float(2.0), right=BinOp.div(left=Float(3.0), right=Float(-4.0)))),
     PrintStatement(BinOp.add(Integer(-2), Integer(3))),
-    PrintStatement(BinOp.add(BinOp.mult(Integer(2), Integer(3)), Integer(-4))),
+    PrintStatement(BinOp.add(left=BinOp.mult(Integer(2), Integer(3)), right=Integer(-4))),
 )
 
 print(repr(model1))
 print(to_source(model1))
+interpret_program(model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -87,6 +88,7 @@ model2 = Program(
 
 print(repr(model2))
 print(to_source(model2))
+interpret_program(model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -118,7 +120,7 @@ model3 = Program(
 
 print(repr(model3))
 print(to_source(model3))
-
+interpret_program(model3)
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
 #
@@ -151,7 +153,7 @@ model4 = Program(
 
 print(repr(model4))
 print(to_source(model4))
-
+interpret_program(model4)
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
 # two variables using a single expression.
@@ -178,7 +180,7 @@ model5 = Program(
 )
 print(repr(model5))
 print(to_source(model5))
-
+interpret_program(model5)
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
