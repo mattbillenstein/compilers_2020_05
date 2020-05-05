@@ -3,9 +3,14 @@ from .model import Node
 NoneType = type(None)
 
 class SourceVisitor:
-    def visit(self, node):
+    def visit(self, node, container=None):
+        if node is None:
+            return ''
         m = getattr(self, f'visit_{node.__class__.__name__}')
-        return m(node)
+        s = m(node)
+        if container:
+            s = container % (s)
+        return s
 
     def visit_Name(self, node):
         return node.name
@@ -39,19 +44,19 @@ class SourceVisitor:
         return f'print {self.visit(node.arg)}'
 
     def visit_Const(self, node):
-        type = f' {self.visit(node.type)}' if node.type is not None else ''
+        type = self.visit(node.type, ' %s')
         return f'const {self.visit(node.loc)}{type} = {self.visit(node.arg)}'
 
     def visit_Var(self, node):
-        arg = f' = {self.visit(node.arg)}' if node.arg is not None else ''
-        type = f' {self.visit(node.type)}' if node.type is not None else ''
+        arg = self.visit(node.arg, ' = %s')
+        type = self.visit(node.type, ' %s')
         return f'var {self.visit(node.loc)}{type}{arg}'
 
     def visit_Assign(self, node):
         return f'{self.visit(node.loc)} = {self.visit(node.arg)}'
 
     def visit_If(self, node):
-        els = f' else {{\n{self.visit(node.eblock)}}}' if node.eblock is not None else ''
+        els = self.visit(node.eblock, ' else {\n%s}')
         return f'if {self.visit(node.cond)} {{\n{self.visit(node.block)}}}{els}'
 
     def visit_While(self, node):
@@ -63,7 +68,7 @@ class SourceVisitor:
 
     def visit_Func(self, node):
         args = ', '.join(self.visit(_) for _ in node.args)
-        type = f' {self.visit(node.ret_type)}' if node.ret_type else ''
+        type = self.visit(node.ret_type, ' %s')
         return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
 
     def visit_Arg(self, node):
