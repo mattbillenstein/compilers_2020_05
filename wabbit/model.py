@@ -48,9 +48,9 @@
 
 from types import SimpleNamespace
 from textwrap import dedent
+from collections import Counter
 
-
-class Model(SimpleNamespace):
+class Node(SimpleNamespace):
     def to_source(self):
         raise NotImplementedError
 
@@ -68,188 +68,271 @@ class Model(SimpleNamespace):
         return self.to_source()
 
 
-class Integer(Model):
+class Statement(Node):
+    ...
+
+
+class Definition(Statement):
+    ...
+
+
+class Expression(Node):
+    ...
+
+
+class Location(Expression):
+    ...
+
+
+class Struct(Node):
+    def __init__(self, *fields):
+        super().__init__(fields=tuple(fields))
+        assert all(isinstance(field, StructField) for field in self.fields)
+        c = Counter(field.name for field in self.fields)
+        for name, count in c.items():
+            if count > 1:
+                raise AssertionError("StructField names must be unique")
+
+
+class StructField(Node):
+    def __init__(self, name, type):
+        assert isinstance(name, str)
+        assert isinstance(type, str)
+        super().__init__(name=name, type=type)
+
+
+class FieldLookup(Location):
+    """
+    p.x
+    p.y
+    """
+    def __init__(self, struct, fieldname):
+        assert isinstance(struct, Struct)
+        assert isinstance(fieldname, str)
+        assert any(field.name == fieldname for field in struct.fields), f"Struct {struct} has no field {fieldname}"
+
+
+class Integer(Expression):
     """
     Example: 42
     """
 
     def __init__(self, value):
+        assert isinstance(value, int)
         super().__init__(value=value)
 
     def to_source(self):
         return f"{self.value}"
 
 
-class Float(Model):
+class Float(Expression):
     """
     Example: 42.0
     """
 
     def __init__(self, value):
+        assert isinstance(value, float)
         super().__init__(value=value)
 
     def to_source(self):
         return f"{self.value}"
 
 
-class BinOp(Model):
-    """
-    Example: left + right
-    """
-
-    def __init__(self, op, left, right, **kwargs):
-        super().__init__(op=op, left=left, right=right, **kwargs)
-
-    def to_source(self):
-        return f"{self.left} {self.op} {self.right}"
+class Bool(Expression):
+    def __init__(self, value):
+        assert isinstance(value, bool)
+        super().__init__(value=value)
 
 
-    @classmethod
-    def add(cls, left, right):
-        return cls(op="+", left=left, right=right)
-
-
-    @classmethod
-    def subtract(cls, left, right):
-        return cls(op="-", left=left, right=right)
-
-
-    @classmethod
-    def mult(cls, left, right):
-        return cls(op="*", left=left, right=right)
-
-
-    @classmethod
-    def div(cls, left, right):
-        return cls(op="/", left=left, right=right)
-
-
-class Statement(Model):
-    ...
-
-class Definition(Statement):
-    ...
-
-class Expression(Model):
-    ...
-
-
-class Assignment(Statement):
-    def __init__(self, left, value, **kwargs):
-        super().__init__(left=left, right=value, **kwargs)
-
-    def to_source(self):
-        return f'{self.left} = {self.right}'
-
-
-class Type(Model):
-    ...
-
-
-def infer_type(value):
-    ...
-
-
-class Const(Assignment):
-    def __init__(self, left, value, type_=None):
-        self._type = type_
-        super().__init__(left=left, value=value, type=type_ or infer_type(value))
-
-    def _infer_type(self):
-        ...
-
-    def to_source(self):
-        return f"const {self.left}{' ' + self.type if self._type else ''} = {self.right};"
-
-
-class Var(Assignment):
-    def __init__(self, left, value, type_=None):
-        self._type = None
-        super().__init__(left=left, value=value, type=type_ or infer_type(value))
-
-    def to_source(self):
-        return f"var {self.left}{' ' + self.type if self._type else ''} = {self.right};"
-
-
-class VarDeclaration(Model):
-    def __init__(self, name, type):
-        super().__init__(name=name, type=type)
-
-    def to_source(self):
-        return f"var {self.name} {self.type};"
-
-
-
-class Identifier(Model):
+class Identifier(Location):
     def __init__(self, name):
+        assert isinstance(name, str)
         super().__init__(name=name)
 
     def to_source(self):
         return f"{self.name}"
 
 
+class BinOp(Expression):
+    """
+    Example: left + right
+    """
 
-class PrintStatement(Model):
+    def __init__(self, op, left, right):
+        assert isinstance(op, str)
+        assert op in ('+', '-', '*', '/', '<', '<=', '=>', '>', '==', '!='), f"Operation {op} is invalid"
+        super().__init__(op=op, left=left, right=right)
+
+    def to_source(self):
+        return f"{self.left} {self.op} {self.right}"
+
+    @classmethod
+    def add(cls, left, right):
+        return cls(op="+", left=left, right=right)
+
+    @classmethod
+    def subtract(cls, left, right):
+        return cls(op="-", left=left, right=right)
+
+    @classmethod
+    def mult(cls, left, right):
+        return cls(op="*", left=left, right=right)
+
+    @classmethod
+    def div(cls, left, right):
+        return cls(op="/", left=left, right=right)
+
+
+class Compare(BinOp):
+    """
+    ==, !=, <, >, <=, >=
+    Comparisons operations always end up being Bools
+    """
+
+    @classmethod
+    def lt(cls, left, right):
+        return cls(left=left, right=right, op='<')
+
+    @classmethod
+    def lte(cls, left, right):
+        return cls(left=left, right=right, op='<=')
+
+    @classmethod
+    def gt(cls, left, right):
+        return cls(left=left, right=right, op='>')
+
+    @classmethod
+    def gte(cls, left, right):
+        return cls(left=left, right=right, op='>=')
+
+    @classmethod
+    def eq(cls, left, right):
+        return cls(left=left, right=right, op='==')
+
+    @classmethod
+    def ne(cls, left, right):
+        return cls(left=left, right=right, op='!=')
+
+
+class Unit(Expression):
+    def to_source(self):
+        return '()'
+
+
+class Program(Node):
+    """
+    Collection of statements
+    """
+    def __init__(self, *statements):
+        super().__init__(statements=tuple(statements))
+        for stmt in self.statements:
+            assert isinstance(stmt, Statement), f"{stmt} is not a statement"
+
+    def to_source(self):
+        return "\n".join(str(stmt) for stmt in self.statements)
+
+
+class Clause(Node):
+    """
+    Example: LBRACE statements RBRACE
+
+    Provides lexical scoping?
+    Should work for if statements, function definitions too maybe?
+    """
+    def __init__(self, *statements):
+        super().__init__(statements=tuple(statements))
+        for stmt in self.statements:
+            assert isinstance(stmt, Statement), f"{stmt} is not a statement"
+
+    def to_source(self):
+        statment_sources = "\n".join(str(stmt) for stmt in self.statements)
+        return f'{{ {statment_sources} }}'
+
+
+class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
+    def __init__(self, *statements):
+        super().__init__(statements=statements)
+
+    def to_source(self):
+        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '};'
+
+
+class PrintStatement(Statement):
+    """
+    PRINT expression SEMI
+    """
     def __init__(self, expression):
+        assert isinstance(expression, Expression)
         super().__init__(expression=expression)
 
     def to_source(self):
         return f"print {self.expression};"
 
 
-class LessThan(Model): #  Is this an operator or what?
-    def __init__(self, left, right):
-        super().__init__(left=left, right=right)
-
-    def to_source(self):
-        return f'{self.left} < {self.right}'
-
-
-class GreaterThan(Model):
-    def __init__(self, left, right):
-        super().__init__(left=left, right=right)
-
-    def to_source(self):
-        return f'{self.left} > {self.right}'
-
-
-class LessThanEqual(Model):  # Is this an operator or what?
-    def __init__(self, left, right):
-        super().__init__(left=left, right=right)
-
-    def to_source(self):
-        return f'{self.left} <= {self.right}'
-
-
-class GreaterThanEqual(Model):
-    def __init__(self, left, right):
-        super().__init__(left=left, right=right)
-
-    def to_source(self):
-        return f'{self.left} >= {self.right}'
-
-
-# aliases
-Gt = GreaterThan
-Gte = GreaterThanEqual
-Lt = LessThan
-Lte = LessThanEqual
-
-class IfStatement(Model):
-    def __init__(self, condition, body, else_clause=None):
+class IfStatement(Statement):
+    """
+    IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+    """
+    def __init__(self, condition, consequent, alternative=None):
+        assert isinstance(condition, Expression)
+        assert isinstance(consequent, Clause)
+        if alternative is not None:
+            assert isinstance(alternative, Clause)
         super().__init__(
-            condition=condition, body=body, else_clause=else_clause
-        )  # expression?  # ???
+            condition=condition, consequent=consequent, alternative=alternative
+        )
 
     def to_source(self):
         if_statement = f"if {self.condition} {{ \n    {self.body}\n}}"
-        if self.else_clause != None:
+        if self.alternative is not None:
             if_statement += f" else {{\n    {self.else_clause} \n}}"
         return dedent(if_statement)
 
 
-class WhileLoop(Model):
+class Assignment(Statement):
+    """
+    location ASSIGN expression SEMI
+    """
+    def __init__(self, location, value, **kwargs):
+        assert isinstance(location, Location)
+        assert isinstance(value, Expression)
+        super().__init__(location=location, value=value)
+
+    def to_source(self):
+        return f'{self.left} = {self.right};'
+
+
+class VariableDefinition(Definition):
+    def __init__(self, name, type, value):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        assert value is None or isinstance(value, Expression)
+        super().__init__(name=name, type=type, value=value)
+
+    def to_source(self):
+        src = f'var {self.name}'
+        if self.type is not None:
+            src += f' {self.type}'
+        if self.value is not None:
+            src += f' = {self.value}'
+        return src
+
+
+class ConstDefinition(Definition):
+    def __init__(self, name, value, type=None):
+        assert isinstance(name, str)
+        assert isinstance(value, Expression)
+        assert type is None or isinstance(type, str)
+        super().__init__(name=name, value=value, type=type)
+
+    def to_source(self):
+        return f"const {self.left}{' ' + self.type if self._type else ''} = {self.right};"
+
+
+class WhileLoop(Statement):
     def __init__(self, condition, body):
+        assert isinstance(condition, Expression)
+        assert isinstance(body, Clause)
         super().__init__(condition=condition, body=body)
 
     def to_source(self):
@@ -257,26 +340,12 @@ class WhileLoop(Model):
         return dedent(if_statement)
 
 
-class Program(Model):
-    def __init__(self, *statements):
-        self.statements = statements
-
-    def to_source(self):
-        return "\n".join(str(stmt) for stmt in self.statements)
-
-
-class Clause(Program):  # Not sure if this will remain a subclass of Program, but we'll see
-    ...  # maybe I can cleanly handle nesting formatting here?
-
-
-class CompoundExpr(Model):
-    def __init__(self, *statements):
-        self.statements = statements
-
-    def to_source(self):
-        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '}'
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
+
+
+class NodeVisitor:
+    ...  # We'll be removing to_source methods soon
 
 
 def to_source(node):
