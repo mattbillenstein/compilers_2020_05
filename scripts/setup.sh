@@ -19,7 +19,7 @@ fi
 
 python3 -m venv venv
 source venv/bin/activate
-pip install -U pip llvmlite
+pip install -U pip llvmlite sly
 
 echo
 echo "Setup complete - now 'source venv/bin/activate'"
