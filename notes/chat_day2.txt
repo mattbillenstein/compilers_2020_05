@@ -136,4 +136,7 @@ Rex Suter에서 모두에게: (07:37 오전)
  So doesn’t it avoid the problem by dropping the plural and not defining itself? 
 svpooni에서 모두에게: (07:37 오전)
  That was cool dave ! Now I understand the grammar 
+<<<<<<< HEAD
 F -> (E) | id Now I understand after looking at the parenthesis in the factor code
+=======
+>>>>>>> bb8b16b279066db366b131e51c6669128eebb2f9
