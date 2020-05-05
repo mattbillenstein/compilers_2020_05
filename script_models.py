@@ -1,5 +1,4 @@
 # See https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
-import sys
 from difflib import unified_diff
 from subprocess import Popen, PIPE
 
