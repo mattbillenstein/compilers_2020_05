@@ -83,7 +83,7 @@ class WabbitLexer(Lexer):
         PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
         PRINT, CONST, VAR, VAR_NAME, FLOAT, IF, ELSE, INT, WHILE, BREAK,
-        CONTINUE, TRUE, FALSE, LOR, LNOT, LAND, CHAR
+        CONTINUE, TRUE, FALSE, LOR, LNOT, LAND, CHAR, DOT
         }
     ignore = ' \t\n'
     ignore_single_line_comments = r'//.*'
@@ -108,7 +108,7 @@ class WabbitLexer(Lexer):
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    DECIMAL = r'\d*\.\d*'       # 23.45
+    DECIMAL = r'(\d*\.\d+|\d+\.\d*)'       # 23.45
     NUMBER = r'\d+'
 
     LE = r'<='
@@ -127,6 +127,7 @@ class WabbitLexer(Lexer):
     LBRACE = r'{'
     RBRACE = r'}'
     CHAR = r"'.'"
+    DOT = r'\.'
 
 
 def tokenize(text):

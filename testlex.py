@@ -48,3 +48,7 @@ def test_comments():
     print(tok_values)
     assert(tok_values == ['yeehaw', 'yipee'])
 
+def test_dot():
+    s = "a.x.y = 3"
+    tok_types = [t.type for t in list(tokenize(s))]
+    assert(tok_types == ['VAR_NAME', 'DOT', 'VAR_NAME', 'DOT', 'VAR_NAME', 'ASSIGN', 'NUMBER'])
