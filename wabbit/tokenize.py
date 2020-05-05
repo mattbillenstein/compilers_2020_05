@@ -144,15 +144,9 @@ class WabbitLexer(Lexer):
         r'\\\\',
         r"\\'",
         r'\\\"',
-        r'\\a',
-        r'\\b',
-        r'\\f',
-        r'\\n',
-        r'\\r',
-        r'\\t',
-        r'\\v',
-        r'\\ooo',
-        r'\\xhh',
+        r'\\[abfnrtv]',
+        r'\\\d{1,3}',
+        r'\\x[a-fA-F0-9]{1,2}',
     ]
 
     # Specify tokens as regex rules
@@ -164,7 +158,7 @@ class WabbitLexer(Lexer):
     DCOLON = r':'
     FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'      # 23.45
     INTEGER = r'\d+'
-    CHAR = r'\'([\s\S]|' + '|'.join(_escape_sequences) + r')\''
+    CHAR = r'\'(.|' + '|'.join(_escape_sequences) + r')\''
     DOT = "\."
     #LOOKUP = r'\.[a-zA-Z_]([a-zA-Z_\d])*'
     NAME = r'[a-zA-Z_]([a-zA-Z_\d])*'
