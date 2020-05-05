@@ -76,7 +76,7 @@ source2 = """
 
 model2 = Statements(
     [
-        Assignment(Const("pi"), Float(3.14159)),
+        Const("pi", None, Float(3.14159)),
         Var("tau", "float", None),
         Assignment(Variable("tau"), BinOp("*", Float(2.0), Variable("pi"))),
         Print(Variable("tau")),
@@ -131,7 +131,7 @@ source4 = """
 
 model4 = Statements(
     [
-        Assignment(Const("n"), Integer(10)),
+        Const("n", None, Integer(10)),
         Var("x", "int", Integer(1)),
         Var("fact", "int", Integer(1)),
         While(

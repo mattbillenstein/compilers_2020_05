@@ -367,14 +367,19 @@ class Float(Expression):
 
 class Const(Definition):
     """
-    Example: const bar
+    Example: const name [type] = value
     """
 
-    def __init__(self, value):
+    def __init__(self, name, type, value):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        assert isinstance(value, Expression) or isinstance(value, Location)
+        self.name = name
+        self.type = type
         self.value = value
 
     def __repr__(self):
-        return f"Const({self.value})"
+        return f"Const({self.name}, {self.type}, {self.value})"
 
 
 class Var(Definition):

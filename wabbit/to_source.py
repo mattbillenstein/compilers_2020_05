@@ -136,7 +136,9 @@ def to_source_Float(node):
 
 @rule(Const)
 def to_source_Const(node):
-    return f"const {node.value}"
+    if node.type:
+        return f"const {node.name} {node.type} = {to_source(node.value)}"
+    return f"const {node.name} = {to_source(node.value)}"
 
 
 @rule(Var)
