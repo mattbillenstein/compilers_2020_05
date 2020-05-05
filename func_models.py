@@ -50,9 +50,87 @@ func main() int {
 }
 '''
 
-model6 = None
+model6 = Program(
+    FunctionDefinition(name='add',
+                       parameters=(
+                           Parameter(name='x', type='int'),
+                           Parameter(name='y', type='int'),
+                       ),
+                       rtype='int',
+                       body=Clause(
+                            ReturnStatement(expression=BinOp.add(left=Identifier('x'), right=Identifier('y')))
+                       )
+                       ),
+    FunctionDefinition(name='mul',
+                       parameters=(
+                           Parameter(name='x', type='int'),
+                           Parameter(name='y', type='int'),
+                       ),
+                       rtype='int',
+                       body=Clause(
+                           ReturnStatement(expression=BinOp.mult(left=Identifier('x'), right=Identifier('y')))
+                       )
+                       ),
+    FunctionDefinition(name='factorial',
+                       parameters=(
+                           Parameter(name='n', type='int'),
+                       ),
+                       rtype='int',
+                       body=Clause(
+                           IfStatement(
+                               condition=Compare.eq(left=Identifier('n'), right=Integer(0)),
+                               consequent=Clause(
+                                   ReturnStatement(expression=Integer(1))
+                               ),
+                               alternative=Clause(
+                                   ReturnStatement(expression=FunctionCall(name='mul', arguments=(
+                                       Identifier('n'),
+                                       FunctionCall(name='factorial', arguments=(
+                                           FunctionCall(name='add', arguments=(
+                                               Identifier('n'),
+                                               Integer(-1)
+                                           )),
+                                       ))
+                                   )))
+                               )
+                           )
+                       )
+                       ),
+    FunctionDefinition(name='print_factorials',
+                       parameters=(
+                           Parameter(name='last', type='int'),
+                       ),
+                       rtype=None,
+                       body=Clause(
+                           VariableDefinition(name='x', type=None, value=Integer(0)),
+                           WhileLoop(condition=Compare.lt(left=Identifier('x'), right=Identifier('last')),
+                                     body=Clause(
+                                         PrintStatement(expression=FunctionCall(name='factorial',
+                                                                                arguments=(
+                                                                                    Identifier('x'),
+                                                                                ))),
+                                         Assignment(location=Identifier('x'), value=FunctionCall(name='add',
+                                                                                                 arguments=(
+                                                                                                     Identifier('x'),
+                                                                                                     Integer(1)
+                                                                                                 )))
+                                     ))
+                       )
+                       ),
+    FunctionDefinition(name='main',
+                       parameters=None,
+                       rtype='int',
+                       body=Clause(
+                           VariableDefinition(name='result', type=None, value=FunctionCall(name='print_factorials',
+                                                                                           arguments=(
+                                                                                               Integer(10),
+                                                                                           ))),
+                           ReturnStatement(expression=Integer(0))
+                       ))
+)
 
-# print(to_source(model6))
+print(repr(model6))
+print(to_source(model6))
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 

@@ -49,6 +49,7 @@
 from types import SimpleNamespace
 from textwrap import dedent
 from collections import Counter
+from collections.abc import Iterable
 
 class Node(SimpleNamespace):
     def to_source(self):
@@ -353,6 +354,49 @@ class WhileLoop(Statement):
         return dedent(if_statement)
 
 
+class Parameter(Node):
+    def __init__(self, name, type):
+        assert isinstance(name, str)
+        assert isinstance(type, str)
+        super().__init__(name=name, type=type)
+
+    def to_source(self):
+        return f'{self.name} {self.type}'
+
+
+class FunctionDefinition(Definition):
+    def __init__(self, name, parameters, rtype, body):
+        assert isinstance(name, str)
+        assert parameters is None or isinstance(parameters, Iterable)
+        parameters = tuple(parameters) if parameters else tuple()
+        assert all(isinstance(param, Parameter) for param in parameters)
+        assert rtype is None or isinstance(rtype, str)
+        assert isinstance(body, Clause)
+        super().__init__(name=name, parameters=parameters, rtype=rtype, body=body)
+
+    def to_source(self):
+        src = f"func {self.name} ({', '.join(str(param) for param in self.parameters)}) {self.rtype} {self.body}"
+        return src
+
+class ReturnStatement(Statement):
+    def __init__(self, expression):
+        assert isinstance(expression, Expression)
+        super().__init__(expression=expression)
+
+    def to_source(self):
+        return f'return {self.expression};'
+
+
+class FunctionCall(Expression):
+    def __init__(self, name, arguments):
+        assert isinstance(name, str)  # can functions be stored at locations?
+        assert arguments is None or isinstance(arguments, Iterable)
+        arguments = tuple(arguments) if arguments else tuple()
+        assert all(isinstance(arg, Expression) for arg in arguments)
+        super().__init__(name=name, arguments=arguments)
+
+    def to_source(self):
+        return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
