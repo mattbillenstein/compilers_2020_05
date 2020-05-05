@@ -1,4 +1,5 @@
 # interp.py
+# flake8: noqa
 #
 # In order to write a compiler for a programming language, it helps to
 # have some kind of specification of how programs written in the
@@ -15,7 +16,7 @@
 # So, the purpose of doing this is to pin down fine details as well as
 # our overall understanding of what needs to happen when programs run.
 #
-# We'll write our interpreter in Python.  The idea is relatively 
+# We'll write our interpreter in Python.  The idea is relatively
 # straightforward.  For each class in the model.py file, you're
 # going to write a function similar to this:
 #
@@ -23,23 +24,24 @@
 #        # Execute "node" in the environment "env"
 #        ...
 #        return result
-#   
-# The input to the function will be an object from model.py (node)
+#
+# The input to the function will be an object from model.py (node, env)
 # along with an object respresenting the execution environment (env).
 # The function will then execute the node in the environment and return
 # a result.  It might also modify the environment (for example,
-# when executing assignment statements, variable definitions, etc.). 
+# when executing assignment statements, variable definitions, etc.).
 #
 # For the purposes of this projrect, assume that all programs provided
 # as input are "sound"--meaning that there are no programming errors
 # in the input.  Our purpose is not to create a "production grade"
 # interpreter.  We're just trying to understand how things actually
-# work when a program runs. 
+# work when a program runs.
 #
 # For testing, try running your interpreter on the models you
 # created in the example_models.py file.
 #
 
+from functools import singledispatch
 from .model import *
 
 # Top level function that interprets an entire program. It creates the
@@ -50,15 +52,124 @@ def interpret_program(model):
     env = { }
     interpret(model, env)
 
-# Internal function to interpret a node in the environment
+
+@singledispatch
 def interpret(node, env):
-    # Expand to check for different node types
-    ...
     raise RuntimeError(f"Can't interpret {node}")
 
-                             
-                             
+add = interpret.register
 
-        
-        
-        
+# Order alphabetically so that they are easier to find
+
+@add(Assignment)
+def interpret_Assignment(node, env):
+    return f"{interpret(node.location, env)} = {interpret(node.expression, env)};"
+
+@add(BinOp)
+def interpret_BinOp(node, env):
+    left = interpret(node.left, env)
+    right = interpret(node.right, env)
+    if node.op == "+":
+        return left + right
+    elif node.op == "-":
+        return left - right
+    elif node.op == "*":
+        return left * right
+    elif node.op == "/":
+        if isinstance(left, int):
+            return left // right
+        else:
+            return left / right
+    elif node.op == ">":
+        return left > right
+    elif node.op == ">=":
+        return left >= right
+    elif node.op == "<":
+        return left < right
+    elif node.op == ">=":
+        return left >= right
+    elif node.op == "==":
+        return left == right
+    elif node.op == "!=":
+        return left != right
+    else:
+        raise RuntimeError(f"Unsupported operator {node.op}")
+
+@add(Const)
+def interpret_Const(node, env):
+    location = interpret(node.location, env)
+    value = interpret(node.expression, env)
+    # type = interpret(node.type) irrelevant for this
+    env[location] = value
+
+@add(Compound)
+def interpret_Compound(node, env):
+    statements = [interpret(s, env) for s in node.statements]
+    return "{ " + " ".join(statements) + " }"
+
+@add(Float)
+def interpret_Float(node, env):
+    return node.value
+
+@add(If)
+def interpret_If(node, env):
+    condition = interpret(node.condition, env)
+    if condition:
+        interpret(node.result, env)
+    elif node.alternative is not None:
+        interpret(node.alternative, env)
+
+@add(Integer)
+def interpret_Integer(node, env):
+    return node.value
+
+@add(Name)
+def interpret_Name(node, env):
+    if node.location in env:
+        return env[node.location]
+    return node.location
+
+@add(Print)
+def interpret_Print(node, env):
+    expr = interpret(node.expression, env)
+    if 'capture_print' in env:
+        env['capture_print'].append(expr)
+    print(expr)
+
+
+@add(Statements)
+def interpret_Statements(node, env):
+    for s in node.statements:
+        interpret(s, env)
+
+@add(Type)
+def interpret_Type(node, env):
+    return node.type
+
+@add(UnaryOp)
+def interpret_UnaryOp(node, env):
+    value = interpret(node.value, env)
+    if node.op == "-":
+        return -value
+    else:
+        return value
+
+@add(Var)
+def interpret_Var(node, env):
+    type = interpret(node.type, env)
+    if node.expression:
+        value = interpret(node.expression, env)
+    elif type == 'float':
+        value = 0.0
+    else:
+        value = 0
+    env[node.location] = value
+
+
+@add(While)
+def interpret_While(node, env):
+    return f"while {interpret(node.condition, env)} {{\n{interpret(node.statements, env)}\n}}"
+
+
+
+

@@ -1,7 +1,8 @@
 # tokenizer.py
+# flake8: noqa
 #
-# The role of a tokenizer is to turn raw text into recognized symbols 
-# known as tokens. 
+# The role of a tokenizer is to turn raw text into recognized symbols
+# known as tokens.
 #
 # The following set of tokens are defined for "WabbitScript".  Later
 # parts of the project require you to add more tokens.  The suggested
@@ -9,7 +10,7 @@
 #
 # Reserved Keywords:
 #     CONST   : 'const'
-#     VAR     : 'var'  
+#     VAR     : 'var'
 #     PRINT   : 'print'
 #     BREAK   : 'break'
 #     CONTINUE: 'continue'
@@ -50,7 +51,7 @@
 #     LAND     : '&&'
 #     LOR      : '||'
 #     LNOT     : '!'
-#    
+#
 # Miscellaneous Symbols
 #     ASSIGN   : '='
 #     SEMI     : ';'
@@ -66,36 +67,92 @@
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
-#      lineno: Illegal char 'c'         
-#      lineno: Unterminated character constant    
+#      lineno: Illegal char 'c'
+#      lineno: Unterminated character constant
 #      lineno: Unterminated comment
 #
 # ----------------------------------------------------------------------
 
+from sly import Lexer
+
+class WabbitLexer(Lexer):
+
+    ignore = ' \t\n'
+
+    tokens = {CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
+        NAME, FLOAT, INTEGER, CHAR, LE, GE, EQ, NE, LAND, LOR, PLUS, MINUS, TIMES,
+        DIVIDE, LT, GT, LNOT, ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE}
+
+    ignore_eol_comments = r'//.*'
+    ignore_comments = r'/\*(.|\n)*?\*/'
+
+# Reserved Keywords:
+    CONST   = r'const'
+    VAR     = r'var'
+    PRINT   = r'print'
+    BREAK   = r'break'
+    CONTINUE= r'continue'
+    IF      = r'if'
+    ELSE    = r'else'
+    WHILE   = r'while'
+    TRUE    = r'true'
+    FALSE   = r'false'
+
+    NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
+
+    # Literals
+    FLOAT = r'(\d+\.\d*|\.\d+)'
+    INTEGER = r'\d+'
+    CHAR = "'.'"
+
+# operators
+
+    LE       = r'<='
+    GE       = r'>='
+    EQ       = r'=='
+    NE       = r'!='
+    LAND     = r'&&'
+    LOR      = r'\|\|'
+    PLUS     = r'\+'
+    MINUS    = r'-'
+    TIMES    = r'\*'
+    DIVIDE   = r'/'
+    LT       = r'<'
+    GT       = r'>'
+    LNOT     = r'!'
+    ASSIGN   = r'='
+
+
+# Miscellaneous Symbols
+
+    SEMI     = r';'
+    LPAREN   = r'\('
+    RPAREN   = r'\)'
+    LBRACE   = r'{'
+    RBRACE   = r'}'
+
+#     ignore = ' \t'
 
 # High level function that takes input source text and turns it into tokens.
 # This is a natural place to use some kind of generator function.
 
 def tokenize(text):
-    ...
-    yield tok
-    ...
+    lexer = WabbitLexer()
+    for tok in lexer.tokenize(text):
+        yield tok
 
 # Main program to test on input files
-def main(filename):
-    with open(filename) as file:
-        text = file.read()
+def main(filename=None, text=None):
+    if text is None:
+        with open(filename) as file:
+            text = file.read()
 
     for tok in tokenize(text):
         print(tok)
 
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1])
-
-    
-            
-        
-
-            
-    
+    if len(sys.argv) > 1:
+        main(filename=sys.argv[1])
+    else:
+        main(text="abc 23 + 2 +")

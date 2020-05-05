@@ -32,6 +32,7 @@ from wabbit.model import *
 expr_source = "2 + 3 * 4"
 
 expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
+expr_model_a = Print(expr_model)
 
 # Can you turn it back into source code?
 # print(to_source(expr_model))
