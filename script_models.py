@@ -3,6 +3,7 @@ import sys
 from difflib import unified_diff
 from subprocess import Popen, PIPE
 
+from wabbit.format_source import format_source
 from wabbit.model import (
     Assign,
     BinOp,
@@ -16,12 +17,11 @@ from wabbit.model import (
     VarDef,
     While,
     Statements,
-    to_source,
 )
 
 
 def assert_equivalent(source, model):
-    transpiled_source = to_source(model)
+    transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
         diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
         proc = Popen(["delta"], stdin=PIPE)
@@ -32,25 +32,27 @@ def assert_equivalent(source, model):
 # ----------------------------------------------------------------------
 # Simple Expression
 expr_source = "2 + 3 * 4;"
-expr_model = [BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))]
+expr_model = Statements([BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))])
 
 assert_equivalent(expr_source, expr_model)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
 source1 = """
-print 2 + 3 * - 4;
-print 2.0 - 3.0 / - 4.0;
-print - 2 + 3;
-print 2 * 3 + - 4;
+print 2 + 3 * -4;
+print 2.0 - 3.0 / -4.0;
+print -2 + 3;
+print 2 * 3 + -4;
 """
 
-model1 = [
-    Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
-    Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
-    Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
-    Print(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))),
-]
+model1 = Statements(
+    [
+        Print(BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
+        Print(BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))),
+        Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+        Print(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))),
+    ]
+)
 
 assert_equivalent(source1, model1)
 
@@ -64,12 +66,14 @@ tau = 2.0 * pi;
 print tau;
 """
 
-model2 = [
-    ConstDef("pi", None, 3.14159),
-    VarDef("tau", "float", None),
-    Assign("tau", BinOp("*", Float(2.0), Name("pi"))),
-    Print(Name("tau")),
-]
+model2 = Statements(
+    [
+        ConstDef("pi", None, 3.14159),
+        VarDef("tau", "float", None),
+        Assign("tau", BinOp("*", Float(2.0), Name("pi"))),
+        Print(Name("tau")),
+    ]
+)
 
 assert_equivalent(source2, model2)
 
@@ -87,15 +91,17 @@ if a < b {
 }
 """
 
-model3 = [
-    VarDef("a", "int", 2),
-    VarDef("b", "int", 3),
-    If(
-        BinOp("<", Name("a"), Name("b")),
-        Statements([Print(Name("a"))]),
-        Statements([Print(Name("b"))]),
-    ),
-]
+model3 = Statements(
+    [
+        VarDef("a", "int", 2),
+        VarDef("b", "int", 3),
+        If(
+            BinOp("<", Name("a"), Name("b")),
+            Statements([Print(Name("a"))]),
+            Statements([Print(Name("b"))]),
+        ),
+    ]
+)
 
 assert_equivalent(source3, model3)
 
@@ -115,21 +121,23 @@ while x < n {
 }
 """
 
-model4 = [
-    ConstDef("n", None, 10),
-    VarDef("x", "int", 1),
-    VarDef("fact", "int", 1),
-    While(
-        BinOp("<", Name("x"), Name("n")),
-        Statements(
-            [
-                Assign("fact", BinOp("*", Name("fact"), Name("x"))),
-                Print(Name("fact")),
-                Assign("x", BinOp("+", Name("x"), Integer(1))),
-            ]
+model4 = Statements(
+    [
+        ConstDef("n", None, 10),
+        VarDef("x", "int", 1),
+        VarDef("fact", "int", 1),
+        While(
+            BinOp("<", Name("x"), Name("n")),
+            Statements(
+                [
+                    Assign("fact", BinOp("*", Name("fact"), Name("x"))),
+                    Print(Name("fact")),
+                    Assign("x", BinOp("+", Name("x"), Integer(1))),
+                ]
+            ),
         ),
-    ),
-]
+    ]
+)
 
 assert_equivalent(source4, model4)
 
