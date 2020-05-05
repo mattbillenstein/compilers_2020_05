@@ -137,19 +137,13 @@ class EnumLocation(Location):
         return f"EnumLocation({self.enum}, {self.location}, {self.args})"
 
 
-class MatchCondition:
+class MatchCondition(Expression):
     """
     Example:
-    return match(a) {
-                No => Number::No;
-                Integer(x) => match(b) {
-                    Integer(y) => Number::Integer(x + y);
-                    Float(y) => Number::Float(float(x) + y);
-                };
-                Float(x) => match(b) {
-                    Integer(y) => Number::Float(x + float(x));
-                    Float(y) => Number::Float(x + y);
-                };
+        Integer(x) => match(b) {
+        Integer(y) => Number::Integer(x + y);
+        Float(y) => Number::Float(float(x) + y);
+        };
     };
    """
 
@@ -162,19 +156,10 @@ class MatchCondition:
         return f"MatchCondition({self.choice}, {self.expression})"
 
 
-class Match:
+class Match(Expression):
     """
     Example:
     return match(a) {
-                No => Number::No;
-                Integer(x) => match(b) {
-                    Integer(y) => Number::Integer(x + y);
-                    Float(y) => Number::Float(float(x) + y);
-                };
-                Float(x) => match(b) {
-                    Integer(y) => Number::Float(x + float(x));
-                    Float(y) => Number::Float(x + y);
-                };
     };
    """
 
@@ -347,6 +332,7 @@ class Return(Statement):
     """
 
     def __init__(self, value):
+        assert isinstance(value, Expression) or isinstance(value, Location)
         self.value = value
 
     def __repr__(self):
@@ -359,6 +345,7 @@ class Float(Expression):
     """
 
     def __init__(self, value):
+        assert isinstance(value, float)
         self.value = value
 
     def __repr__(self):
@@ -411,7 +398,7 @@ class Let(Definition):
 
     def __init__(self, name, value):
         assert isinstance(name, str)
-        assert isinstance(value, Expression)
+        assert isinstance(value, Expression) or isinstance(value, Location)
         self.name = name
         self.value = value
 
@@ -425,6 +412,7 @@ class Variable(Location):
     """
 
     def __init__(self, value):
+        assert isinstance(value, str)
         self.value = value
 
     def __repr__(self):
@@ -437,6 +425,7 @@ class Integer(Expression):
     """
 
     def __init__(self, value):
+        assert isinstance(value, int)
         self.value = value
 
     def __repr__(self):
@@ -449,6 +438,8 @@ class UnaryOp(Expression):
     """
 
     def __init__(self, op, target):
+        assert isinstance(op, str)
+        assert isinstance(target, Expression) or isinstance(target, Location)
         self.op = op
         self.target = target
 
@@ -462,6 +453,9 @@ class BinOp(Expression):
     """
 
     def __init__(self, op, left, right):
+        assert isinstance(op, str)
+        assert isinstance(left, Expression) or isinstance(left, Location)
+        assert isinstance(right, Expression) or isinstance(right, Location)
         self.op = op
         self.left = left
         self.right = right
