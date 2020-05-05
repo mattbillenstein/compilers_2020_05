@@ -80,7 +80,7 @@ compare_source(model7, source7)
 # while let.
 
 source8 = '''
-enum MaybeNumber {
+enum Number {
     No;
     Integer(int);
     Float(float);
@@ -120,6 +120,22 @@ while let Integer(x) = a {
 }
 '''
 
-model8 = Block([])
+model8 = Block([
+    Enum(Name('Number'), [
+        Member(Name('No')),
+        Member(Name('Integer'), 'int'),
+        Member(Name('Float'), 'float'),
+    ]),
+    Func(Name('add'),
+        Block([
+            Return(
+                Match(Name('a'), [
+                ]),
+            ),
+        ]),
+        [Arg(Name('a'), 'Number'), Arg(Name('b'), 'Number')],
+        ret_type='Number',
+    ),
+])
 
 compare_source(model8, source8)

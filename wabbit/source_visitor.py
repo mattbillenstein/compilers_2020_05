@@ -77,6 +77,14 @@ class SourceVisitor:
         args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'
         return f'struct {self.visit(node.name)} {{\n{args}}}\n'
 
+    def visit_Enum(self, node):
+        args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'
+        return f'enum {self.visit(node.name)} {{\n{args}}}\n'
+
+    def visit_Member(self, node):
+        type = f'({node.type})' if node.type else ''
+        return f'{self.visit(node.name)}{type}'
+
 def to_source(node):
     return SourceVisitor().visit(node)
 

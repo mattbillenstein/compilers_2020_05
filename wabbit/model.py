@@ -275,3 +275,28 @@ class Struct(Node):
 
     def __repr__(self):
         return f'Struct({self.name}, {self.args})'
+
+class Enum(Node):
+    is_statement = True
+
+    def __init__(self, name, args):
+        assert isinstance(name, Name)
+        assert isinstance(args, list)
+        assert all(isinstance(_, Node) for _ in args)
+        assert len(args) > 0
+        self.name = name
+        self.args = args
+
+    def __repr__(self):
+        return f'Enum({self.name}, {self.args})'
+
+class Member(Node):
+    def __init__(self, name, type=None):
+        assert isinstance(name, Name)
+        assert isinstance(type, (str, NoneType))
+        self.name = name
+        self.type = type
+
+    def __repr__(self):
+        type = f', {self.type}' if self.type is not None else ''
+        return f'Member({self.name}{type})'
