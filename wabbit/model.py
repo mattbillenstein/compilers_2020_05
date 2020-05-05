@@ -138,9 +138,6 @@ class UnaryOp(Expression):
     def __repr__(self):
         return f'UnaryOp({self.op}, {self.operand})'
 
-    def to_source(self):
-        return f'({self.op} {self.operand.to_source()})'
-
 # Does this need to be part of the model or not? 
 class Grouping(Expression):
     '''
@@ -356,7 +353,7 @@ class NodeVisitor:
         ...
 
 # Example of using visitor pattern
-def to_source_2(node):
+def to_source(node):
     NodeVisitor().visit(node)    
 
 # Another option:  Use singledispatch
@@ -367,7 +364,7 @@ from functools import singledispatch
 def to_source(node):
     raise RuntimeError("Can't generate source for {node}")
 
-rule = to_source.register     # Shortcut
+rule = to_source.register     # Decorator shortcut
 
 # Absolutely critical:  The functions here can *** NOT *** be named "to_source"
 @rule(Integer)
