@@ -159,7 +159,7 @@ class WabbitLexer(Lexer):
     FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'      # 23.45
     INTEGER = r'\d+'
     CHAR = r'\'(.|' + '|'.join(_escape_sequences) + r')\''
-    DOT = "\."
+    DOT = r"\."
     #LOOKUP = r'\.[a-zA-Z_]([a-zA-Z_\d])*'
     NAME = r'[a-zA-Z_]([a-zA-Z_\d])*'
     print(CHAR)
