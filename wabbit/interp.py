@@ -119,22 +119,18 @@ def _(node, env):
 
 @interpret.register(IfElse)
 def _(node, env):
-    return env[node.name]
+    if interpret(node.condition, env):
+        interpret(node.consequence, env)
+    else:
+        interpret(node.otherwise, env)
 
-    # elif isinstance(node, If):
-        # return f'''if {to_source(node.condition)} {{
-# {to_source_nested_body(node.consequence)}
-# }}'''
-    # elif isinstance(node, IfElse):
-        # return f'''if {to_source(node.condition)} {{
-# {to_source_nested_body(node.consequence)}
-# }} else {{
-# {to_source_nested_body(node.otherwise)}
-# }}'''
-    # elif isinstance(node, While):
-        # return f'''while {to_source(node.condition)} {{
-# {to_source_nested_body(node.body)}
-# }}'''
+#TODO If
+
+@interpret.register(While)
+def _(node, env):
+    while interpret(node.condition, env):
+        interpret(node.body, env)
+
     # elif isinstance(node, CompoundExpression):
         # return f'{{ {"; ".join([to_source(each) for each in node.statements.statements])}; }}'
     # elif isinstance(node, Function):

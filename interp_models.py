@@ -59,3 +59,32 @@ env = {}
 interpret(model3, env)
 print('env after', env)
 print()
+
+
+source4 = '''
+    const n = 10;
+    var x int = 1;
+    var fact int = 1;
+
+    while x < n {
+        fact = fact * x;
+        print fact;
+        x = x + 1;
+    }
+'''
+
+model4 = Statements([
+    Const('n', Integer(10)),
+    Assign(Var('x', 'int'), Integer(1)),
+    Assign(Var('fact', 'int'), Integer(1)),
+    While(BinOp('<', Variable('x'), Variable('n')), Statements([
+        Assign(Variable('fact'), BinOp('*', Variable('fact'), Variable('x'))),
+        PrintStatement(Variable('x')),
+        Assign(Variable('x'), BinOp('+', Variable('x'), Integer(1))),
+        ])),
+    ])
+print(4)
+env = {}
+interpret(model4, env)
+print('env after', env)
+print()
