@@ -14,7 +14,7 @@
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitFunc.md
 
 from wabbit.model import *
-from wabbit.dis import to_source
+from wabbit.decompiler import to_source
 
 # ----------------------------------------------------------------------
 # Program 6: Functions.  The program prints out the first factorials
