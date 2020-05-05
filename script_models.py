@@ -116,8 +116,8 @@ if a < b {
 models.append(
     Statements(
         [
-            VarDef("a", "int", 2),
-            VarDef("b", "int", 3),
+            VarDef("a", "int", Integer(2)),
+            VarDef("b", "int", Integer(3)),
             If(
                 BinOp("<", Name("a"), Name("b")),
                 Statements([Print(Name("a"))]),
@@ -150,8 +150,8 @@ models.append(
     Statements(
         [
             ConstDef("n", None, 10),
-            VarDef("x", "int", 1),
-            VarDef("fact", "int", 1),
+            VarDef("x", "int", Integer(1)),
+            VarDef("fact", "int", Integer(1)),
             While(
                 BinOp("<", Name("x"), Name("n")),
                 Statements(

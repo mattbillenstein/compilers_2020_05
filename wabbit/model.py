@@ -39,14 +39,14 @@ class Name(Expression):
 @dataclass
 class UnaryOp(Expression):
     op: str
-    right: Any
+    right: Expression
 
 
 @dataclass
 class BinOp(Expression):
     op: str
-    left: Any
-    right: Any
+    left: Expression
+    right: Expression
 
 
 @dataclass
@@ -60,28 +60,28 @@ class ConstDef(Statement):
 class VarDef(Statement):
     name: str
     type: Optional[str]
-    value: Optional[Any]
+    value: Optional[Expression]
 
 
 @dataclass
 class Assign(Statement):
     location: Any
-    value: Any
+    value: Expression
 
 
 @dataclass
 class Print(Statement):
-    expression: Any
+    expression: Expression
 
 
 @dataclass
 class If(Statement):
-    test: Any
+    test: Expression
     then: Statements
     else_: Statements
 
 
 @dataclass
 class While(Statement):
-    test: Any
+    test: Expression
     then: Statements
