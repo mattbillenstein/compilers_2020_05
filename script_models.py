@@ -105,7 +105,7 @@ expr3 = If(BinOp('<', Name('a'), Name('b')),
                     Print(Name('a')),
                     Print(Name('b')))
 
-model3 = Statements(expr1, expr2, expr3)
+model3 = Statements(expr1, Statements(expr2), Statements(expr3))
 
 # print(to_source(model3))
 

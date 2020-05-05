@@ -233,7 +233,6 @@ class Statements(Statement):
         self.is_valid()
 
     def __repr__(self):
-        lines = [to_source(st) for st in self.statements]
         return f"Statements{self.statements}"
 
     def is_valid(self):
