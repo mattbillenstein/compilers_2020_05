@@ -58,7 +58,9 @@ class SourceFormatter:
 
     @typechecked
     def visit_VarDef(self, node: VarDef) -> str:
-        tokens = ["var", node.name, node.type]
+        tokens = ["var", node.name]
+        if node.type is not None:
+            tokens.append(node.type)
         if node.value is not None:
             tokens.extend(["=", str(node.value)])
         return " ".join(tokens)

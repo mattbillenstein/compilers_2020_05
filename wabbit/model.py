@@ -55,7 +55,7 @@ class ConstDef(Statement):
 @dataclass
 class VarDef(Statement):
     name: str
-    type: str
+    type: Optional[str]
     value: Optional[Any]
 
 
