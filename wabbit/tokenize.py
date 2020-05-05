@@ -2,100 +2,69 @@
 #
 # The role of a tokenizer is to turn raw text into recognized symbols 
 # known as tokens. 
-#
-# The following set of tokens are defined for "WabbitScript".  Later
-# parts of the project require you to add more tokens.  The suggested
-# name of the token is on the left. The matching text is on the right.
-#
-# Reserved Keywords:
-#     CONST   : 'const'
-#     VAR     : 'var'  
-#     PRINT   : 'print'
-#     BREAK   : 'break'
-#     CONTINUE: 'continue'
-#     IF      : 'if'
-#     ELSE    : 'else'
-#     WHILE   : 'while'
-#     TRUE    : 'true'
-#     FALSE   : 'false'
-#
-# Identifiers/Names
-#     NAME    : Text starting with a letter or '_', followed by any number
-#               number of letters, digits, or underscores.
-#               Examples:  'abc' 'ABC' 'abc123' '_abc' 'a_b_c'
-#
-# Literals:
-#     INTEGER :  123   (decimal)
-#
-#     FLOAT   : 1.234
-#               .1234
-#               1234.
-#
-#     CHAR    : 'a'     (a single character - byte)
-#               '\xhh'  (byte value)
-#               '\n'    (newline)
-#               '\''    (literal single quote)
-#
-# Operators:
-#     PLUS     : '+'
-#     MINUS    : '-'
-#     TIMES    : '*'
-#     DIVIDE   : '/'
-#     LT       : '<'
-#     LE       : '<='
-#     GT       : '>'
-#     GE       : '>='
-#     EQ       : '=='
-#     NE       : '!='
-#     LAND     : '&&'
-#     LOR      : '||'
-#     LNOT     : '!'
-#    
-# Miscellaneous Symbols
-#     ASSIGN   : '='
-#     SEMI     : ';'
-#     LPAREN   : '('
-#     RPAREN   : ')'
-#     LBRACE   : '{'
-#     RBRACE   : '}'
-#
-# Comments:  To be ignored
-#      //             Skips the rest of the line
-#      /* ... */      Skips a block (no nesting allowed)
-#
-# Errors: Your lexer may optionally recognize and report the following
-# error messages:
-#
-#      lineno: Illegal char 'c'         
-#      lineno: Unterminated character constant    
-#      lineno: Unterminated comment
-#
-# ----------------------------------------------------------------------
+
+from sly import Lexer
 
 
-# High level function that takes input source text and turns it into tokens.
-# This is a natural place to use some kind of generator function.
+class WabbitLexer(Lexer):
+    tokens = { IDENTIFIER, CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, INTEGER, FLOAT, CHAR,
+            PLUS, MINUS, TIMES, DIVIDE, LTE, LT, GTE, GT, EQ, NE, LAND, LOR, LNOT, ASSIGN, SEMI, LPAREN, RPAREN,
+            LBRACE, RBRACE, MIDLINE_COMMENT, MULTILINE_COMMENT_START, MULTILINE_COMMENT_END}
+    ignore = ' \t\n'
+
+    IDENTIFIER = r'[A-Za-z_][A-Za-z0-9_]*'
+    CONST = r'const'
+    VAR = r'var'
+    PRINT = r'print'
+    BREAK = r'break'
+    CONTINUE = r'continue'
+    IF = r'if'
+    ELSE = r'else'
+    WHILE = r'while'
+    TRUE = r'true'
+    FALSE = r'false'
+
+    INTEGER = r'[0-9]+'
+    FLOAT = r'[0-9]*\.[0-9]*'
+    CHAR = r"'(\'|\n|[a-z][A-Z][0-9]|\\x[0-9]{2})'"
+
+    PLUS = r'\+'
+    MINUS = r'-'
+    TIMES = r'\*'
+    DIVIDE = r'/'
+    LTE = r'<='
+    LT = r'<'
+    GTE = r'>='
+    GT = r'>'
+    EQ = r'=='
+    NE = r'!='
+    LAND = r'&&'
+    LOR = r'\|\|'
+    LNOT = r'!'
+
+    ASSIGN = r'='
+    SEMI = r';'
+    LPAREN = r'\('
+    RPAREN = r'\)'
+    LBRACE = r'{'
+    RBRACE = r'}'
+
+    MIDLINE_COMMENT = r'//'
+    MULTILINE_COMMENT_START = r'/\*'
+    MULTILINE_COMMENT_END = r'/\*\/'
+
 
 def tokenize(text):
     ...
     yield tok
     ...
 
-# Main program to test on input files
-def main(filename):
-    with open(filename) as file:
-        text = file.read()
-
-    for tok in tokenize(text):
-        print(tok)
 
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1])
-
-    
-            
-        
-
-            
-    
+    filename = sys.argv[1]
+    lexer = WabbitLexer()
+    with open(filename) as file:
+        text = file.read()
+    for tok in lexer.tokenize(text):
+        print(tok)
