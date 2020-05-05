@@ -1,7 +1,7 @@
 # tokenizer.py
 #
-# The role of a tokenizer is to turn raw text into recognized symbols 
-# known as tokens. 
+# The role of a tokenizer is to turn raw text into recognized symbols
+# known as tokens.
 #
 # The following set of tokens are defined for "WabbitScript".  Later
 # parts of the project require you to add more tokens.  The suggested
@@ -9,7 +9,7 @@
 #
 # Reserved Keywords:
 #     CONST   : 'const'
-#     VAR     : 'var'  
+#     VAR     : 'var'
 #     PRINT   : 'print'
 #     BREAK   : 'break'
 #     CONTINUE: 'continue'
@@ -50,7 +50,7 @@
 #     LAND     : '&&'
 #     LOR      : '||'
 #     LNOT     : '!'
-#    
+#
 # Miscellaneous Symbols
 #     ASSIGN   : '='
 #     SEMI     : ';'
@@ -66,20 +66,13 @@
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
-#      lineno: Illegal char 'c'         
-#      lineno: Unterminated character constant    
+#      lineno: Illegal char 'c'
+#      lineno: Unterminated character constant
 #      lineno: Unterminated comment
 #
 # ----------------------------------------------------------------------
 
 
-# High level function that takes input source text and turns it into tokens.
-# This is a natural place to use some kind of generator function.
-
-def tokenize(text):
-    ...
-    yield tok
-    ...
 
 # Main program to test on input files
 def main(filename):
@@ -89,13 +82,8 @@ def main(filename):
     for tok in tokenize(text):
         print(tok)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
-
-    
-            
-        
-
-            
-    
