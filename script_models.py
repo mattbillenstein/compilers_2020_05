@@ -22,9 +22,14 @@ from wabbit.model import (
 )
 
 
-def check(source, model, label):
+def print_source(source, language="go"):
+    proc = Popen(["bat", "--language", language], stdin=PIPE)
+    proc.stdin.write(source.encode("utf-8"))  # type: ignore
+    proc.communicate()
+
+
+def check(source, model):
     check_syntax(model)
-    dump_json(model, label)
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
         diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
@@ -193,6 +198,12 @@ models.append(
 
 
 for i, (source, model) in enumerate(zip(sources, models)):
-    check(source, model, i)
-
-print(interpret_program(models[0]))
+    print(
+        "\n\n------------------------------------------------------------------------------------"
+    )
+    print(i, "\n")
+    print_source(source)
+    check(source, model)
+    dump_json(model, i)
+    print("Interpreter output:\n")
+    interpret_program(model)
