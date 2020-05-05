@@ -92,6 +92,12 @@ def tokenize(text):
             raise RuntimeError(f"Unrecognized input: {text[:10]}...")
 
 
+def test_tokenizer():
+    test_cases = [("+", [("PLUS", "+")])]
+    for source, expected_tokens in test_cases:
+        assert list(tokenize(source)) == expected_tokens
+
+
 # Main program to test on input files
 def main(filename):
     with open(filename) as file:

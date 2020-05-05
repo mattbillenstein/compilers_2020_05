@@ -1,7 +1,9 @@
-PYTHON = ~/tmp/virtualenvs/compilers/bin/python
+BIN = ~/tmp/virtualenvs/compilers/bin
+PYTHON = $(BIN)/python
+PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py script_models.py
 
-all: format lint type-check test
+all: lint type-check test
 
 format:
 	@black --quiet --line-length 99 $(PYTHON_FILES)
@@ -12,12 +14,11 @@ lint:
 type-check:
 	@mypy --check-untyped-defs --config-file=tox.ini --no-color-output $(PYTHON_FILES)
 
-test: test-python
-
-test-python:
-	@$(PYTHON) -m doctest $(PYTHON_FILES)
+test:
+	$(PYTEST) --quiet wabbit/tokenize.py
 
 test-python-exercises:
+	@$(PYTHON) -m doctest $(PYTHON_FILES)
 	@for f in exercises/python/warmup/*.py; do \
 		$(PYTHON) $$f; \
 	done
