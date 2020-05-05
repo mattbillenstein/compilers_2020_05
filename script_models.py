@@ -19,8 +19,10 @@
 #
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
 
-
+import sys
 from wabbit.model import *
+from wabbit.interp import Interpreter
+
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -35,6 +37,7 @@ expr_model  = BinOp('+', Integer(2),
 
 # Can you turn it back into source code?
 print(to_source(expr_model))
+print(Interpreter().interpret(expr_model))
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -59,6 +62,7 @@ model1 = Statements(
 
 print("\n\nsource1:")
 print(to_source(model1))
+print(Interpreter().interpret(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -76,12 +80,13 @@ source2 = """
 model2 = Statements(
 	ConstDef("pi", None, Float(3.14159)),
 	VarDef("tau", "float"),
-	Assignment(Var("tau"), BinOp("+", Float(2.0), Var("pi"))),
-	PrintStatement(Var("tau"))
+	Assignment(Var("tau"), BinOp("*", Float(2.0), LocationLookup(Var("pi")))),
+	PrintStatement(LocationLookup(Var("tau")))
 )
 
 print("\n\nsource2:")
 print(to_source(model2))
+print(Interpreter().interpret(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -100,14 +105,15 @@ source3 = '''
 model3 = Statements(
 	VarDef("a", "int", Integer(2)),
 	VarDef("b", "int", Integer(3)),
-	IfConditional(BinOp("<", Var("a"), Var("b")), 
-				  Block(PrintStatement(Var("a"))),
-				  Block(PrintStatement(Var("b"))))
+	IfConditional(BinOp("<", LocationLookup(Var("a")), LocationLookup(Var("b"))), 
+				  Block(PrintStatement(LocationLookup(Var("a")))),
+				  Block(PrintStatement(LocationLookup(Var("b")))))
 
 )
 
 print("\n\nsource3:")
 print(to_source(model3))
+print(Interpreter().interpret(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -129,17 +135,19 @@ model4 = Statements(
 			ConstDef("n", None, Integer(10)), 
 			VarDef("x", "int", Integer(1)),
 			VarDef("fact", "int", Integer(1)),
-			While(BinOp("<", Var("x"), Var("n")), 
+			While(BinOp("<", LocationLookup(Var("x")), LocationLookup(Var("n"))), 
 				Block(
-					Assignment(Var("fact"), BinOp("*", Var("fact"), Var("x"))),
-					PrintStatement(Var("fact")),
-					Assignment(Var("x"), BinOp("+", Var("x"), Integer(1)))
+					Assignment(Var("fact"), BinOp("*", LocationLookup(Var("fact")), LocationLookup(Var("x")))),
+					PrintStatement(LocationLookup(Var("fact"))),
+					Assignment(Var("x"), BinOp("+", LocationLookup(Var("x")), Integer(1)))
 				)
 			)
 )
 
 print("\n\nsource4:")
 print(to_source(model4))
+print(Interpreter().interpret(model4))
+
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -158,18 +166,21 @@ model5 = Statements(
 	VarDef("x", None,  Integer(37)),
 	VarDef("y", None, Integer(42)),
 	Assignment(Var("x"), 
-				Block(
-						Assignment(Var("t"), LocationLookup(Var("y"))), 
-						Assignment(Var("x"), LocationLookup(Var("y"))), 
-						Var("t")
+				Compound(Statements(
+						VarDef("t", None, LocationLookup(Var("y"))), 
+						Assignment(Var("y"), LocationLookup(Var("x"))), 
+						ExpressionStatement(LocationLookup(Var("t")))
 						)
+					)
 			  ),
-	PrintStatement(Var("x")),
-	PrintStatement(Var("y"))
+	PrintStatement(LocationLookup(Var("x"))),
+	PrintStatement(LocationLookup(Var("y")))
 )
 
 print("\n\nModel5:")
 print(to_source(model5))
+print(Interpreter().interpret(model5))
+
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

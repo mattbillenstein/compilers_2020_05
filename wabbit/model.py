@@ -72,7 +72,7 @@ class Definition(Statement):
 	used for defining things like names
 	'''
 	
-class Location(Expression):
+class Location(Node):
 	'''
 	a place to store/load values
 	'''
@@ -204,7 +204,36 @@ class LocationLookup(Expression):
 		
 	def to_source(self):
 		return self.var.to_source()
+
+class Compound(Expression):
+	'''
+	A series of statements serving as a single expression.
+	'''
+	def __init__(self, stmts):
+		assert isinstance(stmts, Statements)
+		self.stmts = stmts
+
+	def __repr__(self):
+		return f'Compound({self.stmts})'	
 		
+	def to_source(self):
+		return '{\n' + self.stmts.to_source() + '\n}'
+		
+###
+### Locations
+###
+
+
+class Var(Location):
+	def __init__(self, name):
+		self.name = name
+		
+	def __repr__(self):
+		return f"Var({self.name})"
+		
+	def to_source(self):
+		return f"{self.name}"
+			
 
 ###
 ### Statements
@@ -315,17 +344,6 @@ class VarDef(Statement):
 			src += f" = {self.value.to_source()}"
 		src += ";"
 		return src
-	
-
-class Var(Location):
-	def __init__(self, name):
-		self.name = name
-		
-	def __repr__(self):
-		return f"Var({self.name})"
-		
-	def to_source(self):
-		return f"{self.name}"
 
 
 class IfConditional(Statement):
@@ -362,6 +380,17 @@ class While(Statement):
 	def to_source(self):
 		return f"while {self.condition.to_source()} {self.todo.to_source()}"
 		
+		
+class ExpressionStatement(Statement):
+	def __init__(self, expr):
+		assert isinstance(expr, Expression)
+		self.expr = expr
+	
+	def __repr__(self):
+		return f"ExpressionStatement({self.expr})"
+		
+	def to_source(self):
+		return ""
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 

@@ -78,7 +78,7 @@ class Metal:
         		
             op, *args = self.instructions[self.registers['PC']]
             # Uncomment to debug what's happening
-            print("%02d: %05s %20s ; %s" % (self.registers['PC'], op, args, self.registers))
+            print("%02d: %05s %20s ; %s %s" % (self.registers['PC'], op, args, " ".join(["'%s': %02d," % (x, self.registers[x]) for x in self.registers.keys()]), self.memory[self.registers['R7']:]))
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
