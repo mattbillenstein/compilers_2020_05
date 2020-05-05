@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # func_models.py
 #
 # The WabbitFunc language extends WabbitScript with support for
@@ -14,6 +16,7 @@
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitFunc.md
 
 from wabbit.model import *
+from wabbit.source_visitor import compare_source
 
 # ----------------------------------------------------------------------
 # Program 6: Functions.  The program prints out the first factorials
@@ -42,6 +45,7 @@ func print_factorials(last int) {
     while x < last {
         print factorial(x);
         x = add(x, 1);
+    }
 }
 
 func main() int {
@@ -50,9 +54,67 @@ func main() int {
 }
 '''
 
-model6 = None
+model6 = Block([
+    Func(Name('add'),
+        Block([
+            Return(BinOp('+', Name('x'), Name('y'))),
+        ], indent=' '*4),
+        [Arg(Name('x'), 'int'), Arg(Name('y'), 'int')],
+        'int',
+    ),
+    Func(Name('mul'),
+        Block([
+            Return(BinOp('*', Name('x'), Name('y'))),
+        ], indent=' '*4),
+        [Arg(Name('x'), 'int'), Arg(Name('y'), 'int')],
+        'int',
+    ),
+    Func(Name('factorial'),
+        Block([
+            If(BinOp('==', Name('n'), Integer(0)),
+                Block([
+                    Return(Integer(1)),
+                ], indent=' '*4),
+                Block([
+                    Return(
+                        Call(Name('mul'), [
+                            Name('n'),
+                            Call(Name('factorial'), [
+                                Call(Name('add'), [
+                                    Name('n'), Integer(-1),
+                                ]),
+                            ]),
+                        ]),
+                    ),
+                ], indent=' '*4),
+            ),
+        ], indent=' '*4),
+        [Arg(Name('n'), 'int')],
+        'int',
+    ),
+    Func(Name('print_factorials'),
+        Block([
+            Var(Name('x'), Integer(0)),
+            While(BinOp('<', Name('x'), Name('last')),
+                Block([
+                    Print(Call(Name('factorial'), [Name('x')])),
+                    Assign(Name('x'), Call(Name('add'), [Name('x'), Integer(1)])),
+                ], indent=' '*4),
+            ),
+        ], indent=' '*4),
 
-# print(to_source(model6))
+        [Arg(Name('last'), 'int')],
+    ),
+    Func(Name('main'),
+        Block([
+            Var(Name('result'), Call(Name('print_factorials'), [Integer(10)])),
+            Return(Integer(0)),
+        ], indent=' '*4),
+        ret_type='int',
+    ),
+])
+
+compare_source(model6, source6)
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 

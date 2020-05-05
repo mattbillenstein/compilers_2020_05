@@ -1,3 +1,5 @@
+from .model import Node
+
 NoneType = type(None)
 
 class SourceVisitor:
@@ -22,7 +24,7 @@ class SourceVisitor:
         for stmt in node.statements:
             s = self.visit(stmt) + ('' if stmt.is_statement else ';')
             # hack, split lines to add indent, then rejoin them...
-            lines = [node.indent + _ for _ in s.split('\n') if _.strip()]
+            lines = [node.indent + _ for _ in s.split('\n')]
             s = '\n'.join(lines)
             L.append(s)
         return '\n'.join(L) + '\n'
@@ -56,6 +58,30 @@ class SourceVisitor:
     def visit_Name(self, node):
         return node.name
 
+    def visit_Func(self, node):
+        args = ', '.join(self.visit(_) for _ in node.args)
+        type = f' {node.ret_type}' if node.ret_type else ''
+        return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
+
+    def visit_Arg(self, node):
+        return f'{self.visit(node.name)} {node.type}'
+
+    def visit_Return(self, node):
+        return f'return {self.visit(node.value)}'
+
+    def visit_Call(self, node):
+        args = ', '.join(self.visit(_) for _ in node.args)
+        return f'{self.visit(node.name)}({args})'
 
 def to_source(node):
     return SourceVisitor().visit(node)
+
+
+def compare_source(source, expected):
+    if isinstance(source, Node):
+        source = to_source(source)
+
+    if source.strip('\n') != expected.strip('\n'):
+        print(repr(source.strip('\n')))
+        print(repr(expected.strip('\n')))
+        raise ValueError('Mismatched Source')

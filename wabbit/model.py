@@ -116,7 +116,8 @@ class Block(Node):
         self.indent = indent
 
     def __repr__(self):
-        return f'Block({[_ for _ in self.statements]}, indent={indent})'
+        indent = ", indent='{self.indent}'" if self.indent else ''
+        return f'Block({[_ for _ in self.statements]}{indent})'
 
 class Print(Node):
     '''
@@ -200,7 +201,7 @@ class Compound(Node):
         self.statements = statements
 
     def __repr__(self):
-        return f'Compound({[_ for _ in self.statements]})'
+        return f'Compound({self.statements})'
 
 class Name(Node):
     def __init__(self, name):
@@ -209,3 +210,54 @@ class Name(Node):
 
     def __repr__(self):
         return f'Name({self.name})'
+
+class Func(Node):
+    is_statement = True
+
+    def __init__(self, name, block, args=None, ret_type=None):
+        assert isinstance(name, Name)
+        assert isinstance(block, Block)
+        args = args or []
+        assert isinstance(args, list)
+        assert all(isinstance(_, Node) for _ in args)
+        assert isinstance(ret_type, (NoneType, str))
+        self.name = name
+        self.args = args
+        self.ret_type = ret_type
+        self.block = block
+
+    def __repr__(self):
+        args = (', '+ repr(self.args)) if self.args else ''
+        ret_type = (', ' + self.ret_type) if self.ret_type is not None else ''
+        return f'Func({self.name}, {self.block}{args}{ret_type})'
+
+class Return(Node):
+    def __init__(self, value):
+        assert isinstance(value, Node)
+        self.value = value
+    
+    def __repr__(self):
+        return f'Return({self.value})'
+
+class Arg(Node):
+    def __init__(self, name, type):
+        assert isinstance(name, Name)
+        assert isinstance(type, str)
+        self.name = name
+        self.type = type
+    
+    def __repr__(self):
+        return f'Arg({self.name}, {self.type})'
+
+class Call(Node):
+    def __init__(self, name, args):
+        assert isinstance(name, Name)
+        args = args or []
+        assert isinstance(args, list)
+        assert all(isinstance(_, Node) for _ in args)
+        self.name = name
+        self.args = args
+    
+    def __repr__(self):
+        args = (', ' + repr(self.args)) if self.args else ''
+        return f'Call({self.name}{args})'
