@@ -49,7 +49,6 @@ print(match y {
           Yes(val) => val;
       });
 
-
 /* Challenge. Here's a quadratic function:
 
    f(x) = a*x**2 + b*x + c
@@ -61,8 +60,3 @@ print(match y {
    Write a function that computes this using the sqrt() function above. 
    Since there might not be a solution, have it also return a MaybeFloat.
 */
-
-
-   
-
-
