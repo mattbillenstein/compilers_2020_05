@@ -51,6 +51,7 @@ from textwrap import dedent
 from collections import Counter
 from collections.abc import Iterable
 
+
 class Node(SimpleNamespace):
     def to_source(self):
         raise NotImplementedError
@@ -84,10 +85,12 @@ class Expression(Node):
 class Location(Expression):
     ...
 
+
 class ExpressionStatement(Expression, Statement):
     """
     Expressions on their own CAN be statements
     """
+
     def __init__(self, expression):
         assert isinstance(expression, Expression)
         super().__init__(expression=expression)
@@ -95,6 +98,7 @@ class ExpressionStatement(Expression, Statement):
     def to_source(self):
         src = str(self.expression)
         return f"{src};"
+
 
 class Struct(Node):
     def __init__(self, *fields):
@@ -118,10 +122,13 @@ class FieldLookup(Location):
     p.x
     p.y
     """
+
     def __init__(self, struct, fieldname):
         assert isinstance(struct, Struct)
         assert isinstance(fieldname, str)
-        assert any(field.name == fieldname for field in struct.fields), f"Struct {struct} has no field {fieldname}"
+        assert any(
+            field.name == fieldname for field in struct.fields
+        ), f"Struct {struct} has no field {fieldname}"
 
 
 class Integer(Expression):
@@ -172,7 +179,18 @@ class BinOp(Expression):
 
     def __init__(self, op, left, right):
         assert isinstance(op, str)
-        assert op in ('+', '-', '*', '/', '<', '<=', '=>', '>', '==', '!='), f"Operation {op} is invalid"
+        assert op in (
+            "+",
+            "-",
+            "*",
+            "/",
+            "<",
+            "<=",
+            "=>",
+            ">",
+            "==",
+            "!=",
+        ), f"Operation {op} is invalid"
         assert isinstance(left, Expression)
         assert isinstance(right, Expression)
         super().__init__(op=op, left=left, right=right)
@@ -205,38 +223,39 @@ class Compare(BinOp):
 
     @classmethod
     def lt(cls, left, right):
-        return cls(left=left, right=right, op='<')
+        return cls(left=left, right=right, op="<")
 
     @classmethod
     def lte(cls, left, right):
-        return cls(left=left, right=right, op='<=')
+        return cls(left=left, right=right, op="<=")
 
     @classmethod
     def gt(cls, left, right):
-        return cls(left=left, right=right, op='>')
+        return cls(left=left, right=right, op=">")
 
     @classmethod
     def gte(cls, left, right):
-        return cls(left=left, right=right, op='>=')
+        return cls(left=left, right=right, op=">=")
 
     @classmethod
     def eq(cls, left, right):
-        return cls(left=left, right=right, op='==')
+        return cls(left=left, right=right, op="==")
 
     @classmethod
     def ne(cls, left, right):
-        return cls(left=left, right=right, op='!=')
+        return cls(left=left, right=right, op="!=")
 
 
 class Unit(Expression):
     def to_source(self):
-        return '()'
+        return "()"
 
 
 class Program(Node):
     """
     Collection of statements
     """
+
     def __init__(self, *statements):
         super().__init__(statements=tuple(statements))
         for stmt in self.statements:
@@ -253,6 +272,7 @@ class Clause(Node):
     Provides lexical scoping?
     Should work for if statements, function definitions too maybe?
     """
+
     def __init__(self, *statements):
         super().__init__(statements=tuple(statements))
         for stmt in self.statements:
@@ -260,7 +280,7 @@ class Clause(Node):
 
     def to_source(self):
         statment_sources = "\n\t".join(str(stmt) for stmt in self.statements)
-        return f'{{ \n\t{statment_sources} \n}}'
+        return f"{{ \n\t{statment_sources} \n}}"
 
 
 class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
@@ -268,13 +288,14 @@ class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
         super().__init__(*statements)
 
     def to_source(self):
-        return '{' + ' '.join(str(stmt) for stmt in self.statements) + '}'
+        return "{" + " ".join(str(stmt) for stmt in self.statements) + "}"
 
 
 class PrintStatement(Statement):
     """
     PRINT expression SEMI
     """
+
     def __init__(self, expression):
         assert isinstance(expression, Expression)
         super().__init__(expression=expression)
@@ -287,6 +308,7 @@ class IfStatement(Statement):
     """
     IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     """
+
     def __init__(self, condition, consequent, alternative=None):
         assert isinstance(condition, Expression)
         assert isinstance(consequent, Clause)
@@ -307,13 +329,14 @@ class Assignment(Statement):
     """
     location ASSIGN expression SEMI
     """
+
     def __init__(self, location, value):
         assert isinstance(location, Location)
         assert isinstance(value, Expression)
         super().__init__(location=location, value=value)
 
     def to_source(self):
-        return f'{self.location} = {self.value};'
+        return f"{self.location} = {self.value};"
 
 
 class VariableDefinition(Definition):
@@ -324,11 +347,11 @@ class VariableDefinition(Definition):
         super().__init__(name=name, type=type, value=value)
 
     def to_source(self):
-        src = f'var {self.name}'
+        src = f"var {self.name}"
         if self.type is not None:
-            src += f' {self.type}'
+            src += f" {self.type}"
         if self.value is not None:
-            src += f' = {self.value}'
+            src += f" = {self.value}"
         return f"{src};"
 
 
@@ -340,7 +363,9 @@ class ConstDefinition(Definition):
         super().__init__(name=name, value=value, type=type)
 
     def to_source(self):
-        return f"const {self.name}{' ' + self.type if self.type else ''} = {self.value};"
+        return (
+            f"const {self.name}{' ' + self.type if self.type else ''} = {self.value};"
+        )
 
 
 class WhileLoop(Statement):
@@ -361,7 +386,7 @@ class Parameter(Node):
         super().__init__(name=name, type=type)
 
     def to_source(self):
-        return f'{self.name} {self.type}'
+        return f"{self.name} {self.type}"
 
 
 class FunctionDefinition(Definition):
@@ -378,13 +403,14 @@ class FunctionDefinition(Definition):
         src = f"func {self.name} ({', '.join(str(param) for param in self.parameters)}) {self.rtype} {self.body}"
         return src
 
+
 class ReturnStatement(Statement):
     def __init__(self, expression):
         assert isinstance(expression, Expression)
         super().__init__(expression=expression)
 
     def to_source(self):
-        return f'return {self.expression};'
+        return f"return {self.expression};"
 
 
 class FunctionCall(Expression):
@@ -397,6 +423,7 @@ class FunctionCall(Expression):
 
     def to_source(self):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
+
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
