@@ -85,8 +85,8 @@ class BinOp(Node):
     '''
     def __init__(self, op, left, right):
         assert op in ('+', '-', '/', '*', '<', '>', '<=', '>=', '!=', '==')
-        assert isinstance(left, (Node, str))
-        assert isinstance(right, (Node, str))
+        assert isinstance(left, Node)
+        assert isinstance(right, Node)
         self.op = op
         self.left = left
         self.right = right
@@ -103,7 +103,7 @@ class UnaOp(Node):
     '''
     def __init__(self, op, arg):
         assert op in ('-',)
-        assert isinstance(arg, (Node, str))
+        assert isinstance(arg, Node)
         self.op = op
         self.arg = arg
 
@@ -133,7 +133,7 @@ class Block(Node):
     def to_source(self):
         L = []
         for stmt in self.statements:
-            s = to_source(stmt) + ('' if not isinstance(stmt, Node) or stmt.is_statement else ';')
+            s = to_source(stmt) + ('' if stmt.is_statement else ';')
             # hack, split lines to add indent, then rejoin them...
             lines = [self.indent + _ for _ in s.split('\n') if _.strip()]
             s = '\n'.join(lines)
@@ -145,7 +145,7 @@ class Print(Node):
     Print is kinda a special case of a function call - optional parens
     '''
     def __init__(self, arg):
-        assert isinstance(arg, (Node, str))
+        assert isinstance(arg, Node)
         self.arg = arg
 
     def __repr__(self):
@@ -156,8 +156,8 @@ class Print(Node):
 
 class Const(Node):
     def __init__(self, loc, arg, type=None):
-        assert isinstance(loc, str)
-        assert isinstance(arg, (Node, str))
+        assert isinstance(loc, Node)
+        assert isinstance(arg, Node)
         assert isinstance(type, (str, NoneType))
         self.loc = loc
         self.arg = arg
@@ -169,12 +169,12 @@ class Const(Node):
 
     def to_source(self):
         type = f' {self.type}' if self.type is not None else ''
-        return f'const {self.loc}{type} = {to_source(self.arg)}'
+        return f'const {to_source(self.loc)}{type} = {to_source(self.arg)}'
 
 class Var(Node):
     def __init__(self, loc, arg=None, type=None):
-        assert isinstance(loc, str)
-        assert isinstance(arg, (Node, str, NoneType))
+        assert isinstance(loc, Node)
+        assert isinstance(arg, (Node, NoneType))
         assert isinstance(type, (str, NoneType))
         self.loc = loc
         self.arg = arg
@@ -188,12 +188,12 @@ class Var(Node):
     def to_source(self):
         arg = f' = {to_source(self.arg)}' if self.arg is not None else ''
         type = f' {self.type}' if self.type is not None else ''
-        return f'var {self.loc}{type}{arg}'
+        return f'var {to_source(self.loc)}{type}{arg}'
 
 class Assign(Node):
     def __init__(self, loc, arg):
-        assert isinstance(loc, str)
-        assert isinstance(arg, (Node, str))
+        assert isinstance(loc, Node)
+        assert isinstance(arg, Node)
         self.loc = loc
         self.arg = arg
 
@@ -201,13 +201,13 @@ class Assign(Node):
         return f'Assign({self.loc}, {self.arg})'
 
     def to_source(self):
-        return f'{self.loc} = {to_source(self.arg)}'
+        return f'{to_source(self.loc)} = {to_source(self.arg)}'
 
 class If(Node):
     is_statement = True
 
     def __init__(self, cond, block, eblock=None):
-        assert isinstance(cond, (Node, str))
+        assert isinstance(cond, Node)
         assert isinstance(block, Block)
         assert isinstance(eblock, (Block, NoneType))
         self.cond = cond
@@ -226,7 +226,7 @@ class While(Node):
     is_statement = True
 
     def __init__(self, cond, block):
-        assert isinstance(cond, (Node, str))
+        assert isinstance(cond, Node)
         assert isinstance(block, Block)
         self.cond = cond
         self.block = block
@@ -240,7 +240,7 @@ class While(Node):
 class Compound(Node):
     def __init__(self, statements):
         assert isinstance(statements, list)
-        assert all(isinstance(_, (Node, str)) for _ in statements)
+        assert all(isinstance(_, Node) for _ in statements)
         self.statements = statements
 
     def __repr__(self):
@@ -250,9 +250,18 @@ class Compound(Node):
         s = '; '.join(to_source(_) for _ in self.statements) + ';'
         return f'{{ {s} }}'
 
+class Name(Node):
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
+
+    def __repr__(self):
+        return f'Name({self.name})'
+
+    def to_source(self):
+        return self.name
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 def to_source(node):
-    if isinstance(node, Node):
-        return node.to_source()
-    return str(node)
+    return node.to_source()

@@ -80,10 +80,10 @@ source2 = """
 """
 
 model2 = Block([
-    Const('pi', Float(3.14159)),
-    Var('tau', type='float'),
-    Assign('tau', BinOp('*', Float(2.0), 'pi')),
-    Print('tau'),
+    Const(Name('pi'), Float(3.14159)),
+    Var(Name('tau'), type='float'),
+    Assign(Name('tau'), BinOp('*', Float(2.0), Name('pi'))),
+    Print(Name('tau')),
 ], indent=' '*4)
 
 s = to_source(model2)
@@ -104,12 +104,12 @@ source3 = '''
 '''
 
 model3 = Block([
-    Var('a', Integer(2), type='int'),
-    Var('b', Integer(3), type='int'),
+    Var(Name('a'), Integer(2), type='int'),
+    Var(Name('b'), Integer(3), type='int'),
     If(
-        BinOp('<', 'a', 'b'),
-        Block([Print('a')], indent=' '*4),
-        Block([Print('b')], indent=' '*4),
+        BinOp('<', Name('a'), Name('b')),
+        Block([Print(Name('a'))], indent=' '*4),
+        Block([Print(Name('b'))], indent=' '*4),
     )
 ], indent=' '*4)
 
@@ -132,15 +132,15 @@ source4 = '''
 '''
 
 model4 = Block([
-    Const('n', Integer(10)),
-    Var('x', Integer(1), type='int'),
-    Var('fact', Integer(1), type='int'),
+    Const(Name('n'), Integer(10)),
+    Var(Name('x'), Integer(1), type='int'),
+    Var(Name('fact'), Integer(1), type='int'),
     While(
-        BinOp('<', 'x', 'n'),
+        BinOp('<', Name('x'), Name('n')),
         Block([
-            Assign('fact', BinOp('*', 'fact', 'x')),
-            Print('fact'),
-            Assign('x', BinOp('+', 'x', Integer(1))),
+            Assign(Name('fact'), BinOp('*', Name('fact'), Name('x'))),
+            Print(Name('fact')),
+            Assign(Name('x'), BinOp('+', Name('x'), Integer(1))),
         ], indent=' '*4),
     )
 ], indent=' '*4)
@@ -162,16 +162,16 @@ source5 = '''
 '''
 
 model5 = Block([
-    Var('x', Integer(37)),
-    Var('y', Integer(42)),
-    Assign('x', Compound([
-            Var('t', 'y'),
-            Assign('y', 'x'),
-            't',
+    Var(Name('x'), Integer(37)),
+    Var(Name('y'), Integer(42)),
+    Assign(Name('x'), Compound([
+            Var(Name('t'), Name('y')),
+            Assign(Name('y'), Name('x')),
+            Name('t'),
         ]),
     ),
-    Print('x'),
-    Print('y'),
+    Print(Name('x')),
+    Print(Name('y')),
 ], indent=' '*4)
 
 s = to_source(model5)
