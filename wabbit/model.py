@@ -89,9 +89,6 @@ class Integer(Expression):
     def __repr__(self):
         return f'Integer({self.value})'
 
-    def to_source(self):
-        return str(self.value)
-
 class Float(Expression):
     '''
     Example: 4.2
@@ -103,9 +100,6 @@ class Float(Expression):
     def __repr__(self):
         return f'Float({self.value})'
 
-    def to_source(self):
-        return str(self.value)
-
 class Bool(Expression):
     '''
     Literal Bool:  true, false
@@ -116,9 +110,6 @@ class Bool(Expression):
 
     def __repr__(self):
         return f'Bool({self.value})'
-
-    def to_source(self):
-        return str(self.value).lower()
 
 class BinOp(Expression):
     '''
@@ -133,12 +124,6 @@ class BinOp(Expression):
 
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
-
-    def visit(self, visitor):
-        visitor.visit_BinOp(self)
-
-    def to_source(self):
-        return f'({self.left.to_source()} {self.op} {self.right.to_source()})'
 
 class UnaryOp(Expression):
     '''
@@ -168,9 +153,6 @@ class Grouping(Expression):
     def __repr__(self):
         return f'Grouping({self.expression})'
 
-    def to_source(self):
-        return f'({self.expression.to_source()})'
-
 class LoadLocation(Expression):
     '''
     Loading a value out of a location for use in an expression.
@@ -182,9 +164,6 @@ class LoadLocation(Expression):
     def __repr__(self):
         return f'LoadLocation({self.location})'
 
-    def to_source(self):
-        return self.location.to_source()
-
 class Compound(Expression):
     '''
     A series of statements serving as a single expression.
@@ -195,10 +174,6 @@ class Compound(Expression):
 
     def __repr__(self):
         return f'Compound({self.statements})'
-
-    def to_source(self):
-        return '{\n' + self.statements.to_source() + '\n}'
-
 
 #   var x = { 2+3; 4+5; 10+11;};    // 21 is answer
 #   var x = if test compound else compound;   // Possible extension?
@@ -222,9 +197,6 @@ class Statements(Statement):
     def __repr__(self):
         return f'Statements({self.statements})'
 
-    def to_source(self):
-        return '\n'.join(stmt.to_source() for stmt in self.statements)
-
 # Example:   Assignment
 #
 #     a = 2 + 4;
@@ -241,10 +213,6 @@ class AssignmentStatement(Statement):
     def __repr__(self):
         return f'AssignmentStatement({self.location}, {self.expression})'
 
-    def to_source(self):
-        return f'{self.location.to_source()} = {self.expression.to_source()};'
-
-
 class ConstDefinition(Definition):
     '''
     const name [type] = value;
@@ -259,9 +227,6 @@ class ConstDefinition(Definition):
 
     def __repr__(self):
         return f'ConstDefinition({self.name}, {self.type}, {self.value})'
-
-    def to_source(self):
-        return f'const {self.name} {self.type if self.type else ""} = {self.value.to_source()};'
 
 class VarDefinition(Definition):
     '''
@@ -281,12 +246,6 @@ class VarDefinition(Definition):
     def __repr__(self):
         return f'VarDefinition({self.name}, {self.type}, {self.value.to_source()})'
 
-    def to_source(self):
-        src = f'var {self.name} {self.type if self.type else ""}'
-        if self.value:
-            src += f'= {self.value.to_source()}'
-        return src
-
 class PrintStatement(Statement):
     '''
     print expression ;
@@ -297,9 +256,6 @@ class PrintStatement(Statement):
 
     def __repr__(self):
         return f'PrintStatement({self.expression})'
-
-    def to_source(self):
-        return f'print {self.expression.to_source()};'
 
 class IfStatement(Statement):
     '''
@@ -316,12 +272,6 @@ class IfStatement(Statement):
     def __repr__(self):
         return f'IfStatement({self.test}, {self.consequence}, {self.alternative})'
 
-    def to_source(self):
-        # Enhancement.  Don't print else clause if empty.
-        return (f'if {self.test.to_source()}' + ' {\n' +
-                self.consequence.to_source() + '\n} else {\n' +
-                self.alternative.to_source() + '\n}')
-
 class WhileStatement(Statement):
     '''
     while test { body }
@@ -335,11 +285,6 @@ class WhileStatement(Statement):
     def __repr__(self):
         return f'WhileStatement({self.test}, {self.body})'
 
-    def to_source(self):
-        return (f'while {self.test.to_source()}' + ' {\n' +
-                self.body.to_source() + '\n}'
-                )
-
 # Wrapper around a expression to indicate usage as a statement
 class ExpressionStatement(Statement):
     def __init__(self, expression):
@@ -348,9 +293,6 @@ class ExpressionStatement(Statement):
 
     def __repr__(self):
         return f'ExpressionStatement({self.expression})'
-    
-    def to_source(self):
-        return f'{self.expression.to_source()};'
 
 class NamedLocation(Location):
     '''
@@ -363,24 +305,11 @@ class NamedLocation(Location):
     def __repr__(self):
         return f'NamedLocation({self.name})'
 
-    def to_source(self):
-        return str(self.name)
-
 # Future expansion (for structures)
 class DottedLocation(Location):
     '''
     a.b = 23
     '''
-
-# Should types be their own object in the model?  Or just strings?
-# Complex issue.  For now.... leave type names as strings. (Python strings)
-class Type(Node):
-    pass
-
-class SimpleType(Type):
-    def __init__(self, name):
-        self.name = name
-
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
@@ -435,27 +364,87 @@ def to_source_2(node):
 from functools import singledispatch
 
 @singledispatch
-def to_source_3(node):
+def to_source(node):
     raise RuntimeError("Can't generate source for {node}")
 
-rule = to_source_3.register     # Shortcut
+rule = to_source.register     # Shortcut
 
 # Absolutely critical:  The functions here can *** NOT *** be named "to_source"
-@rule
-def to_source_binop(node: BinOp):
-    return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
-
-@rule
-def to_source_integer(node: Integer):
+@rule(Integer)
+def to_source_integer(node):
     return str(node.value)
 
-@rule
-def to_source_unaryop(node: UnaryOp):
-    ...
+@rule(Float)
+def to_source_float(node):
+    return str(node.value)
+
+@rule(Bool)
+def to_source_bool(node):
+    return str(node.value).lower()
+
+@rule(BinOp)
+def to_source_binop(node):
+    return f'{to_source(node.left)} {node.op} {to_source(node.right)}'
+
+@rule(UnaryOp)
+def to_source_unaryop(node):
+    return f'({node.op} {to_source(node.operand)})'
+
+@rule(Grouping)
+def to_source_grouping(node):
+    return f'({to_source(node.expression)})'
+
+@rule(LoadLocation)
+def to_source_load_location(node):
+    return to_source(node.location)
+
+@rule(Compound)
+def to_source_compound(node):
+    return '{\n' + to_source(node.statements) + '\n}'
+
+@rule(Statements)
+def to_source_statements(node):
+    return '\n'.join(to_source(stmt) for stmt in node.statements)
+
+@rule(AssignmentStatement)
+def to_source_assignment(node):
+    return f'{to_source(node.location)} = {to_source(node.expression)};'
+
+@rule(ConstDefinition)
+def to_source_const_definition(node):
+    return f'const {node.name} {node.type if node.type else ""} = {to_source(node.value)};'
+
+@rule(VarDefinition)
+def to_source_var_definition(node):
+    src = f'var {node.name} {node.type if node.type else ""}'
+    if node.value:
+        src += f'= {to_source(node.value)}'
+    return src + ';'
+
+@rule(PrintStatement)
+def to_source_print_statement(node):
+    return f'print {to_source(node.expression)};'
+
+@rule(IfStatement)
+def to_source_if_statement(node):
+    # Enhancement.  Don't print else clause if empty.
+    return (f'if {to_source(node.test)}' + ' {\n' +
+            to_source(node.consequence) + '\n} else {\n' +
+            to_source(node.alternative) + '\n}')
 
 
+@rule(WhileStatement)
+def to_source_while_statement(node):
+    return (f'while {to_source(node.test)}' + ' {\n' +
+            to_source(node.body) + '\n}'
+            )
+
+@rule(ExpressionStatement)
+def to_source_expr_statement(node):
+    return to_source(node.expression) + ';'
 
 
+@rule(NamedLocation)
+def to_source_named_location(node):
+    return node.name
 
-
-    

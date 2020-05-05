@@ -76,7 +76,7 @@ model1 = Statements([
 
 # print(to_source(model1))
 print('------ Model 1')
-print(model1.to_source())
+print(to_source(model1))
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -99,7 +99,7 @@ model2 = Statements([
 ])
 
 print('------ Model 2')
-print(model2.to_source())
+print(to_source(model2))
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -129,7 +129,7 @@ model3 = Statements([
         ])
 
 print('------ Model 3')
-print(model3.to_source())
+print(to_source(model3))
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -168,7 +168,7 @@ model4 = Statements([
         ])
 
 print('------ Model 4')
-print(model4.to_source())
+print(to_source(model4))
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -197,7 +197,7 @@ model5 = Statements([
         ])
 
 print('------ Model 5')                                  
-print(model5.to_source())
+print(to_source(model5))
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
