@@ -156,9 +156,14 @@ print x;
 print y;
 """
 
-model5 = None
-# print(to_source(model5))
+model5 = Statements(
+    [
+        VarDef("x", None, Integer(37)),
+        VarDef("y", None, Integer(42)),
+        Assign("x", Statements([VarDef("t", None, Name("y")), Assign("y", Name("x")), Name("t")])),
+        Print(Name("x")),
+        Print(Name("y")),
+    ]
+)
 
-# ----------------------------------------------------------------------
-# What's next?  If you've made it here are are looking for more,
-# proceed to the file "func_models.py" and continue.
+check(source5, model5)
