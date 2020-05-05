@@ -19,7 +19,7 @@ from wabbit.model import (
 )
 
 
-def assert_equivalent(source, model):
+def check(source, model):
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
         diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
@@ -33,7 +33,7 @@ def assert_equivalent(source, model):
 expr_source = "2 + 3 * 4;"
 expr_model = Statements([BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))])
 
-assert_equivalent(expr_source, expr_model)
+check(expr_source, expr_model)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -53,7 +53,7 @@ model1 = Statements(
     ]
 )
 
-assert_equivalent(source1, model1)
+check(source1, model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -74,7 +74,7 @@ model2 = Statements(
     ]
 )
 
-assert_equivalent(source2, model2)
+check(source2, model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -102,7 +102,7 @@ model3 = Statements(
     ]
 )
 
-assert_equivalent(source3, model3)
+check(source3, model3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -138,7 +138,7 @@ model4 = Statements(
     ]
 )
 
-assert_equivalent(source4, model4)
+check(source4, model4)
 
 
 # ----------------------------------------------------------------------
