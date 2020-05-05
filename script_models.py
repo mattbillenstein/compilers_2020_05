@@ -3,6 +3,7 @@ from difflib import unified_diff
 from subprocess import Popen, PIPE
 
 from wabbit.check_syntax import check_syntax
+from wabbit.format_json import format_json
 from wabbit.format_source import format_source
 from wabbit.model import (
     Assign,
@@ -20,8 +21,9 @@ from wabbit.model import (
 )
 
 
-def check(source, model):
+def check(source, model, label):
     check_syntax(model)
+    dump_json(model, label)
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
         diff = "\n".join(unified_diff(source.splitlines(), transpiled_source.splitlines()))
@@ -30,12 +32,17 @@ def check(source, model):
         proc.communicate()
 
 
+def dump_json(model, label):
+    with open(f"/tmp/model_{label}.json", "w") as fh:
+        fh.write(format_json(model))
+
+
 # ----------------------------------------------------------------------
 # Simple Expression
 expr_source = "2 + 3 * 4;"
 expr_model = Statements([BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))])
 
-check(expr_source, expr_model)
+check(expr_source, expr_model, 0)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -55,7 +62,7 @@ model1 = Statements(
     ]
 )
 
-check(source1, model1)
+check(source1, model1, 1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
@@ -76,7 +83,7 @@ model2 = Statements(
     ]
 )
 
-check(source2, model2)
+check(source2, model2, 2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -104,7 +111,7 @@ model3 = Statements(
     ]
 )
 
-check(source3, model3)
+check(source3, model3, 3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -140,7 +147,7 @@ model4 = Statements(
     ]
 )
 
-check(source4, model4)
+check(source4, model4, 4)
 
 
 # ----------------------------------------------------------------------
@@ -166,4 +173,4 @@ model5 = Statements(
     ]
 )
 
-check(source5, model5)
+check(source5, model5, 5)
