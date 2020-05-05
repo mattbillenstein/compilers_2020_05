@@ -83,6 +83,17 @@ class Expression(Node):
 class Location(Expression):
     ...
 
+class ExpressionStatement(Expression, Statement):
+    """
+    Expressions on their own CAN be statements
+    """
+    def __init__(self, expression):
+        assert isinstance(expression, Expression)
+        super().__init__(expression=expression)
+
+    def to_source(self):
+        src = str(self.expression)
+        return f"{src};"
 
 class Struct(Node):
     def __init__(self, *fields):
@@ -245,13 +256,13 @@ class Clause(Node):
             assert isinstance(stmt, Statement), f"{stmt} is not a statement"
 
     def to_source(self):
-        statment_sources = "\n".join(str(stmt) for stmt in self.statements)
-        return f'{{ {statment_sources} }}'
+        statment_sources = "\n\t".join(str(stmt) for stmt in self.statements)
+        return f'{{ \n\t{statment_sources} \n}}'
 
 
 class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
     def __init__(self, *statements):
-        super().__init__(statements=statements)
+        super().__init__(*statements)
 
     def to_source(self):
         return '{' + ' '.join(str(stmt) for stmt in self.statements) + '};'
@@ -283,9 +294,9 @@ class IfStatement(Statement):
         )
 
     def to_source(self):
-        if_statement = f"if {self.condition} {{ \n    {self.body}\n}}"
+        if_statement = f"if {self.condition} {self.consequent}"
         if self.alternative is not None:
-            if_statement += f" else {{\n    {self.else_clause} \n}}"
+            if_statement += f" else {self.alternative}"
         return dedent(if_statement)
 
 
@@ -293,13 +304,13 @@ class Assignment(Statement):
     """
     location ASSIGN expression SEMI
     """
-    def __init__(self, location, value, **kwargs):
+    def __init__(self, location, value):
         assert isinstance(location, Location)
         assert isinstance(value, Expression)
         super().__init__(location=location, value=value)
 
     def to_source(self):
-        return f'{self.left} = {self.right};'
+        return f'{self.location} = {self.value};'
 
 
 class VariableDefinition(Definition):
@@ -326,7 +337,7 @@ class ConstDefinition(Definition):
         super().__init__(name=name, value=value, type=type)
 
     def to_source(self):
-        return f"const {self.left}{' ' + self.type if self._type else ''} = {self.right};"
+        return f"const {self.name}{' ' + self.type if self.type else ''} = {self.value};"
 
 
 class WhileLoop(Statement):
@@ -336,7 +347,7 @@ class WhileLoop(Statement):
         super().__init__(condition=condition, body=body)
 
     def to_source(self):
-        if_statement = f"while {self.condition} {{ \n    {self.body}\n}}"
+        if_statement = f"while {self.condition} {self.body}"
         return dedent(if_statement)
 
 
