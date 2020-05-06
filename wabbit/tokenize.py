@@ -24,9 +24,6 @@ TOKENS = [
     ("LAND", "&&"),
     ("LOR", r"\|\|"),
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
-    # Comments:  To be ignored
-    #      //             Skips the rest of the line
-    #      /* ... */      Skips a block (no nesting allowed)
 ]
 
 KEYWORDS = ["const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"]
@@ -46,6 +43,11 @@ def tokenize(text):
         if match := re.match(IGNORE, text):
             text = text[match.end() :]
             continue
+        # Comments
+        if text[:2] == "//":
+            text = text[text.find("\n") :]
+        if text[:2] == "/*":
+            text = text[text.find("*/") :]
 
         for type_, *regexp in TOKENS:
             # The tuple may specify the capture group as an optional third element.
