@@ -75,9 +75,13 @@ class Parser(BaseParser):
         statements = []
         while True:
             try:
-                statements.append(self.statement())
-            except StopIteration:  # TODO: avoid catching the wrong StopIteration
-                return Statements(statements)
+                statement = self.statement()
+            except StopIteration:  # TODO: ensure this is an appropriate StopIteration to catch
+                break
+            if not statement:
+                break
+            statements.append(statement)
+        return Statements(statements)
 
     # statement : print_statement
     #           | assignment_statement
