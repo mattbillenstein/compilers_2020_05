@@ -24,25 +24,25 @@ def test_model1():
     assert env['capture_print'] == [-10, 2.75, 1, 2]
 
 
-# def test_model2():
-#     env = {'capture_print': []}
-#     interpret(sm.model2, env)
-#     assert env['capture_print'] == [6]
+def test_model2():
+    env = {'capture_print': []}
+    interpret(sm.model2, env)
+    assert env['capture_print'] == [6.28318]
 
 
-# def test_model3():
-#     env = {'capture_print': []}
-#     interpret(sm.model3, env)
-#     assert env['capture_print'] == [6]
+def test_model3():
+    env = {'capture_print': []}
+    interpret(sm.model3, env)
+    assert env['capture_print'] == [2]
 
 
-# def test_model4():
-#     env = {'capture_print': []}
-#     interpret(sm.model4, env)
-#     assert env['capture_print'] == [6]
+def test_model4():
+    env = {'capture_print': []}
+    interpret(sm.model4, env)
+    assert env['capture_print'] == [1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
 
 
-# def test_model5():
-#     env = {'capture_print': []}
-#     interpret(sm.model5, env)
-#     assert env['capture_print'] == [6]
+def test_model5():
+    env = {'capture_print': []}
+    interpret(sm.model5, env)
+    assert env['capture_print'] == [42, 37]

@@ -112,7 +112,10 @@ def test_char():
         ("CHAR", "a"),
     ]
 
+    tokens = tokenize("'\n'")
+    assert [(tok.type, tok.value) for tok in tokens] == [("CHAR", "\n")]
+
 
 def test_dot():
     tokens = tokenize("x.y")
-    assert [tok.type for tok in tokens] == ['NAME', 'DOT', 'NAME']
+    assert [tok.type for tok in tokens] == ["NAME", "DOT", "NAME"]

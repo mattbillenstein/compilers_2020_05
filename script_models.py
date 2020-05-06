@@ -78,10 +78,12 @@ source2 = """
     print tau;
 """
 
-expr1 = Const(Name('pi'), Type(None), Float(3.14159))
-expr2 = Var(Name('tau'), Type('float'))
-expr3 = Assignment(Name('tau'), BinOp("*", Float(2.0), Name('pi')))
-expr4 = Print(Name('tau'))
+expr1 = Const('pi', Type(None), Float(3.14159))
+expr2 = Var('tau', Type('float'))
+expr3 = Assignment(NamedLocation('tau'),
+                   BinOp("*", Float(2.0),
+                   LoadLocation(NamedLocation('pi'))))
+expr4 = Print(LoadLocation(NamedLocation('tau')))
 model2 = Statements(expr1, expr2, expr3, expr4)
 
 # print(to_source(model2))
@@ -100,11 +102,12 @@ source3 = """
     }
 """
 
-expr1 = Var(Name('a'), Type('int'), Integer(2))
-expr2 = Var(Name('b'), Type('int'), Integer(3))
-expr3 = If(BinOp('<', Name('a'), Name('b')),
-                    Print(Name('a')),
-                    Print(Name('b')))
+expr1 = Var('a', Type('int'), Integer(2))
+expr2 = Var('b', Type('int'), Integer(3))
+expr3 = If(BinOp('<', LoadLocation(NamedLocation('a')),
+                    LoadLocation(NamedLocation('b'))),
+            Print(LoadLocation(NamedLocation('a'))),
+            Print(LoadLocation(NamedLocation('b'))))
 
 model3 = Statements(expr1, Statements(expr2), Statements(expr3))
 
@@ -126,15 +129,20 @@ source4 = """
     }
 """
 
-expr1 = Const(Name('n'), Type(None), Integer(10))
-expr2 = Var(Name('x'), Type('int'), Integer(1))
-expr3 = Var(Name('fact'), Type('int'), Integer(1))
+expr1 = Const('n', Type(None), Integer(10))
+expr2 = Var('x', Type('int'), Integer(1))
+expr3 = Var('fact', Type('int'), Integer(1))
 
-expr4 = Assignment(Name('fact'), BinOp("*", Name('fact'), Name('x')))
-expr5 = Print(Name('fact'))
-expr6 = Assignment(Name('x'), BinOp("+", Name('x'), Integer(1)))
+expr4 = Assignment(NamedLocation('fact'),
+                   BinOp("*", LoadLocation(NamedLocation('fact')),
+                         LoadLocation(NamedLocation('x'))))
+expr5 = Print(LoadLocation(NamedLocation('fact')))
+expr6 = Assignment(NamedLocation('x'),
+                   BinOp("+", LoadLocation(NamedLocation('x')), Integer(1)))
 
-expr7 = While(BinOp('<', Name('x'), Name('n')), Statements(expr4, expr5, expr6))
+expr7 = While(BinOp('<', LoadLocation(NamedLocation('x')),
+                    LoadLocation(NamedLocation('n'))),
+Statements(expr4, expr5, expr6))
 
 model4 = Statements(expr1, expr2, expr3, expr7)
 # print(to_source(model4))
@@ -152,16 +160,16 @@ source5 = """
     print y;
 """
 
-expr1 = Var(Name('x'), Type(None), Integer(37))
-expr2 = Var(Name('y'), Type(None), Integer(42))
+expr1 = Var('x', Type(None), Integer(37))
+expr2 = Var('y', Type(None), Integer(42))
 
-expr3a = Var(Name('t'), Type(None), Name('y'))
-expr3b = Assignment(Name('y'), Name('x'))
-expr3c = Name('t')
-expr3 = Assignment(Name('x'), Compound(expr3a, expr3b, expr3c))
+expr3a = Var('t', Type(None), LoadLocation(NamedLocation('y')))
+expr3b = Assignment(NamedLocation('y'), LoadLocation(NamedLocation('x')))
+expr3c = LoadLocation(NamedLocation('t'))
+expr3 = Assignment(NamedLocation('x'), Compound(expr3a, expr3b, expr3c))
 
-expr4 = Print(Name('x'))
-expr5 = Print(Name('y'))
+expr4 = Print(LoadLocation(NamedLocation('x')))
+expr5 = Print(LoadLocation(NamedLocation('y')))
 
 
 model5 = Statements(expr1, expr2, expr3, expr4, expr5)

@@ -63,7 +63,9 @@ add = interpret.register
 
 @add(Assignment)
 def interpret_Assignment(node, env):
-    return f"{interpret(node.location, env)} = {interpret(node.expression, env)};"
+    value = interpret(node.expression, env);
+    name = interpret(node.location, env)
+    env[name] = value
 
 @add(BinOp)
 def interpret_BinOp(node, env):
@@ -97,15 +99,15 @@ def interpret_BinOp(node, env):
 
 @add(Const)
 def interpret_Const(node, env):
-    location = interpret(node.location, env)
+    name = node.name
     value = interpret(node.expression, env)
-    # type = interpret(node.type) irrelevant for this
-    env[location] = value
+    env[name] = value
 
 @add(Compound)
 def interpret_Compound(node, env):
-    statements = [interpret(s, env) for s in node.statements]
-    return "{ " + " ".join(statements) + " }"
+    for s in node.statements:
+        result = interpret(s, env)
+    return result
 
 @add(Float)
 def interpret_Float(node, env):
@@ -123,11 +125,14 @@ def interpret_If(node, env):
 def interpret_Integer(node, env):
     return node.value
 
-@add(Name)
-def interpret_Name(node, env):
-    if node.location in env:
-        return env[node.location]
-    return node.location
+@add(LoadLocation)
+def interpret_LoadLocation(node, env):
+    name = interpret(node.location, env)
+    return env[name]
+
+@add(NamedLocation)
+def interpret_NamedLocation(node, env):
+    return node.name
 
 @add(Print)
 def interpret_Print(node, env):
@@ -163,13 +168,14 @@ def interpret_Var(node, env):
         value = 0.0
     else:
         value = 0
-    env[node.location] = value
+    env[node.name] = value
 
 
 @add(While)
 def interpret_While(node, env):
-    return f"while {interpret(node.condition, env)} {{\n{interpret(node.statements, env)}\n}}"
-
-
-
-
+    while True:
+        condition = interpret(node.condition, env)
+        if condition:
+            interpret(node.statements, env)
+        else:
+            break

@@ -57,6 +57,11 @@ class Expression(Node):
     """
     pass
 
+class Location(Node):
+    '''
+    A location represents a place to load/store values.  For example, a variable,
+    an object attribute, an index in an array, etc.
+    '''
 
 class Statement(Node):
     """A statement is a single complete instruction"""
@@ -88,7 +93,7 @@ class Assignment(Statement):
         return f"Assignment({self.location}, {self.expression})"
 
     def is_valid(self):
-        assert isinstance(self.location, Name)
+        assert isinstance(self.location, Location)
         assert isinstance(self.expression, Expression)
 
 
@@ -115,23 +120,23 @@ class Const(Definition):
         const pi = 3.14159;
         const tau float;
     """
-    def __init__(self, location, type, expression):
+    def __init__(self, name, type, expression):
+        self.name = name
         self.type = type
-        self.location = location
         self.expression = expression
         self.is_valid()
 
     def __repr__(self):
         if self.type:
             return ("Const(" +
-                f"{self.location}, {self.type}, {self.expression})")
+                f"{self.name}, {self.type}, {self.expression})")
         else:
             return ("Const(" +
-                f"{self.location}, {self.expression})")
+                f"{self.name}, {self.expression})")
 
     def is_valid(self):
         assert isinstance(self.type, Type)
-        assert isinstance(self.location, Name)
+        assert isinstance(self.name, str)
         assert isinstance(self.expression, Expression)
 
 
@@ -194,19 +199,34 @@ class Integer(Expression):
         assert isinstance(self.value, int)
 
 
-class Name(Expression):
-    """
-    Example: x
-    """
+class LoadLocation(Expression):
+    '''
+    Loading a value out of a location for use in an expression.
+    '''
     def __init__(self, location):
         self.location = location
         self.is_valid()
 
     def __repr__(self):
-        return f"Name({self.location})"
+        return f'LoadLocation({self.location})'
 
     def is_valid(self):
-        assert isinstance(self.location, str)
+        assert isinstance(self.location, Location)
+
+
+class NamedLocation(Location):
+    """
+    A location representing a simple variable name
+    """
+    def __init__(self, name):
+        self.name = name
+        self.is_valid()
+
+    def __repr__(self):
+        return f"NamedLocation({self.name})"
+
+    def is_valid(self):
+        assert isinstance(self.name, str)
 
 
 class Print(Statement):
@@ -274,24 +294,24 @@ class Var(Definition):
     """Examples:
         var int pi;
     """
-    def __init__(self, location, type, expression=''):
+    def __init__(self, name, type, expression=''):
+        self.name = name
         self.type = type
-        self.location = location
         self.expression = expression
         self.is_valid()
 
     def __repr__(self):
         if self.expression:
             return ("Var(" +
-                f"{self.location}, {self.type}, {self.expression})")
+                f"{self.name}, {self.type}, {self.expression})")
         else:
             return ("Var(" +
-                f"{self.location}, {self.type})")
+                f"{self.name}, {self.type})")
 
     def is_valid(self):
         print("self.type = ", self.type)
         assert isinstance(self.type, Type)
-        assert isinstance(self.location, Name)
+        assert isinstance(self.name, str)
         assert isinstance(self.expression, (str, Expression))
 
 
@@ -331,7 +351,7 @@ def to_source_BinOp(node):
 
 @add(Const)
 def to_source_Const(node):
-    parts = [f"const {to_source(node.location)}"]
+    parts = [f"const {node.name}"]
     if to_source(node.type):
         parts.append(f" {to_source(node.type)}")
     parts.append(f" = {to_source(node.expression)}")
@@ -357,9 +377,13 @@ def to_source_If(node):
 def to_source_Integer(node):
     return repr(node.value)
 
-@add(Name)
-def to_source_Name(node):
-    return f"{node.location}"
+@add(LoadLocation)
+def to_source_LoadLocation(node):
+    return to_source(node.location)
+
+@add(NamedLocation)
+def to_source_NamedLocation(node):
+    return f"{node.name}"
 
 @add(Print)
 def to_source_Print(node):
@@ -382,7 +406,7 @@ def to_source_UnaryOp(node):
 
 @add(Var)
 def to_source_Var(node):
-    parts = [f"var {to_source(node.location)}"]
+    parts = [f"var {node.name}"]
     parts.append(f" {to_source(node.type)}")
     if node.expression:
         parts.append(f" = {to_source(node.expression)}")

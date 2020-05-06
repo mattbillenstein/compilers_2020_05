@@ -86,6 +86,22 @@ class WabbitLexer(Lexer):
     ignore_eol_comments = r'//.*'
     ignore_comments = r'/\*(.|\n)*?\*/'
 
+    # The following is adopted from Spencer
+    _escape_sequences = "|".join([
+        r'\\\\',
+        r"\\'",
+        r'\\\"',
+        r'\\a',
+        r'\\b',
+        r'\\f',
+        r'\\n',
+        r'\\r',
+        r'\\t',
+        r'\\v',
+        r'\\ooo',
+        r'\\xhh',
+    ])
+
 # Reserved Keywords:
     CONST   = r'const'
     VAR     = r'var'
@@ -103,7 +119,7 @@ class WabbitLexer(Lexer):
     # Literals
     FLOAT = r'(\d+\.\d*|\.\d+)'
     INTEGER = r'\d+'
-    CHAR = "'.'"
+    CHAR = r"'([\s\S]|%s)'" % _escape_sequences
 
     @_(CHAR)
     def CHAR(self, token):
