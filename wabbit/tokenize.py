@@ -5,13 +5,11 @@ import utils
 
 TOKENS = [
     ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
-    ("ASSIGN", r"="),  # Assignment operator
-    ("SEMI", r";"),  # Statement terminator
+    ("SEMICOLON", r";"),  # Statement terminator
     ("NAME", r"_[A-Za-z][_A-Za-z0-9]+"),  # Identifiers
     ("OP", r"[+\-*/]"),  # Arithmetic operators
     ("NEWLINE", r"\n"),  # Line endings
     ("SKIP", r"[ \t]+"),  # Skip over spaces and tabs
-    ("KEYWORD", r"(const|var|print|break|continue|if|else|while|true|false) "),
     #     LPAREN   : '('
     #     RPAREN   : ')'
     #     LBRACE   : '{'
@@ -22,6 +20,7 @@ TOKENS = [
     ("GE", ">="),
     ("GT", ">"),
     ("EQ", "=="),
+    ("ASSIGN", r"="),  # Assignment operator
     ("NE", "!="),
     ("LNOT", "!"),
     ("LAND", "&&"),
@@ -70,15 +69,15 @@ def tokenize(text):
 
 def test_tokenizer():
     test_cases = [
-        ("+", [("PLUS", "+")]),
-        ("+!", [("PLUS", "+"), ("LNOT", "!")]),
+        ("+", [("OP", "+")]),
+        ("+!", [("OP", "+"), ("LNOT", "!")]),
         (
             "+ - * / < <= > >= == != && || !",
             [
-                ("PLUS", "+"),
-                ("MINUS", "-"),
-                ("TIMES", "*"),
-                ("DIVIDE", "/"),
+                ("OP", "+"),
+                ("OP", "-"),
+                ("OP", "*"),
+                ("OP", "/"),
                 ("LT", "<"),
                 ("LE", "<="),
                 ("GT", ">"),
