@@ -192,11 +192,10 @@ models.append(
     )
 )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     for i, (source, model) in enumerate(zip(sources, models)):
-        print(
-            "\n\n--------------------------------------------------------------------------"
-        )
+        print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
         utils.bat(source)
         tokenize(source)
