@@ -7,35 +7,6 @@
 #
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
-# program : statements EOF
-
-# statements : { statement }
-
-# statement : print_statement
-#           | assignment_statement
-#           | variable_definition
-#           | const_definition
-#           | func_definition
-#           | struct_definition
-#           | enum_definition
-#           | if_statement
-#           | if_let_statement
-#           | while_statement
-#           | while_let_statement
-#           | break_statement
-#           | continue_statement
-#           | return_statement
-#           | expression SEMI
-
-# print_statement : PRINT expression SEMI
-
-# assignment_statement : location ASSIGN expression SEMI
-
-# variable_definition : VAR NAME [ type ] ASSIGN expression SEMI
-#                     | VAR NAME type [ ASSIGN expression ] SEMI
-
-# const_definition : CONST NAME [ type ] ASSIGN expression SEMI
-
 # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE
 
 # parameters : parameter { COMMA parameter }
@@ -157,69 +128,74 @@ from .tokenize import tokenize, WabbitLexer
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens
 
-    @_("orterm LOR orterm")
-    def expression(self, p):
-        return BinOp("||", p.orterm0, p.orterm1)
+    # program : statements EOF
+    @_("statements")
+    def program(self, p):
+        return p.statements
 
-    @_("orterm")
-    def expression(self, p):
-        return p.orterm
+    # statements : { statement }
+    @_("{ statement }")
+    def statements(self, p):
+        return Statements(p.statement)
 
-    @_("andterm LAND andterm")
-    def orterm(self, p):
-        return BinOp("&&", p.andterm0, p.andterm1)
+    # statement : print_statement
+    #           | assignment_statement
+    #           | variable_definition
+    #           | const_definition
+    #           | func_definition
+    #           | struct_definition
+    #           | enum_definition
+    #           | if_statement
+    #           | if_let_statement
+    #           | while_statement
+    #           | while_let_statement
+    #           | break_statement
+    #           | continue_statement
+    #           | return_statement
+    #           | expression SEMI
+    @_(
+        "print_statement",
+        "assignment_statement",
+        "variable_definition",
+        "const_definition",
+        "func_definition",
+        "struct_definition",
+        "enum_definition",
+        "if_statement",
+        "if_let_statement",
+        "while_statement",
+        "while_let_statement",
+        "break_statement",
+        "continue_statement",
+        "return_statement",
+        "expression SEMI",
+    )
+    def statement(self, p):
+        return p[0]
 
-    @_("andterm")
-    def expression(self, p):
-        return p.andterm
+    # print_statement : PRINT expression SEMI
+    @_("PRINT expression SEMI")
+    def print_statement(self, p):
+        return Print(expression)
 
-    @_("sumterm LT sumterm")
-    def andterm(self, p):
-        return BinOp("<", p.sumterm0, p.sumterm1)
+    # assignment_statement : location ASSIGN expression SEMI
+    @_("location ASSIGN expression SEMI")
+    def assignment_statement(self, p):
+        return Assignment(location, expression)
 
-    @_("sumterm LE sumterm")
-    def andterm(self, p):
-        return BinOp("<=", p.sumterm0, p.sumterm1)
+    # variable_definition : VAR NAME [ NAME ] ASSIGN expression SEMI
+    #                     | VAR NAME NAME [ ASSIGN expression ] SEMI
+    @_(
+        "VAR NAME [ NAME ] ASSIGN expression SEMI",
+        "VAR NAME NAME [ ASSIGN expression ] SEMI",
+    )
+    def variable_definition(self, p):
+        return Var(p.NAME0, p.NAME1, expression)
 
-    @_("sumterm GT sumterm")
-    def andterm(self, p):
-        return BinOp(">", p.sumterm0, p.sumterm1)
-
-    @_("sumterm GE sumterm")
-    def andterm(self, p):
-        return BinOp(">=", p.sumterm0, p.sumterm1)
-
-    @_("sumterm EQ sumterm")
-    def andterm(self, p):
-        return BinOp("==", p.sumterm0, p.sumterm1)
-
-    @_("sumterm NE sumterm")
-    def andterm(self, p):
-        return BinOp("!=", p.sumterm0, p.sumterm1)
-
-    @_("sumterm")
-    def expression(self, p):
-        return p.sumterm
-
-    @_("multerm PLUS multerm")
-    def sumterm(self, p):
-        return BinOp("+", p.multerm0, p.multerm1)
-
-    @_("multerm MINUS multerm")
-    def sumterm(self, p):
-        return BinOp("-", p.multerm0, p.multerm1)
-
-    @_("factor TIMES factor")
-    def multerm(self, p):
-        return BinOp("*", p.factor0, p.factor1)
-
-    @_("factor DIVIDE factor")
-    def multerm(self, p):
-        return BinOp("/", p.factor0, p.factor1)
-
-    @_("literal")
-    def factor(self, p):
-        return p.literal
+    # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
+    @_("CONST NAME [ NAME ] ASSIGN expression SEMI")
+    def const_definition(self, p):
+        return Const(p.NAME0, p.NAME1, expression)
 
     @_("INTEGER")
     def literal(self, p):
