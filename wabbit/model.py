@@ -107,6 +107,23 @@ class Float(Node):
     def is_correct(self):
         return isinstance(self.value, float)
 
+class UnaryOp(Node):
+    def __init__(self, op, right):
+        super().__init__()
+        self.op = op
+        self.right = right
+        self.is_expression = True
+        checkMe(self)
+
+    def __repr__(self):
+        return f'UnaryOp({self.op}, {self.right})'
+
+    def is_correct(self):
+        legal_ops = ['+', '-', '!' ]
+        if not self.op in legal_ops:
+            return False
+        return self.right.is_expression
+
 class BinOp(Node):
     '''
     Example: left + right
@@ -422,6 +439,8 @@ def to_source(node):
         return ', '.join([to_source(a) for a in node.arguments])
     elif isinstance(node, InvokingArgument):
         return to_source(node.node)
+    elif isinstance(node, UnaryOp):
+        return f'({node.op} {to_source(node.right)})'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 

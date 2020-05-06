@@ -125,6 +125,10 @@ class WabbitParser(Parser):
         ('left', TIMES, DIVIDE),
         )
 
+    @_('{ statement }')
+    def statements(self, p):
+        return Statements(p.statement)
+
     # STATEMENTS===============================
     @_('expr SEMI')
     def statement(self, p):
@@ -160,6 +164,10 @@ class WabbitParser(Parser):
     @_('NAME')
     def expr(self, p):
         return Variable(p.NAME)
+
+    @_('PLUS expr', 'MINUS expr', 'LNOT expr')
+    def expr(self, p):
+        return UnaryOp(p[0], p.expr)
 
 def parse_tokens(tokens):
     parser = WabbitParser()

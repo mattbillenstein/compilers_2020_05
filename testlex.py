@@ -23,7 +23,7 @@ def test_float():
 def test_vars():
     s = 'printable holy_moly scontinue ifelsewhile'
     tok_types = [t.type for t in list(tokenize(s))]
-    assert(tok_types == ['VAR_NAME', 'VAR_NAME', 'VAR_NAME', 'VAR_NAME'])
+    assert(tok_types == ['NAME', 'NAME', 'NAME', 'NAME'])
 
 def test_ops():
     s = '+ - * / < <= > >= == != && || !'
@@ -51,5 +51,5 @@ def test_comments():
 def test_dot():
     s = "a.x.y = 3"
     tok_types = [t.type for t in list(tokenize(s))]
-    assert(tok_types == ['VAR_NAME', 'DOT', 'VAR_NAME', 'DOT', 'VAR_NAME', 'ASSIGN', 'NUMBER'])
+    assert(tok_types == ['NAME', 'DOT', 'NAME', 'DOT', 'NAME', 'ASSIGN', 'NUMBER'])
 

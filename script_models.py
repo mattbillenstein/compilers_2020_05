@@ -53,10 +53,10 @@ source1 = """
 """
 
 model1 = Statements([
-    PrintStatement(BinOp('+', Integer(2), BinOp('*', Integer(3), Integer(-4)))),
-    PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
+    PrintStatement(BinOp('+', Integer(2), BinOp('*', Integer(3), UnaryOp('-', Integer(4))))),
+    PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnaryOp('-', Float(4.0))))),
     PrintStatement(BinOp('+', Integer(-2), Integer(3))),
-    PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), Integer(-4)))),
+    PrintStatement(BinOp('*', Integer(2), BinOp('+', Integer(3), UnaryOp('-', Integer(4))))),
 ])
 
 print('1')

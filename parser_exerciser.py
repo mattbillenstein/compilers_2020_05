@@ -48,3 +48,20 @@ s = 'print 2 + x;'
 print(s)
 print(parse_source(s))
 print()
+
+print(0)
+s = "2 + 3 * 4;"
+print(s)
+print(parse_source(s))
+print()
+
+print(1)
+s = """
+    print 2 + 3 * -4;
+    print 2.0 - 3.0 / -4.0;
+    print -2 + 3;
+    print 2 * 3 + -4;
+"""
+print(s)
+print(parse_source(s))
+print()
