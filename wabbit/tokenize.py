@@ -5,7 +5,8 @@ import utils
 KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
 TYPES = {"bool", "char", "int", "float"}
 TOKEN_TYPES = [
-    ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
+    ("FLOAT", r"\d+\.\d*"),  # TODO: floats with nothing before the "."
+    ("INTEGER", r"\d+"),  # Integer or decimal number, TODO: leading "."
     ("SEMICOLON", r";"),
     ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),
     ("OP", r"[+\-*/]"),
@@ -77,7 +78,7 @@ def test_tokenizer():
         ("+!", [("OP", "+"), ("LNOT", "!")]),
         (
             "(1 + 2)",
-            [("LPAREN", "("), ("NUMBER", "1"), ("OP", "+"), ("NUMBER", "2"), ("RPAREN", ")")],
+            [("LPAREN", "("), ("INTEGER", "1"), ("OP", "+"), ("INTEGER", "2"), ("RPAREN", ")")],
         ),
         (
             "+ - * / < <= > >= == != && || !",
@@ -110,7 +111,7 @@ def test_tokenizer():
                 ("NAME", "a"),
                 ("TYPE", "int"),
                 ("ASSIGN", "="),
-                ("NUMBER", "2"),
+                ("INTEGER", "2"),
                 ("SEMICOLON", ";"),
             ],
         ),
