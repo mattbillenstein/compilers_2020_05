@@ -21,9 +21,12 @@ def print_diff(a, b):
         a = to_json(a)
         b = to_json(b)
     diff = "\n".join(unified_diff(a.splitlines(), b.splitlines()))
-    proc = Popen(["delta"], stdin=PIPE)
-    proc.stdin.write(diff.encode("utf-8"))  # type: ignore
-    proc.communicate()
+    if not diff:
+        print("✅")
+    else:
+        proc = Popen(["delta"], stdin=PIPE)
+        proc.stdin.write(diff.encode("utf-8"))  # type: ignore
+        proc.communicate()
 
 
 def to_json(obj):
