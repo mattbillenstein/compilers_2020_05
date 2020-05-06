@@ -19,6 +19,7 @@ from wabbit.model import (
     While,
     Statements,
 )
+from wabbit.tokenize import tokenize
 
 
 def check(source, model):
@@ -196,6 +197,7 @@ for i, (source, model) in enumerate(zip(sources, models)):
     )
     print(i, "\n")
     utils.bat(source)
+    tokenize(source)
     check(source, model)
     dump_json(model, i)
     print("Interpreter output:\n")
