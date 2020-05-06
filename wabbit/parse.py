@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # parse.py
 #
 # Wabbit parser.  The parser needs to construct the data model or an

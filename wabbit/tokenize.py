@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # tokenizer.py
 #
 # The role of a tokenizer is to turn raw text into recognized symbols 
@@ -72,30 +74,103 @@
 #
 # ----------------------------------------------------------------------
 
+import os.path
+
+import sly
+
+
+class WabbitLexer(sly.Lexer):
+    # few things stolen from dabeaz in the interest of time...
+    # CHAR, comments
+
+    tokens = {
+        NAME, INTEGER, FLOAT, CHAR, LE, GE, EQ, NE, LAND, LOR,
+        LT, GT, LNOT, PLUS, MINUS, TIMES, DIVIDE, ASSIGN, LPAREN,
+        RPAREN, SEMI, LBRACE, RBRACE, CONST, VAR, PRINT, BREAK,
+        CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, DOT, COMMA, COLONCOLON,
+    }
+
+    ignore = ' \t'
+
+    ignore_line_comment = r'//.*'
+
+    @_('\n+')
+    def ignore_newline(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    @_(r'/\*(.|\n)*?\*/')
+    def ignore_block_comment(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    # Tokens
+    NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    FLOAT = r'(?:[-]?\d+\.\d*)|(?:[-]?\d*\.\d+)'
+    INTEGER = r'[-]?\d+'
+    CHAR = r"'(\\'|.)*?'"
+
+    # keywords
+    NAME['const'] = CONST
+    NAME['var'] = VAR
+    NAME['print'] = PRINT
+    NAME['break'] = BREAK
+    NAME['continue'] = CONTINUE
+    NAME['if'] = IF
+    NAME['else'] = ELSE
+    NAME['while'] = WHILE
+    NAME['true'] = TRUE
+    NAME['false'] = FALSE
+
+    # Special symbols - multiple characters first!
+    LE = r'<='
+    GE = r'>='
+    EQ = r'=='
+    NE = r'!='
+    LAND = r'&&'
+    LOR = r'\|\|'
+    COLONCOLON = r'::'
+    LT = r'<'
+    GT = r'>'
+    LNOT = r'!'
+    PLUS = r'\+'
+    MINUS = r'-'
+    TIMES = r'\*'
+    DIVIDE = r'/'
+    ASSIGN = r'='
+    LPAREN = r'\('
+    RPAREN = r'\)'
+    SEMI = r';'
+    LBRACE = r'\{'
+    RBRACE = r'\}'
+    DOT = r'\.'
+    COMMA = r','  # FIXME
+
+    def error(self, t):
+        print("Illegal character '%s'" % t.value[0])
+        self.index += 1
+
 
 # High level function that takes input source text and turns it into tokens.
 # This is a natural place to use some kind of generator function.
 
 def tokenize(text):
-    ...
-    yield tok
-    ...
+    lexer = WabbitLexer()
+    for tok in lexer.tokenize(text):
+        yield tok
 
 # Main program to test on input files
-def main(filename):
-    with open(filename) as file:
-        text = file.read()
+def main(args):
+    if args:
+        if os.path.isfile(args[0]):
+            with open(args[0]) as file:
+                text = file.read()
+        else:
+            text = args[0]
+    else:
+        text = sys.stdin.read()
 
     for tok in tokenize(text):
         print(tok)
 
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1])
-
-    
-            
-        
-
-            
-    
+    main(sys.argv[1:])
