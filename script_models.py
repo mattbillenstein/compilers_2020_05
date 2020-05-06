@@ -21,6 +21,7 @@
 
 
 from wabbit.model import *
+from wabbit.parse import parse_source
 from wabbit.interp import interpret_program
 
 # ----------------------------------------------------------------------
@@ -54,9 +55,6 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-from .parse import parse_source
-model1_parsed = parse_source(source1)     # Want. A parser
-
 # Are we allowed to use built-in types like list, tuple, for the model?
 # Should everything be represented by a class definition (for consistency)?
 
@@ -80,7 +78,8 @@ model1 = Statements([
                          UnaryOp('-', Integer(4)))),
 ])
 
-assert model1_parsed == model1
+# Try parsing the source instead.
+model1 = parse_source(source1)
 
 # print(to_source(model1))
 print('------ Model 1')
@@ -108,6 +107,7 @@ model2 = Statements([
    PrintStatement(LoadLocation(NamedLocation("tau"))),
 ])
 
+model2 = parse_source(source2);
 print('------ Model 2')
 print(to_source(model2))
 print('------ Interpret 2')
@@ -140,6 +140,7 @@ model3 = Statements([
                     ),
         ])
 
+model3 = parse_source(source3)
 print('------ Model 3')
 print(to_source(model3))
 print('------ Interpret 3')
@@ -181,6 +182,7 @@ model4 = Statements([
             ),
         ])
 
+model4 = parse_source(source4)
 print('------ Model 4')
 print(to_source(model4))
 print('------ Interpret 4')

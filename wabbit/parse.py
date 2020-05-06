@@ -198,16 +198,35 @@ class WabbitParser(Parser):
     @_('expression PLUS expression',
        'expression MINUS expression',
        'expression TIMES expression',
-       'expression DIVIDE expression')
+       'expression DIVIDE expression',
+       'expression LT expression',
+       'expression LE expression',
+       'expression GT expression',
+       'expression GE expression',
+       'expression EQ expression',
+       'expression NE expression',
+       'expression LAND expression',
+       'expression LOR expression',
+       )
     def expression(self, p):
         op = p[1]           
         left = p.expression0
         right = p.expression1
         return BinOp(op, left, right)
 
+    @_('PLUS expression',
+       'MINUS expression',
+       'LNOT expression')
+    def expression(self, p):
+        return UnaryOp(p[0], p.expression)
+
     @_('LPAREN expression RPAREN')
     def expression(self, p):
         return Grouping(p.expression)
+
+    @_('location')
+    def expression(self, p):
+        return LoadLocation(p.location)
 
     @_('INTEGER')
     def expression(self, p):
