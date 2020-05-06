@@ -8,7 +8,7 @@
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
 # The following conventions are used:
-# 
+#
 #       ALLCAPS       --> A token
 #       { symbols }   --> Zero or more repetitions of symbols
 #       [ symbols ]   --> Zero or one occurences of symbols (optional)
@@ -59,18 +59,18 @@
 #      | PLUS expr
 #      | MINUS expr
 #      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
+#      | LPAREN expr RPAREN
 #      | location
 #      | literal
-#      | LBRACE statements RBRACE 
-#       
+#      | LBRACE statements RBRACE
+#
 # literal : INTEGER
 #         | FLOAT
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
-# 
+#         | LPAREN RPAREN
+#
 # location : NAME
 #
 # type      : NAME
@@ -78,7 +78,7 @@
 # empty     :
 # ======================================================================
 
-# How to proceed:  
+# How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
 # take it in tiny pieces.  Focus on one specific part of the language.
@@ -108,20 +108,22 @@
 #
 # If you are highly motivated and want to know how a parser works at a
 # low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
+# It is also fine to use high-level tools such as
 #
-#    - SLY (https://github.com/dabeaz/sly), 
+#    - SLY (https://github.com/dabeaz/sly),
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
 from .model import *
 from .tokenize import tokenize
 
-# Top-level function that runs everything    
+
+# Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)     # You need to implement this part
+    model = parse_tokens(tokens)  # You need to implement this part
     return model
+
 
 # Example of a main program
 def parse_file(filename):
@@ -129,11 +131,11 @@ def parse_file(filename):
         text = file.read()
     return parse_source(text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
+        raise SystemExit("Usage: wabbit.parse filename")
+    model = parse_file(sys.argv[1])
     print(model)
-
-
