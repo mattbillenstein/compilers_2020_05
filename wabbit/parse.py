@@ -91,7 +91,7 @@ class Parser(BaseParser):
 
     def statement(self) -> Statement:
 
-        node = self.print_statement() or self.assignment_statement()
+        node = self.print() or self.assign()
 
         assert node
 
@@ -100,8 +100,8 @@ class Parser(BaseParser):
 
     # print_statement : PRINT expr SEMICOLON
     #
-    def print_statement(self) -> Optional[Statement]:
-        print(blue(f"print_statement(): next = {self.peek()}"))
+    def print(self) -> Optional[Statement]:
+        print(blue(f"print(): next = {self.peek()}"))
         tok = self.accept("PRINT")
         if not tok:
             return None
@@ -114,8 +114,23 @@ class Parser(BaseParser):
 
     # assignment_statement : LOCATION = EXPRESSION SEMICOLON
     #
-    def assignment_statement(self) -> Optional[Statement]:
-        print(blue(f"assignment_statement(): next = {self.peek()}"))
+    def assign(self) -> Optional[Statement]:
+        print(blue(f"assign(): next = {self.peek()}"))
+
+        tok = self.accept("NAME")  # TODO: location
+        if not tok:
+            return None
+        location = Location(tok.token)
+
+        if not self.accept("ASSIGN"):
+            return None
+
+        expression = self.expression()
+        self.expect("SEMICOLON")
+        node = Assign(location, expression)
+
+        print(green(f"    Parsed {node}"))
+        return node
 
         tok = self.accept("NAME")  # TODO: location
         if not tok:
