@@ -52,11 +52,11 @@ def tokenize(text):
         for type_, *regexp in TOKENS:
             # The tuple may specify the capture group as an optional third element.
             if len(regexp) == 2:
-                regexp, group = regexp
+                regexp, group = regexp  # type: ignore
             else:
-                [regexp], group = regexp, 0
+                [regexp], group = regexp, 0  # type: ignore
             if match := re.match(regexp, text):
-                matched = match.string[match.start(group) : match.end(group)]
+                matched = match.string[match.start(group) : match.end(group)]  # type: ignore
                 text = text[match.end() :]
                 if type_ == "NAME" and matched in KEYWORDS:
                     type_ = "KEYWORD"
