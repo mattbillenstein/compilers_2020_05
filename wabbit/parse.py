@@ -162,6 +162,22 @@ class WabbitParser(Parser):
     def statement(self, p):
         return While(p.expr, p.statements)
 
+    @_('FUNC NAME LPAREN [ arguments ] RPAREN [ NAME ] LBRACE statements RBRACE')
+    def statement(self, p):
+        return Function(p.NAME0, p.arguments, p.NAME1, p.statements)
+
+    @_('RETURN expr SEMI')
+    def statement(self, p):
+        return Return(p.expr)
+
+    @_('{ argument }')
+    def arguments(self, p):
+        return Arguments(p.argument)
+
+    @_('NAME NAME [ COMMA ]')
+    def argument(self, p):
+        return Argument(p[0], p[1])
+
     # EXPRESSIONS==============================
     @_('NUMBER')
     def expr(self, p):
@@ -191,6 +207,14 @@ class WabbitParser(Parser):
     @_('LBRACE statements RBRACE')
     def expr(self, p):
         return CompoundExpression(p.statements)
+
+    @_('NAME LPAREN { invoking_argument } RPAREN')
+    def expr(self, p):
+        return FunctionInvocation(p.NAME, InvokingArguments(p.invoking_argument))
+
+    @_('expr [ COMMA ]')
+    def invoking_argument(self, p):
+        return InvokingArgument(p.expr)
 
 def parse_tokens(tokens):
     parser = WabbitParser()

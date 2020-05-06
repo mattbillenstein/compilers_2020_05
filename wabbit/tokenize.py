@@ -83,7 +83,7 @@ class WabbitLexer(Lexer):
         PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
         PRINT, CONST, VAR, NAME, FLOAT, IF, ELSE, INT, WHILE, BREAK,
-        CONTINUE, TRUE, FALSE, LOR, LNOT, LAND, CHAR, DOT
+        CONTINUE, TRUE, FALSE, LOR, LNOT, LAND, CHAR, DOT, FUNC, COMMA, RETURN
         }
     ignore = ' \t\n'
     ignore_single_line_comments = r'//.*'
@@ -91,6 +91,8 @@ class WabbitLexer(Lexer):
 
     #TODO fun with characters, single quotes, double quotes, only 1, everything else is an error
     NAME = r'[a-zA-Z_]+'
+    NAME['func'] = FUNC
+    NAME['return'] = RETURN
     NAME['print'] = PRINT
     NAME['const'] = CONST
     # NAME['float'] = FLOAT
@@ -128,6 +130,7 @@ class WabbitLexer(Lexer):
     RBRACE = r'}'
     CHAR = r"('.'|'\\n')"
     DOT = r'\.'
+    COMMA = r','
 
 
 def tokenize(text):

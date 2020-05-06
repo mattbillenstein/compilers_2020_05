@@ -53,3 +53,7 @@ def test_dot():
     tok_types = [t.type for t in list(tokenize(s))]
     assert(tok_types == ['NAME', 'DOT', 'NAME', 'DOT', 'NAME', 'ASSIGN', 'NUMBER'])
 
+def test_parens():
+    s = "(a, a){a}"
+    tok_types = [t.type for t in list(tokenize(s))]
+    assert(tok_types == ['LPAREN', 'NAME', 'COMMA', 'NAME', 'RPAREN', 'LBRACE', 'NAME', 'RBRACE'])
