@@ -53,13 +53,18 @@ def tokenize(text):
             text = text[match.end() :]
             continue
 
-        for type_, regexp in TOKENS:
+        for type_, *regexp in TOKENS:
+            # The tuple may specify the capture group as an optional third element.
+            if len(regexp) == 2:
+                regexp, group = regexp
+            else:
+                [regexp], group = regexp, 0
             if match := re.match(regexp, text):
-                matched = match.string[: match.end()]
+                matched = match.string[match.start(group) : match.end(group)]
+                text = text[match.end() :]
                 if type_ == "NAME" and matched in KEYWORDS:
                     type_ = "KEYWORD"
                 yield type_, matched
-                text = text[match.end() :]
                 break
         else:
             raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
