@@ -1,86 +1,22 @@
-# tokenizer.py
-#
-# The role of a tokenizer is to turn raw text into recognized symbols
-# known as tokens.
-#
-# The following set of tokens are defined for "WabbitScript".  Later
-# parts of the project require you to add more tokens.  The suggested
-# name of the token is on the left. The matching text is on the right.
-#
-# Reserved Keywords:
-#     CONST   : 'const'
-#     VAR     : 'var'
-#     PRINT   : 'print'
-#     BREAK   : 'break'
-#     CONTINUE: 'continue'
-#     IF      : 'if'
-#     ELSE    : 'else'
-#     WHILE   : 'while'
-#     TRUE    : 'true'
-#     FALSE   : 'false'
-#
-# Identifiers/Names
-#     NAME    : Text starting with a letter or '_', followed by any number
-#               number of letters, digits, or underscores.
-#               Examples:  'abc' 'ABC' 'abc123' '_abc' 'a_b_c'
-#
-# Literals:
-#     INTEGER :  123   (decimal)
-#
-#     FLOAT   : 1.234
-#               .1234
-#               1234.
-#
-#     CHAR    : 'a'     (a single character - byte)
-#               '\xhh'  (byte value)
-#               '\n'    (newline)
-#               '\''    (literal single quote)
-#
-# Operators:
-#     PLUS     : '+'
-#     MINUS    : '-'
-#     TIMES    : '*'
-#     DIVIDE   : '/'
-#     LT       : '<'
-#     LE       : '<='
-#     GT       : '>'
-#     GE       : '>='
-#     EQ       : '=='
-#     NE       : '!='
-#     LAND     : '&&'
-#     LOR      : '||'
-#     LNOT     : '!'
-#
-# Miscellaneous Symbols
-#     ASSIGN   : '='
-#     SEMI     : ';'
-#     LPAREN   : '('
-#     RPAREN   : ')'
-#     LBRACE   : '{'
-#     RBRACE   : '}'
-#
-# Comments:  To be ignored
-#      //             Skips the rest of the line
-#      /* ... */      Skips a block (no nesting allowed)
-#
-# Errors: Your lexer may optionally recognize and report the following
-# error messages:
-#
-#      lineno: Illegal char 'c'
-#      lineno: Unterminated character constant
-#      lineno: Unterminated comment
-#
-# ----------------------------------------------------------------------
-
+from typing import NamedTuple
 import re
 
 import utils
 
 TOKENS = [
-    ("PLUS", r"\+"),
-    ("MINUS", "-"),
-    ("TIMES", r"\*"),
-    ("DIVIDE", "/"),
+    ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
+    ("ASSIGN", r"="),  # Assignment operator
+    ("SEMI", r";"),  # Statement terminator
+    ("NAME", r"_[A-Za-z][_A-Za-z0-9]+"),  # Identifiers
+    ("OP", r"[+\-*/]"),  # Arithmetic operators
+    ("NEWLINE", r"\n"),  # Line endings
+    ("SKIP", r"[ \t]+"),  # Skip over spaces and tabs
+    ("KEYWORD", r"(const|var|print|break|continue|if|else|while|true|false) "),
+    #     LPAREN   : '('
+    #     RPAREN   : ')'
+    #     LBRACE   : '{'
+    #     RBRACE   : '}'
+    # Operators
     ("LE", "<="),
     ("LT", "<"),
     ("GE", ">="),
@@ -90,9 +26,26 @@ TOKENS = [
     ("LNOT", "!"),
     ("LAND", "&&"),
     ("LOR", r"\|\|"),
+    # Literals:
+    #     CHAR    : 'a'     (a single character - byte)
+    #               '\xhh'  (byte value)
+    #               '\n'    (newline)
+    #               '\''    (literal single quote)
+    #
+    # Comments:  To be ignored
+    #      //             Skips the rest of the line
+    #      /* ... */      Skips a block (no nesting allowed)
+    ("MISMATCH", r"."),  # Any other character
 ]
 
 IGNORE = " "
+# Errors: Your lexer may optionally recognize and report the following
+# error messages:
+#
+#      lineno: Illegal char 'c'
+#      lineno: Unterminated character constant
+#      lineno: Unterminated comment
+#
 
 
 # def print(*args):
