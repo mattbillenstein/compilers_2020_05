@@ -38,7 +38,6 @@ TOKENS = [
     ("MISMATCH", r"."),  # Any other character
 ]
 
-IGNORE = " "
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
@@ -48,24 +47,39 @@ IGNORE = " "
 #
 
 
-# def print(*args):
-#     pass
+IGNORE = " "
 
 
-def tokenize(text):
-    text = text.rstrip()
-    while text:
-        if match := re.match(IGNORE, text):
-            text = text[match.end() :]
+class Token(NamedTuple):
+    type: str
+    value: str
+    line: int
+    column: int
+
+
+# From https://docs.python.org/3/library/re.html#writing-a-tokenizer
+def tokenize(code):
+    keywords = {"IF", "THEN", "ENDIF", "FOR", "NEXT", "GOSUB", "RETURN"}
+    tok_regex = "|".join("(?P<%s>%s)" % pair for pair in TOKENS)
+    line_num = 1
+    line_start = 0
+    for mo in re.finditer(tok_regex, code):
+        kind = mo.lastgroup
+        value = mo.group()
+        column = mo.start() - line_start
+        if kind == "NUMBER":
+            value = float(value) if "." in value else int(value)
+        elif kind == "ID" and value in keywords:
+            kind = value
+        elif kind == "NEWLINE":
+            line_start = mo.end()
+            line_num += 1
             continue
-
-        for name, regexp in TOKENS:
-            if match := re.match(regexp, text):
-                yield name, match.string[: match.end()]
-                text = text[match.end() :]
-                break
-        else:
-            raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
+        elif kind == "SKIP":
+            continue
+        elif kind == "MISMATCH":
+            raise RuntimeError(f"{value!r} unexpected on line {line_num}")
+        yield Token(kind, value, line_num, column)
 
 
 def test_tokenizer():
