@@ -77,6 +77,10 @@ def interpret_float(node, env):
 def interpret_bool(node, env):
     return node.value
 
+@rule(Char)
+def interpret_char(node, env):
+    return node.value
+
 @rule(BinOp)
 def interpet_binop(node, env):
     leftval = interpret(node.left, env)     # Do the left
@@ -137,7 +141,10 @@ def interpret_load_location(node, env):
 @rule(PrintStatement)
 def interpret_print_statement(node, env):
     value = interpret(node.expression, env)
-    print(value)
+    if isinstance(value, str):
+        print(value, end='')
+    else:
+        print(value)
 
 @rule(ConstDefinition)
 def interpret_const_definition(node, env):

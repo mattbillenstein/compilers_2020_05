@@ -253,7 +253,7 @@ class WabbitParser(Parser):
 
     @_('CHAR')
     def expression(self, p):
-        return Char(p.CHAR)
+        return Char(eval(p.CHAR))
 
     @_('TRUE')
     def expression(self, p):

@@ -111,6 +111,17 @@ class Bool(Expression):
     def __repr__(self):
         return f'Bool({self.value})'
 
+class Char(Expression):
+    '''
+    Literal Char:
+    '''
+    def __init__(self, value):
+        assert isinstance(value, str)
+        self.value = value
+
+    def __repr__(self):
+        return f'Char({self.value!r})'
+
 class BinOp(Expression):
     '''
     Example: left + right
