@@ -50,14 +50,14 @@ from types import SimpleNamespace
 from textwrap import dedent
 from collections import Counter
 from collections.abc import Iterable
-
+import ast
 
 class Node(SimpleNamespace):
     def to_source(self):
         raise NotImplementedError
 
     def __repr__(self):
-        return (
+        rep = (
             f"{self.__class__.__name__}("
             + ", ".join(
                 "{key}={value}".format(key=key, value=repr(value))
@@ -65,6 +65,7 @@ class Node(SimpleNamespace):
             )
             + ")"
         )
+        return black_format_code(rep)
 
     def __str__(self):
         return self.to_source()
@@ -128,7 +129,7 @@ class FieldLookup(Location):
         assert isinstance(fieldname, str)
         assert any(
             field.name == fieldname for field in struct.fields
-        ), f"Struct {struct} has no field {fieldname}"
+        ), f"Struct {struct} has no field {fieldname}"  # Maybe this isn't the right place for this
 
 
 class Integer(Expression):
@@ -161,6 +162,29 @@ class Bool(Expression):
     def __init__(self, value):
         assert isinstance(value, bool)
         super().__init__(value=value)
+
+
+class CharacterLiteral(Expression):
+    def __init__(self, value):
+        assert isinstance(value, str)
+        assert len(ast.listeral_eval(value)) == 1
+        #  "'H'" -> 'H'
+        #  "'\\n'" -> '\\n'
+        super().__init__(value=ast.literal_eval(value))
+
+    def to_source(self):
+        return f"'{self.value}'"
+
+
+class UnaryOp(Expression):
+    def __init__(self, op, operand):
+        assert isinstance(op, str)
+        assert op in ('+', '-')
+        assert isinstance(operand, Expression)
+        super().__init__(op=op, operand=operand)
+
+    def to_source(self):
+        return f'{self.op}{self.operand}'
 
 
 class Identifier(Location):
@@ -440,3 +464,14 @@ def to_source(node):
     #     return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
     # else:
     #     raise RuntimeError(f"Can't convert {node} to source")
+
+
+def black_format_code(source):
+    import black
+    kwargs = {
+        'line_length': 120,
+    }
+    reformatted_source = black.format_file_contents(
+        source, fast=True, mode=black.FileMode(**kwargs)
+    )
+    return reformatted_source

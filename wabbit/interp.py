@@ -52,13 +52,19 @@ logger = logging.getLogger(__name__)
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
+
+def wabbit_divide(a, b):
+    if isinstance(a, int) and isinstance(b, int):
+        return operator.floordiv(a, b)
+    elif isinstance(a, float) or isinstance(b, float):
+        return operator.truediv(a, b)
 
 OPERATIONS = {
     "+": operator.add,
     "-": operator.sub,
-    "/": operator.truediv,
+    "/": wabbit_divide,
     "*": operator.mul,
     "==": operator.eq,
     "!=": operator.ne,
@@ -308,3 +314,16 @@ def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
 def interpret_expression_statement_node(expression_statement_node, env):
     expr = expression_statement_node.expression
     return interpret(expr, env)
+
+
+@interpret.register(UnaryOp)
+def interpret_unary_op_node(unary_op_node, env):
+    op = unary_op_node.op
+    expr = unary_op_node.operand
+    value = interpret(expr)
+    if op == '+':
+        return value
+    elif op == '-':
+        return value * -1
+    else:
+        raise RuntimeError(f'Unexpected unary operator: "{op}"')
