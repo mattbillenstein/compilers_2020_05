@@ -96,8 +96,8 @@ class Interpreter:
 
     @typechecked
     def visit_While(self, node: While):
-        if self.visit(node.test):
-            return self.visit(node.then)
+        while self.visit(node.test):
+            self.visit(node.then)
 
     @typechecked
     def visit_Statements(self, node: Statements):
