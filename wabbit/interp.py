@@ -41,77 +41,77 @@ UNARY_OPERATORS = {
 @dataclass
 class Interpreter:
     @typechecked
-    def visit(self, node: Node, env: ChainMap, **kwargs):
-        method_name = "visit_" + node.__class__.__name__
+    def interpret(self, node: Node, env: ChainMap, **kwargs):
+        method_name = "interpret_" + node.__class__.__name__
         return getattr(self, method_name)(node, env, **kwargs)
 
     @typechecked
-    def visit_Float(self, node: Float, env):
+    def interpret_Float(self, node: Float, env):
         return node.value
 
     @typechecked
-    def visit_Integer(self, node: Integer, env):
+    def interpret_Integer(self, node: Integer, env):
         return node.value
 
     @typechecked
-    def visit_Name(self, node: Name, env):
+    def interpret_Name(self, node: Name, env):
         return env[node.name]
 
     @typechecked
-    def visit_UnaryOp(self, node: UnaryOp, env):
-        right_val = self.visit(node.right, env)
+    def interpret_UnaryOp(self, node: UnaryOp, env):
+        right_val = self.interpret(node.right, env)
         return UNARY_OPERATORS[node.op](right_val)
 
     @typechecked
-    def visit_BinOp(self, node: BinOp, env):
-        left_val = self.visit(node.left, env)
-        right_val = self.visit(node.right, env)
+    def interpret_BinOp(self, node: BinOp, env):
+        left_val = self.interpret(node.left, env)
+        right_val = self.interpret(node.right, env)
         return OPERATORS[node.op](left_val, right_val)
 
     @typechecked
-    def visit_ConstDef(self, node: ConstDef, env):
+    def interpret_ConstDef(self, node: ConstDef, env):
         env[node.name] = node.value
 
     @typechecked
-    def visit_VarDef(self, node: VarDef, env):
+    def interpret_VarDef(self, node: VarDef, env):
         if node.value is not None:
-            env[node.name] = self.visit(node.value, env)
+            env[node.name] = self.interpret(node.value, env)
 
     @typechecked
-    def visit_Assign(self, node: Assign, env):
+    def interpret_Assign(self, node: Assign, env):
         # TODO
-        env[node.location] = self.visit(node.value, env)
+        env[node.location] = self.interpret(node.value, env)
 
     @typechecked
-    def visit_Print(self, node: Print, env):
-        sys.stdout.write(str(self.visit(node.expression, env)) + "\n")
+    def interpret_Print(self, node: Print, env):
+        sys.stdout.write(str(self.interpret(node.expression, env)) + "\n")
 
     @typechecked
-    def visit_If(self, node: If, env):
-        if self.visit(node.test, env):
-            return self.visit(node.then, env)
+    def interpret_If(self, node: If, env):
+        if self.interpret(node.test, env):
+            return self.interpret(node.then, env)
         else:
-            return self.visit(node.else_, env)
+            return self.interpret(node.else_, env)
 
     @typechecked
-    def visit_While(self, node: While, env):
-        while self.visit(node.test, env):
-            self.visit(node.then, env)
+    def interpret_While(self, node: While, env):
+        while self.interpret(node.test, env):
+            self.interpret(node.then, env)
 
     @typechecked
-    def visit_Statements(self, node: Statements, env):
+    def interpret_Statements(self, node: Statements, env):
         for statement in node.statements:
-            self.visit(statement, env)
+            self.interpret(statement, env)
 
     @typechecked
-    def visit_Block(self, node: Block, env):
+    def interpret_Block(self, node: Block, env):
         env = env.new_child()
         for statement in node.statements.statements:
-            val = self.visit(statement, env)
+            val = self.interpret(statement, env)
         return val
 
 
 @typechecked
 def interpret_program(node: Statements):
     env: ChainMap = ChainMap()
-    return Interpreter().visit(node, env)
+    return Interpreter().interpret(node, env)
