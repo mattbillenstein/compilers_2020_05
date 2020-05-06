@@ -187,11 +187,20 @@ class WabbitParser(Parser):
     def expr(self, p):
         return Float(float(p.DECIMAL))
 
+    @_('TRUE', 'FALSE')
+    def expr(self, p):
+        value = False
+        if p[0] == 'true':
+            value = True
+        return Boolean(value)
+
     @_('expr PLUS expr',
         'expr MINUS expr',
         'expr TIMES expr',
         'expr DIVIDE expr',
         'expr LT expr',
+        'expr LAND expr',
+        'expr LOR expr',
             )
     def expr(self, p):
         return BinOp(p[1], p[0], p[2])

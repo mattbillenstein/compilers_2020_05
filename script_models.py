@@ -170,6 +170,20 @@ print(5)
 print(to_source(model5))
 print()
 
+source101 = '''
+  true;
+  true && false;
+  true || false;
+  x = true;
+'''
+
+model101 = Statements([
+    Boolean(True),
+    BinOp('&&', Boolean(True), Boolean(False)),
+    Assign(Variable('x'), Boolean(True)),
+    ])
+print(to_source(model101))
+print()
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.

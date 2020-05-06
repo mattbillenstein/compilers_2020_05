@@ -107,6 +107,19 @@ class Float(Node):
     def is_correct(self):
         return isinstance(self.value, float)
 
+class Boolean(Node):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+        self.is_expression = True
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Boolean({self.value})'
+
+    def is_correct(self):
+        return isinstance(self.value, bool)
+
 class UnaryOp(Node):
     def __init__(self, op, right):
         super().__init__()
@@ -441,6 +454,10 @@ def to_source(node):
         return to_source(node.node)
     elif isinstance(node, UnaryOp):
         return f'({node.op} {to_source(node.right)})'
+    elif isinstance(node, Boolean):
+        if node.value is True:
+            return 'true'
+        return 'false'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 

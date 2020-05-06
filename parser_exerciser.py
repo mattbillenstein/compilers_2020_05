@@ -165,36 +165,42 @@ print(s)
 print(parse_source(s))
 print()
 
-print(6, 'full')
-s = '''
-func add(x int, y int) int {
-    return x + y;
-}
+# print(6, 'full')
+# s = '''
+# func add(x int, y int) int {
+    # return x + y;
+# }
 
-func mul(x int, y int) int {
-    return x * y;
-}
+# func mul(x int, y int) int {
+    # return x * y;
+# }
 
-func factorial(n int) int {
-    if n == 0 {
-        return 1;
-    } else {
-        return mul(n, factorial(add(n, -1)));
-    }
-}
+# func factorial(n int) int {
+    # if n == 0 {
+        # return 1;
+    # } else {
+        # return mul(n, factorial(add(n, -1)));
+    # }
+# }
 
-func print_factorials(last int) {
-    var x = 0;
-    while x < last {
-        print factorial(x);
-        x = add(x, 1);
-}
+# func print_factorials(last int) {
+    # var x = 0;
+    # while x < last {
+        # print factorial(x);
+        # x = add(x, 1);
+# }
 
-func main() int {
-    var result = print_factorials(10);
-    return 0;
-}
-'''
+# func main() int {
+    # var result = print_factorials(10);
+    # return 0;
+# }
+# '''
+# print(s)
+# print(parse_source(s))
+# print()
+
+print(101)
+s = "true && false;"
 print(s)
 print(parse_source(s))
 print()
