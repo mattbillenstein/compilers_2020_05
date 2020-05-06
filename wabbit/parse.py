@@ -157,6 +157,58 @@ from .tokenize import tokenize, WabbitLexer
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens
 
+    @_("orterm LOR orterm")
+    def expression(self, p):
+        return BinOp("||", p.orterm0, p.orterm1)
+
+    @_("orterm")
+    def expression(self, p):
+        return p.orterm
+
+    @_("andterm LAND andterm")
+    def orterm(self, p):
+        return BinOp("&&", p.andterm0, p.andterm1)
+
+    @_("andterm")
+    def expression(self, p):
+        return p.andterm
+
+    @_("sumterm LT sumterm")
+    def andterm(self, p):
+        return BinOp("<", p.sumterm0, p.sumterm1)
+
+    @_("sumterm LE sumterm")
+    def andterm(self, p):
+        return BinOp("<=", p.sumterm0, p.sumterm1)
+
+    @_("sumterm GT sumterm")
+    def andterm(self, p):
+        return BinOp(">", p.sumterm0, p.sumterm1)
+
+    @_("sumterm GE sumterm")
+    def andterm(self, p):
+        return BinOp(">=", p.sumterm0, p.sumterm1)
+
+    @_("sumterm EQ sumterm")
+    def andterm(self, p):
+        return BinOp("==", p.sumterm0, p.sumterm1)
+
+    @_("sumterm NE sumterm")
+    def andterm(self, p):
+        return BinOp("!=", p.sumterm0, p.sumterm1)
+
+    @_("sumterm")
+    def expression(self, p):
+        return p.sumterm
+
+    @_("multerm PLUS multerm")
+    def sumterm(self, p):
+        return BinOp("+", p.multerm0, p.multerm1)
+
+    @_("multerm MINUS multerm")
+    def sumterm(self, p):
+        return BinOp("-", p.multerm0, p.multerm1)
+
     @_("factor TIMES factor")
     def multerm(self, p):
         return BinOp("*", p.factor0, p.factor1)
@@ -176,6 +228,22 @@ class WabbitParser(Parser):
     @_("FLOAT")
     def literal(self, p):
         return Float(float(p.FLOAT))
+
+    @_("NAME LPAREN NAME RPAREN")
+    def pattern(self, p):
+        return Arguments(Argument(p.name0), Argument(p.name1))
+
+    @_("NAME")
+    def pattern(self, p):
+        return p.NAME
+
+    @_("NAME")
+    def type(self, p):
+        return p.NAME
+
+    @_("")
+    def empty(self, p):
+        pass
 
 
 # Top-level function that runs everything
