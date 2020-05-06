@@ -175,17 +175,25 @@ class WabbitParser(Parser):
                                p.type,
                                p.expression)
 
-    @_('VAR NAME [ type ] ASSIGN expression SEMI')
+    @_('VAR NAME [ type ] [ ASSIGN expression ] SEMI')      # var x = 23;    var int x;   var x;  (syntax allowed)
     def var_definition(self, p):
+        # Do we check for both missing type/expression here?  Is it a syntax error?
+        # Is it some other kind of error?  Let's ignore the error for the moment.
         return VarDefinition(p.NAME,
                              p.type,
                              p.expression)
 
-    @_('VAR NAME type [ ASSIGN expression ] SEMI')
-    def var_definition(self, p):
-        return VarDefinition(p.NAME,
-                             p.type,
-                             p.expression)
+    @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
+    def if_statement(self, p):
+        return IfStatement(p.expression, p.statements0, p.statements1 if p.statements1 else Statements([]))
+
+    @_('WHILE expression LBRACE statements RBRACE')
+    def while_statement(self, p):
+        return WhileStatement(p.expression, p.statements)
+    
+    @_('expression SEMI')
+    def expression_statement(self, p):
+        return ExpressionStatement(p.expression)
 
     @_('expression PLUS expression',
        'expression MINUS expression',
@@ -197,13 +205,29 @@ class WabbitParser(Parser):
         right = p.expression1
         return BinOp(op, left, right)
 
+    @_('LPAREN expression RPAREN')
+    def expression(self, p):
+        return Grouping(p.expression)
+
     @_('INTEGER')
     def expression(self, p):
         return Integer(int(p.INTEGER))
-
+    
     @_('FLOAT')
     def expression(self, p):
         return Float(float(p.FLOAT))
+
+    @_('CHAR')
+    def expression(self, p):
+        return Char(p.CHAR)
+
+    @_('TRUE')
+    def expression(self, p):
+        return Bool(True)
+
+    @_('FALSE')
+    def expression(self, p):
+        return Bool(False)
 
     @_('NAME')
     def location(self, p):
