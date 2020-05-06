@@ -37,7 +37,7 @@ IGNORE = " "
 #
 
 
-def _tokenize(text):
+def tokenize(text):
     while text:
         # Ignore white space
         if match := re.match(IGNORE, text):
@@ -67,10 +67,6 @@ def _tokenize(text):
                 break
         else:
             raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
-
-
-def tokenize(text):
-    return list(_tokenize(text))
 
 
 def test_tokenizer():

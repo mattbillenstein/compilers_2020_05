@@ -220,7 +220,7 @@ if __name__ == "__main__":
         print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
         utils.bat(source)
-        tokenize(source)
+        tokens = list(tokenize(source))
         check(source, model)
         dump_json(model, i)
         print("Interpreter output:\n")
