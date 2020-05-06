@@ -14,6 +14,7 @@ from .model import (  # noqa
     Float,
     If,
     Integer,
+    Location,
     Name,
     Print,
     UnaryOp,
@@ -54,6 +55,7 @@ class BaseParser:
             print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
+        return None
 
 
 class Parser(BaseParser):
@@ -98,11 +100,11 @@ class Parser(BaseParser):
 
     # print_statement : PRINT expr SEMICOLON
     #
-    def print_statement(self) -> Statement:
+    def print_statement(self) -> Optional[Statement]:
         print(blue(f"print_statement(): next = {self.peek()}"))
         tok = self.accept("PRINT")
         if not tok:
-            return
+            return None
         expression = self.expression()
         self.expect("SEMICOLON")
         node = Print(expression)
@@ -112,20 +114,20 @@ class Parser(BaseParser):
 
     # assignment_statement : LOCATION = EXPRESSION SEMICOLON
     #
-    def assignment_statement(self) -> Statement:
+    def assignment_statement(self) -> Optional[Statement]:
         print(blue(f"assignment_statement(): next = {self.peek()}"))
 
         tok = self.accept("NAME")  # TODO: location
         if not tok:
-            return
-        name = Name(tok.token)
+            return None
+        location = Location(tok.token)
 
         if not self.accept("ASSIGN"):
-            return
+            return None
 
         expression = self.expression()
         self.expect("SEMICOLON")
-        node = Assign(name, expression)
+        node = Assign(location, expression)
 
         print(green(f"    Parsed {node}"))
         return node

@@ -80,7 +80,7 @@ class Interpreter:
     @typechecked
     def interpret_Assign(self, node: Assign, env):
         # TODO
-        env[node.location] = self.interpret(node.value, env)
+        env[node.location.name] = self.interpret(node.value, env)
 
     @typechecked
     def interpret_Print(self, node: Print, env):

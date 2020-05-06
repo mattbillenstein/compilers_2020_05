@@ -12,6 +12,7 @@ from wabbit.model import (
     Float,
     If,
     Integer,
+    Location,
     Name,
     Print,
     UnaryOp,
@@ -82,7 +83,7 @@ models.append(
         [
             ConstDef("pi", None, 3.14159),
             VarDef("tau", "float", None),
-            Assign("tau", BinOp("*", Float(2.0), Name("pi"))),
+            Assign(Location("tau"), BinOp("*", Float(2.0), Name("pi"))),
             Print(Name("tau")),
         ]
     )
@@ -147,9 +148,9 @@ models.append(
                 BinOp("<", Name("x"), Name("n")),
                 Statements(
                     [
-                        Assign("fact", BinOp("*", Name("fact"), Name("x"))),
+                        Assign(Location("fact"), BinOp("*", Name("fact"), Name("x"))),
                         Print(Name("fact")),
-                        Assign("x", BinOp("+", Name("x"), Integer(1))),
+                        Assign(Location("x"), BinOp("+", Name("x"), Integer(1))),
                     ]
                 ),
             ),
@@ -180,9 +181,11 @@ models.append(
             VarDef("x", None, Integer(37)),
             VarDef("y", None, Integer(42)),
             Assign(
-                "x",
+                Location("x"),
                 Block(
-                    Statements([VarDef("t", None, Name("y")), Assign("y", Name("x")), Name("t")])
+                    Statements(
+                        [VarDef("t", None, Name("y")), Assign(Location("y"), Name("x")), Name("t")]
+                    )
                 ),
             ),
             Print(Name("t")),
@@ -209,7 +212,9 @@ models.append(
             VarDef("i", None, Integer(0)),
             While(
                 BinOp("<", Name("i"), Integer(3)),
-                Statements([Print(Name("i")), Assign("i", BinOp("+", Name("i"), Integer(1)))]),
+                Statements(
+                    [Print(Name("i")), Assign(Location("i"), BinOp("+", Name("i"), Integer(1)))]
+                ),
             ),
         ]
     )

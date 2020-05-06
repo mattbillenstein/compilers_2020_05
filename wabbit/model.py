@@ -52,6 +52,11 @@ class Name(Expression):
 
 
 @dataclass
+class Location(Name):
+    pass
+
+
+@dataclass
 class UnaryOp(Expression):
     op: str
     right: Expression
@@ -80,7 +85,7 @@ class VarDef(Statement):
 
 @dataclass
 class Assign(Statement):
-    location: Name
+    location: Location
     value: Expression
 
 

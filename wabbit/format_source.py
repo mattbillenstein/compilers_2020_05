@@ -50,6 +50,10 @@ class SourceFormatter:
         return node.name
 
     @typechecked
+    def visit_Location(self, node: Name) -> str:
+        return self.visit_Name(node)
+
+    @typechecked
     def visit_UnaryOp(self, node: UnaryOp) -> str:
         return node.op + self.visit(node.right)
 
