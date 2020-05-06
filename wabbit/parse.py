@@ -54,7 +54,13 @@ class WabbitParser(Parser):
 
     debugfile = "parser.out"
 
-    precedence = (("left", PLUS), ("left", MINUS), ("left", DIVIDE), ("left", TIMES))
+    precedence = [
+        ("left", LOR),
+        ("left", LAND),
+        ("left", LT, LE, GT, GE, EQ, NE),
+        ("left", PLUS, MINUS),
+        ("left", TIMES, DIVIDE),
+    ]
 
     # program : statements EOF
     @_("statements")
@@ -83,7 +89,7 @@ class WabbitParser(Parser):
     #           | expression SEMI
     @_(
         "print_statement",
-        # "assignment_statement",
+        "assignment_statement",
         "variable_definition",
         "const_definition",
         # "func_definition",
@@ -114,19 +120,20 @@ class WabbitParser(Parser):
     def assignment_statement(self, p):
         return Assignment(location, expression)
 
-    # variable_definition : VAR NAME [ NAME ] ASSIGN expression SEMI
-    #                     | VAR NAME NAME [ ASSIGN expression ] SEMI
-    @_(
-        "VAR NAME [ NAME ] ASSIGN expression SEMI",
-        "VAR NAME NAME [ ASSIGN expression ] SEMI",
-    )
+    # variable_definition : VAR NAME [ type ] ASSIGN expression SEMI
+    #                     | VAR NAME type [ ASSIGN expression ] SEMI
+    @_("VAR NAME [ type ] ASSIGN expression SEMI",)
     def variable_definition(self, p):
-        return Var(p.NAME0, p.NAME1, p.expression)
+        return Var(p.NAME, p.type, p.expression)
 
-    # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
-    @_("CONST NAME [ NAME ] ASSIGN expression SEMI")
+    @_("VAR NAME type [ ASSIGN expression ] SEMI",)
+    def variable_definition(self, p):
+        return Var(p.NAME, p.type, p.expression)
+
+    # const_definition : CONST NAME [ type ] ASSIGN expression SEMI
+    @_("CONST NAME [ type ] ASSIGN expression SEMI")
     def const_definition(self, p):
-        return Const(p.NAME0, p.NAME1, p.expression)
+        return Const(p.NAME, p.type, p.expression)
 
     # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE
     @_("FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE")
@@ -135,11 +142,15 @@ class WabbitParser(Parser):
 
     # parameters : parameter { COMMA parameter }
     #            | empty
-    @_("parameter { COMMA parameter }", "empty")
+
+    @_("parameter { COMMA parameter }")
     def parameters(self, p):
-        if p.empty:
-            return p.empty
-        return Arguments(*p.parameter)
+        args = [p.parameter0] + p.parameter1
+        return Arguments(*args)
+
+    @_("empty")
+    def parameters(self, p):
+        return p.empty
 
     # parameter  : NAME NAME
     @_("NAME NAME")
@@ -189,16 +200,18 @@ class WabbitParser(Parser):
     # expression : orterm { LOR ortem }
     @_("orterm { LOR orterm }")
     def expression(self, p):
-        if p.LOR:
-            return BinOp("||", p.orterm0, p.orterm1)
-        return p.orterm0
+        left_term = p.orterm0
+        for or_term in p.orterm1:
+            left_term = BinOp("||", left_term, or_term)
+        return left_term
 
     # orterm : andterm { LAND andterm }
     @_("andterm { LAND andterm }")
     def orterm(self, p):
-        if p.LAND:
-            return BinOp("&&", p.andterm0, p.andterm1)
-        return p.andterm0
+        left_term = p.andterm0
+        for and_term in p.andterm1:
+            left_term = BinOp("||", left_term, and_term)
+        return left_term
 
     # andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
     @_(
@@ -210,35 +223,34 @@ class WabbitParser(Parser):
         "sumterm { NE sumterm }",
     )
     def andterm(self, p):
-        if p[1]:
-            return BinOp(p[1], p.sumterm0, p.sumterm1)
-        return p.sumterm0
+        left_term = p.sumterm0
+        for sum_term in p.sumterm1:
+            left_term = BinOp(p[1], left_term, sum_term)
+        return left_term
 
     # sumterm : multerm { PLUS|MINUS multerm }
-    @_("multerm { PLUS  multerm }")
+    @_("multerm { sumop multerm }")
     def sumterm(self, p):
-        if p.PLUS:
-            return BinOp("+", p.multerm0, p.multerm1)
-        return p.multerm0
+        left_term = p.multerm0
+        for op, term in zip(p.sumop, p.multerm1):
+            left_term = BinOp(op, left_term, term)
+        return left_term
 
-    @_("multerm { MINUS multerm }")
-    def sumterm(self, p):
-        if p.MINUS:
-            return BinOp("+", p.multerm0, p.multerm1)
-        return p.multerm0
+    @_("PLUS", "MINUS")
+    def sumop(self, p):
+        return p[0]
 
     # multerm : factor { TIMES|DIVIDE factor }
-    @_("factor { DIVIDE factor }")
+    @_("factor { sumop factor }")
     def multerm(self, p):
-        if p.DIVIDE:
-            return BinOp("/", p.factor0, p.factor1)
-        return p.factor0
+        left_term = p.factor0
+        for op, term in zip(p.sumop, p.factor1):
+            left_term = BinOp(op, left_term, term)
+        return left_term
 
-    @_("factor { TIMES factor }")
-    def multerm(self, p):
-        if p.TIMES:
-            return BinOp("*", p.factor0, p.factor1)
-        return p.factor0
+    @_("DIVIDE", "TIMES")
+    def sumop(self, p):
+        return p[0]
 
     # continue_statement : CONTINUE SEMI
     @_("CONTINUE SEMI")
@@ -272,7 +284,7 @@ class WabbitParser(Parser):
 
     @_("LBRACE statements RBRACE",)
     def factor(self, p):
-        return p.statements
+        return Compound(p.statements)
 
     # literal : INTEGER
     #         | FLOAT
@@ -280,6 +292,9 @@ class WabbitParser(Parser):
     #         | TRUE
     #         | FALSE
     #         | LPAREN RPAREN ? what to do here?
+    @_("LPAREN RPAREN")
+    def literal(self, p):
+        return Empty()
 
     @_("INTEGER")
     def literal(self, p):
@@ -303,11 +318,13 @@ class WabbitParser(Parser):
 
     # exprlist : expression { COMMA expression }
     #          | empty
-    @_("expression { COMMA expression }")
+    @_("expression  COMMA expression")
     def exprlist(self, p):
-        if p.expression1:
-            return ExpressionList(*[p.expression0, p.expression1])
-        return ExpressionList(p.expression0)
+        return ExpressionList(*[p.expression0, p.expression1])
+
+    @_("expression")
+    def exprlist(self, p):
+        return ExpressionList(p.expression)
 
     @_("empty")
     def exprlist(self, p):

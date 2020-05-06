@@ -36,6 +36,10 @@ def test_parser_name():
     tokens = tokenize(source)
     assert parser.parse(tokens) == Statements([Const("b", "float", Float(3.1))])
 
+    source = "2 + 3;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([BinOp("+", Integer(2), Integer(3))])
+
 
 # def test_parser_basics():
 #     source = "2.9 * 2.7"
