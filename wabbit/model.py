@@ -65,7 +65,14 @@ class Node(SimpleNamespace):
             )
             + ")"
         )
-        return black_format_code(rep)
+        try:
+            return black_format_code(rep)
+        except ImportError as e:
+            # Just in case you don't have `black` installed :-)
+            return rep
+        except Exception as e:
+            print('WARN: Unexpected error formatting code ', e)
+            return rep
 
     def __str__(self):
         return self.to_source()
@@ -167,13 +174,13 @@ class Bool(Expression):
 class CharacterLiteral(Expression):
     def __init__(self, value):
         assert isinstance(value, str)
-        assert len(ast.listeral_eval(value)) == 1
+        assert len(ast.literal_eval(value)) == 1
         #  "'H'" -> 'H'
         #  "'\\n'" -> '\\n'
         super().__init__(value=ast.literal_eval(value))
 
     def to_source(self):
-        return f"'{self.value}'"
+        return f"{repr(self.value)}"
 
 
 class UnaryOp(Expression):
@@ -321,7 +328,7 @@ class PrintStatement(Statement):
     """
 
     def __init__(self, expression):
-        assert isinstance(expression, Expression)
+        assert isinstance(expression, Expression), f"Expected expression got {type(expression)}"
         super().__init__(expression=expression)
 
     def to_source(self):

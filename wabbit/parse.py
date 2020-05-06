@@ -122,30 +122,33 @@ from sly import Parser
 # Grammar for Wabbit  (Specificiation of syntax)
 #
 
+
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens  # Token names
 
-
     precedence = [
-        ('left', LOR),       # a || b
-        ('left', LAND),      # a && b
-        ('left', LT, LE, GT, GE, EQ, NE),     #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
-        ('left', PLUS, MINUS),       # Lower precedence      2 + 3 + 4 --> (2+3) + 4
-        ('left', TIMES, DIVIDE),     # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
-
+        ("left", LOR),  # a || b
+        ("left", LAND),  # a && b
+        ("left", LT, LE, GT, GE, EQ, NE),  #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
+        ("left", PLUS, MINUS),  # Lower precedence      2 + 3 + 4 --> (2+3) + 4
+        (
+            "left",
+            TIMES,
+            DIVIDE,
+        ),  # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
         # Unary -x.   -> Super high precedence    2 * -x.
-        #('right', UNARY),    # 'UNARY' is a fake token (does not exist in tokenizer)
-        ]
+        ("right", UNARY),  # 'UNARY' is a fake token (does not exist in tokenizer)
+    ]
 
     # program : statements
-    @_('statements')
+    @_("statements")
     def program(self, p):
         return p[0]
 
     #
     # statements : { statement }      # zero or more statements { }
     #
-    @_('{ statement }')
+    @_("{ statement }")
     def statements(self, p):
         # p.statement   --- it's already a list of statement (by SLY)
         return Program(*p.statement)
@@ -156,104 +159,114 @@ class WabbitParser(Parser):
     #           | const_definition
     #           ...
     #
-    @_('print_statement',
-       'assignment_statement',
-       #       'if_statement',
-       'const_definition',
-       )
+    @_(
+        "print_statement",
+        "assignment_statement",
+        "if_statement",
+        "const_definition",
+        "expression_statement",
+        "var_definition",
+        'while_statement',
+
+    )
     def statement(self, p):
         return p[0]  # Just return whatever the thing is
 
     # print_statement : PRINT expression SEMI
     #
-    @_('PRINT expression SEMI')
+    @_("PRINT expression SEMI")
     def print_statement(self, p):  # p contains all information from the parse
         # Create a node from your model
         return PrintStatement(expression=p.expression)
 
     # assignment_statement : location ASSIGN expression SEMI
     #
-    @_('location ASSIGN expression SEMI')
+    @_("location ASSIGN expression SEMI")
     def assignment_statement(self, p):
-        return Assignment(location=p.location,
-                          value=p.expression)
+        return Assignment(location=p.location, value=p.expression)
 
-    @_('IF expression clause [ ELSE clause ]')
+    @_("IF expression clause [ ELSE clause ]")
     def if_statement(self, p):
-        return IfStatement(condition=p.expression,
-                           consequent=p.clause0,
-                           alternative=p.clause1)
+        return IfStatement(
+            condition=p.expression, consequent=p.clause0, alternative=p.clause1
+        )
 
-
-
-    @_('LPAREN RPAREN')
-    def unit(self, p):
-        return Unit()
-
-    @_('LBRACE statements RBRACE')
+    @_("LBRACE statements RBRACE")
     def clause(self, p):
         return Clause(*p.statements)
 
-    @_('PLUS expression',
-       'MINUS expression',
-       'LNOT expression')
+    @_(
+        "PLUS expression %prec UNARY",
+        "MINUS expression %prec UNARY",
+        "LNOT expression %prec UNARY",
+    )
     def expression(self, p):
         return UnaryOp(op=p[0], operand=p.expression)
 
-    @_('CONST NAME [ type ] ASSIGN expression SEMI')
+    @_("CONST NAME [ type ] ASSIGN expression SEMI")
     def const_definition(self, p):
-        return ConstDefinition(name=p.NAME0,
-                               type=p.NAME1,
-                               value=p.expression)
+        return ConstDefinition(name=p.NAME0, type=p.NAME1, value=p.expression)
 
-
-    @_('VAR NAME [ type ] ASSIGN expression SEMI')
+    @_("VAR NAME [ type ] ASSIGN expression SEMI")
     def var_definition(self, p):
-        return VariableDefinition(name=p.NAME,
-                                  type=p.type,
-                                  value=p.expression)
+        return VariableDefinition(name=p.NAME, type=p.type, value=p.expression)
 
-    @_('VAR NAME type [ ASSIGN expression ] SEMI')
+    @_("VAR NAME type [ ASSIGN expression ] SEMI")
     def var_definition(self, p):
-        return VariableDefinition(name=p.NAME,
-                             type=p.type,
-                             value=p.expression)
-    @_('expression SEMI')
+        return VariableDefinition(name=p.NAME, type=p.type, value=p.expression)
+
+    @_("expression SEMI")
     def expression_statement(self, p):
         return ExpressionStatement(expression=p.expression)
 
-    @_('expression PLUS expression',
-       'expression MINUS expression',
-       'expression TIMES expression',
-       'expression DIVIDE expression')
+    @_("WHILE expression clause")
+    def while_statement(self, p):
+        return WhileLoop(condition=p.expression, body=p.clause)
+
+    @_(
+        "expression PLUS expression",
+        "expression MINUS expression",
+        "expression TIMES expression",
+        "expression DIVIDE expression",
+        "expression LT expression",
+        "expression LE expression",
+        "expression GT expression",
+        "expression GE expression",
+        "expression EQ expression",
+        "expression NE expression",
+        "expression LAND expression",
+        "expression LOR expression",
+    )
     def expression(self, p):
         op = p[1]
         left = p.expression0
         right = p.expression1
         return BinOp(op=op, left=left, right=right)
 
-    @_('INTEGER')
+    @_("INTEGER")
     def expression(self, p):
         return Integer(int(p.INTEGER))
 
-    @_('FLOAT')
+    @_("FLOAT")
     def expression(self, p):
         return Float(float(p.FLOAT))
 
-    @_('NAME')
+    @_("NAME")
     def location(self, p):
         return Identifier(name=p.NAME)
 
-    @_('NAME')
+    @_("NAME")
     def type(self, p):
         return p[0]
 
-    @_('CHAR')
+    @_("CHAR")
     def expression(self, p):
-        return p[0]
+        return CharacterLiteral(value=p[0])
 
 
-
+    @_("LPAREN RPAREN")
+    def expression(self, p):
+        return Unit()
 
 
 def parse_tokens(raw_tokens):
@@ -275,12 +288,11 @@ def parse_file(filename):
     return parse_source(text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
+        raise SystemExit("Usage: wabbit.parse filename")
     model = parse_file(sys.argv[1])
     print(repr(model))
     print(model)
-
