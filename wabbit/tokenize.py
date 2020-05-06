@@ -6,7 +6,7 @@ import utils
 TOKENS = [
     ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
     ("SEMICOLON", r";"),  # Statement terminator
-    ("NAME", r"[_A-Za-z][_A-Za-z0-9]+"),  # Identifiers
+    ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),  # Identifiers
     ("OP", r"[+\-*/]"),  # Arithmetic operators
     ("NEWLINE", r"\n"),  # Line endings
     ("LPAREN", r"\("),
@@ -26,7 +26,9 @@ TOKENS = [
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
 ]
 
-KEYWORDS = ["const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"]
+KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
+TYPES = {"bool", "char", "int", "float"}
+
 
 IGNORE = " "
 # Errors: Your lexer may optionally recognize and report the following
@@ -58,8 +60,11 @@ def _tokenize(text):
             if match := re.match(regexp, text):
                 matched = match.string[match.start(group) : match.end(group)]  # type: ignore
                 text = text[match.end() :]
-                if type_ == "NAME" and matched in KEYWORDS:
-                    type_ = "KEYWORD"
+                if type_ == "NAME":
+                    if matched in KEYWORDS:
+                        type_ = "KEYWORD"
+                    if matched in TYPES:
+                        type_ = "TYPE"
                 yield type_, matched
                 break
         else:
@@ -104,6 +109,17 @@ def test_tokenizer():
         (r"'\xhh'", [("CHAR", r"\xhh")]),
         (r"'\n'", [("CHAR", r"\n")]),
         # (r"'\''", [("CHAR", "'")]),  # TODO
+        (
+            "var a int = 2;",
+            [
+                ("KEYWORD", "var"),
+                ("NAME", "a"),
+                ("TYPE", "int"),
+                ("ASSIGN", "="),
+                ("NUMBER", "2"),
+                ("SEMICOLON", ";"),
+            ],
+        ),
     ]
     for source, expected_tokens in test_cases:
         actual_tokens = list(tokenize(source))
