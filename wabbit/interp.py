@@ -40,73 +40,71 @@ UNARY_OPERATORS = {
 
 @dataclass
 class Interpreter:
-    env: ChainMap
-
     @typechecked
-    def visit(self, node: Node, **kwargs):
+    def visit(self, node: Node, env: ChainMap, **kwargs):
         method_name = "visit_" + node.__class__.__name__
-        return getattr(self, method_name)(node, **kwargs)
+        return getattr(self, method_name)(node, env, **kwargs)
 
     @typechecked
-    def visit_Float(self, node: Float):
+    def visit_Float(self, node: Float, env: ChainMap):
         return node.value
 
     @typechecked
-    def visit_Integer(self, node: Integer):
+    def visit_Integer(self, node: Integer, env: ChainMap):
         return node.value
 
     @typechecked
-    def visit_Name(self, node: Name):
+    def visit_Name(self, node: Name, env: ChainMap):
         return self.env[node.name]
 
     @typechecked
-    def visit_UnaryOp(self, node: UnaryOp):
+    def visit_UnaryOp(self, node: UnaryOp, env: ChainMap):
         right_val = self.visit(node.right)
         return UNARY_OPERATORS[node.op](right_val)
 
     @typechecked
-    def visit_BinOp(self, node: BinOp):
+    def visit_BinOp(self, node: BinOp, env: ChainMap):
         left_val = self.visit(node.left)
         right_val = self.visit(node.right)
         return OPERATORS[node.op](left_val, right_val)
 
     @typechecked
-    def visit_ConstDef(self, node: ConstDef):
+    def visit_ConstDef(self, node: ConstDef, env: ChainMap):
         self.env[node.name] = node.value
 
     @typechecked
-    def visit_VarDef(self, node: VarDef):
+    def visit_VarDef(self, node: VarDef, env: ChainMap):
         if node.value is not None:
             self.env[node.name] = self.visit(node.value)
 
     @typechecked
-    def visit_Assign(self, node: Assign):
+    def visit_Assign(self, node: Assign, env: ChainMap):
         # TODO
         self.env[node.location] = self.visit(node.value)
 
     @typechecked
-    def visit_Print(self, node: Print):
+    def visit_Print(self, node: Print, env: ChainMap):
         sys.stdout.write(str(self.visit(node.expression)) + "\n")
 
     @typechecked
-    def visit_If(self, node: If):
+    def visit_If(self, node: If, env: ChainMap):
         if self.visit(node.test):
             return self.visit(node.then)
         else:
             return self.visit(node.else_)
 
     @typechecked
-    def visit_While(self, node: While):
+    def visit_While(self, node: While, env: ChainMap):
         while self.visit(node.test):
             self.visit(node.then)
 
     @typechecked
-    def visit_Statements(self, node: Statements):
+    def visit_Statements(self, node: Statements, env: ChainMap):
         for statement in node.statements:
             self.visit(statement)
 
     @typechecked
-    def visit_Block(self, node: Block):
+    def visit_Block(self, node: Block, env: ChainMap):
         for statement in node.statements.statements:
             val = self.visit(statement)
         return val
@@ -115,4 +113,4 @@ class Interpreter:
 @typechecked
 def interpret_program(node: Statements):
     env: ChainMap = ChainMap()
-    return Interpreter(env).visit(node)
+    return Interpreter().visit(node, env)
