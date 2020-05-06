@@ -60,6 +60,8 @@ def wabbit_divide(a, b):
         return operator.floordiv(a, b)
     elif isinstance(a, float) or isinstance(b, float):
         return operator.truediv(a, b)
+    else:
+        raise RuntimeError(f'Cannot divide objects of type "{type(a)}" and "{type(b)}"')
 
 OPERATIONS = {
     "+": operator.add,
