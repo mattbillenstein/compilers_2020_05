@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typeguard import typechecked
 
 from wabbit.model import (
@@ -90,17 +91,19 @@ class SourceFormatter:
     @typechecked
     def visit_If(self, node: If) -> str:
         # TODO: hard-coded indent=1
-        return """\
-if %s {
+        source = """if %s {
 %s
-} else {
-%s
-}
-""" % (
+}""" % (
             self.visit(node.test),
             self.visit(node.then, level=1),
-            self.visit(node.else_, level=1),
         )
+        if node.else_:
+            source += """ else {
+%s
+}""" % self.visit(
+                node.else_, level=1
+            )
+        return source
 
     @typechecked
     def visit_While(self, node: While) -> str:
