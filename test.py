@@ -47,7 +47,6 @@ class ScriptModels(unittest.TestCase):
         # according to the names/classes you defined in wabbit.model
         
         source = "2 + 3 * 4;"
-        output = '14'
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
             Token(type='PLUS', value='+', lineno=1, index=2),
@@ -56,13 +55,13 @@ class ScriptModels(unittest.TestCase):
             Token(type='INTEGER', value='4', lineno=1, index=8),
             Token(type='SEMI', value=';', lineno=1, index=9),
         ]
-        model = [ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))]
-        output = '14'
+        model = Statements([ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))])
+        stdout = []
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.assertEqual(interpret_program(model), stdout)
 
     def test_print(self):
         
@@ -78,7 +77,7 @@ class ScriptModels(unittest.TestCase):
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
         print 2 * 3 + -4;""")
-        output = '14'
+        stdout = ['-10', '2.75', '1', '2']
 
         tokens = [
             Token(type='PRINT', value='print', lineno=1, index=0),
@@ -113,18 +112,18 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=72),
         ]
         
-        model = [
+        model = Statements([
             PrintStatement(BinOp('+', Int(2), BinOp('*', Int(3), UnOp('-', Int(4))))),
             PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnOp('-', Float(4.0))))),
             PrintStatement(BinOp('+', UnOp('-', Int(2)), Int(3))),
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
-            ]
+            ])
         
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.assertEqual(interpret_program(model), stdout)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -160,13 +159,13 @@ class ScriptModels(unittest.TestCase):
             Token(type='NAME', value='tau', lineno=1, index=57),
             Token(type='SEMI', value=';', lineno=1, index=60)
         ]
-        model = [
+        model = Statements([
             AssignStatement(DeclStorageLocation(StorageIdentifier('pi'), None, True), Float(3.14159)),
             AssignStatement(DeclStorageLocation(StorageIdentifier('tau'), 'float', False), value=None),
             AssignStatement(StorageIdentifier('tau'), BinOp('*', Float(2.0),
                 StorageLocation(StorageIdentifier('pi')))),
             PrintStatement(StorageLocation(StorageIdentifier('tau')))
-            ]
+            ])
 
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
@@ -219,7 +218,7 @@ class ScriptModels(unittest.TestCase):
             Token(type='RBRACE', value='}', lineno=1, index=70),
         ]
 
-        model = [
+        model = Statements([
             AssignStatement(DeclStorageLocation(StorageIdentifier('a'), 'int', False), Int(2)),
             AssignStatement(DeclStorageLocation(StorageIdentifier('b'), 'int', False), Int(3)),
             ConditionalStatement(BinOp('<', StorageLocation(StorageIdentifier('a')),
@@ -229,7 +228,7 @@ class ScriptModels(unittest.TestCase):
                     PrintStatement(StorageLocation(StorageIdentifier('b')))
                 ]
             ),
-            ]
+            ])
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -293,7 +292,7 @@ class ScriptModels(unittest.TestCase):
             Token(type='RBRACE', value='}', lineno=1, index=104),
         ]
         
-        model = [
+        model = Statements([
                 AssignStatement(DeclStorageLocation(StorageIdentifier('n'), None, True), Int(10)),
                 AssignStatement(DeclStorageLocation(StorageIdentifier('x'), 'int', False), Int(1)),
                 AssignStatement(DeclStorageLocation(StorageIdentifier('fact'), 'int', False), Int(1)),
@@ -306,7 +305,7 @@ class ScriptModels(unittest.TestCase):
                     AssignStatement(StorageIdentifier('x'), BinOp('+',
                         StorageLocation(StorageIdentifier('x')), Int(1)))
                 ]),
-                ]
+                ])
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -362,7 +361,7 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=70),
         ]
         
-        model = [
+        model = Statements([
             AssignStatement(DeclStorageLocation(StorageIdentifier('x')), Int(37)),
             AssignStatement(DeclStorageLocation(StorageIdentifier('y')), Int(42)),
             AssignStatement(StorageIdentifier('x'), BlockExpression([
@@ -372,7 +371,7 @@ class ScriptModels(unittest.TestCase):
                 ])),
             PrintStatement(StorageLocation(StorageIdentifier('x'))),
             PrintStatement(StorageLocation(StorageIdentifier('y'))),
-            ]
+            ])
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)

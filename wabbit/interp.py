@@ -46,11 +46,13 @@ from .model import *
 # initial environment that's used for storing variables.
 
 
-def interpret_program(model):
+def interpret_program(statements):
     # Make the initial environment (a dict)
     env = {}
-    interpreter = Interpreter(env)
-    interpreter.run(model)
+    stdout = []
+    interpreter = Interpreter(env, stdout)
+    statements.visit(interpreter)
+    return stdout
 
 
 class Storage():
@@ -60,8 +62,9 @@ class Storage():
 
 
 class Interpreter(ModelVisitor):
-    def __init__(self, env):
+    def __init__(self, env, stdout):
         self.env = env
+        self.stdout = stdout
 
     def visit_Location(self, node):
         return self.env[node.identifier]
@@ -122,7 +125,7 @@ class Interpreter(ModelVisitor):
             raise
 
     def visit_PrintStatement(self, node):
-        print(node.expr.visit(self))
+        self.stdout.append(str(node.expr.visit(self)))
         return None
 
     def visit_ConditionalStatement(self, node):
@@ -158,3 +161,7 @@ class Interpreter(ModelVisitor):
 
     def visit_ReturnStatement(self, node):
         pass  # XXX
+
+    def visit_Statements(self, node):
+        for stmt in node.statements:
+            stmt.visit(self)

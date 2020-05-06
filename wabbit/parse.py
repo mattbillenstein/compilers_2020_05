@@ -23,7 +23,7 @@ class WabbitParser(Parser):
 
     @_('{ statement }')
     def statements(self, p):
-        return p.statement
+        return Statements(p.statement)
 
     @_('print_statement',
        'assignment_statement',

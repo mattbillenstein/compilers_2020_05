@@ -21,34 +21,28 @@ class ExpressionNode(Node):
 class StatementNode(Node):
     pass
 
+# Groupings of code
+
+
+@dataclass
+class Statements(Node):
+    statements: List[StatementNode]
+
+
+@dataclass
+class Program(Node):
+    statements: Statements
+
 
 class BlockNode(Node):
     lines: List[StatementNode]
 
-
-class ScalarNode(ExpressionNode):
-    def visit(self, visitor):
-        return visitor.visit_ScalarNode(self)
+# Variables
 
 
 @dataclass
 class StorageIdentifier(ExpressionNode):
     name: str
-
-
-@dataclass
-class Int(ScalarNode):
-    value: int
-
-
-@dataclass
-class Char(ScalarNode):
-    value: str
-
-
-@dataclass
-class Float(ScalarNode):
-    value: float
 
 
 @dataclass
@@ -62,24 +56,30 @@ class DeclStorageLocation(StorageLocation):
     _type: str = None
     const: bool = False
 
+# Functions
+
+
+@dataclass
+class FuncCall(ExpressionNode):
+    name: str
+    args: List[ExpressionNode]
+
+
+@dataclass
+class FuncDeclStatement(StatementNode):
+    name: str
+    args: List[List[str]]
+    retval: str
+    body: List[StatementNode]
+
+
+# Statements
+
 
 @dataclass
 class AssignStatement(StatementNode):
     location: StorageLocation
     value: ExpressionNode
-
-
-@dataclass
-class BinOp(ExpressionNode):
-    op: str
-    left: ExpressionNode
-    right: ExpressionNode
-
-
-@dataclass
-class UnOp(ExpressionNode):
-    op: str
-    right: ExpressionNode
 
 
 @dataclass
@@ -111,95 +111,127 @@ class BreakLoopStatement(StatementNode):
 
 
 @dataclass
-class BlockExpression(ExpressionNode):
-    block: List[StatementNode]
-
-
-@dataclass
 class ExpressionStatement(StatementNode):
     statement: ExpressionNode
-
-
-@dataclass
-class FuncCall(ExpressionNode):
-    name: str
-    args: List[ExpressionNode]
-
-
-@dataclass
-class FuncDeclStatement(StatementNode):
-    name: str
-    args: List[List[str]]
-    retval: str
-    body: List[StatementNode]
 
 
 @dataclass
 class ReturnStatement(StatementNode):
     retval: ExpressionNode
 
-
-@dataclass
-class Statements(StatementNode):
-    statements: List[StatementNode]
+# Expressions
 
 
 @dataclass
-class Grouping(ExpressionNode):
-    expr: ExpressionNode
+class BinOp(ExpressionNode):
+    op: str
+    left: ExpressionNode
+    right: ExpressionNode
+
+
+@dataclass
+class UnOp(ExpressionNode):
+    op: str
+    right: ExpressionNode
+
+
+@dataclass
+class BlockExpression(ExpressionNode):
+    block: List[StatementNode]
+
+# Scalars
+
+
+@dataclass
+class ScalarNode(ExpressionNode):
+    def visit(self, visitor):
+        return visitor.visit_ScalarNode(self)
+
+
+@dataclass
+class Int(ScalarNode):
+    value: int
+
+
+@dataclass
+class Char(ScalarNode):
+    value: str
+
+
+@dataclass
+class Float(ScalarNode):
+    value: float
 
 
 class ModelVisitor:
     def __init__(self):
         raise NotImplementedError
-
-    def visit_StorageLocation(self, node):
-        raise NotImplementedError
-
-    def visit_DeclStorageLocation(self, node):
-        raise NotImplementedError
-
-    def visit_ScalarNode(self, node):
-        raise NotImplementedError
-
-    def visit_AssignStatement(self, node):
-        raise NotImplementedError
-
-    def visit_BinOp(self, node):
-        raise NotImplementedError
-
-    def visit_UnOp(self, node):
-        raise NotImplementedError
-
-    def visit_PrintStatement(self, node):
-        raise NotImplementedError
-
-    def visit_ConditionalStatement(self, node):
-        raise NotImplementedError
-
-    def visit_ConditionalLoopStatement(self, node):
-        raise NotImplementedError
-
-    def visit_BlockExpression(self, node):
-        raise NotImplementedError
-
-    def visit_ExpressionStatement(self, node):
-        raise NotImplementedError
-
-    def visit_FuncCall(self, node):
-        raise NotImplementedError
-
-    def visit_FuncDeclStatement(self, node):
-        raise NotImplementedError
-
-    def visit_ReturnStatement(self, node):
-        raise NotImplementedError
-
+    
     def visit_Statements(self, node):
         raise NotImplementedError
-
-    def visit_Grouping(self, node):
+    
+    def visit_Program(self, node):
         raise NotImplementedError
-
+    
+    def visit_BlockNode(self, node):
+        raise NotImplementedError
+    
     def visit_StorageIdentifier(self, node):
+        raise NotImplementedError
+    
+    def visit_StorageLocation(self, node):
+        raise NotImplementedError
+    
+    def visit_DeclStorageLocation(self, node):
+        raise NotImplementedError
+    
+    def visit_FuncCall(self, node):
+        raise NotImplementedError
+    
+    def visit_FuncDeclStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_AssignStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_PrintStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_ConditionalStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_ConditionalLoopStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_ContinueLoopStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_BreakLoopStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_ExpressionStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_ReturnStatement(self, node):
+        raise NotImplementedError
+    
+    def visit_BinOp(self, node):
+        raise NotImplementedError
+    
+    def visit_UnOp(self, node):
+        raise NotImplementedError
+    
+    def visit_BlockExpression(self, node):
+        raise NotImplementedError
+    
+    def visit_ScalarNode(self, node):
+        raise NotImplementedError
+    
+    def visit_Int(self, node):
+        raise NotImplementedError
+    
+    def visit_Char(self, node):
+        raise NotImplementedError
+    
+    def visit_Float(self, node):
         raise NotImplementedError
