@@ -84,8 +84,8 @@ class WabbitParser(Parser):
     @_(
         "print_statement",
         # "assignment_statement",
-        # "variable_definition",
-        # "const_definition",
+        "variable_definition",
+        "const_definition",
         # "func_definition",
         # "struct_definition",
         # "enum_definition",
@@ -121,12 +121,12 @@ class WabbitParser(Parser):
         "VAR NAME NAME [ ASSIGN expression ] SEMI",
     )
     def variable_definition(self, p):
-        return Var(p.NAME0, p.NAME1, expression)
+        return Var(p.NAME0, p.NAME1, p.expression)
 
     # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
     @_("CONST NAME [ NAME ] ASSIGN expression SEMI")
     def const_definition(self, p):
-        return Const(p.NAME0, p.NAME1, expression)
+        return Const(p.NAME0, p.NAME1, p.expression)
 
     # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE
     @_("FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE")

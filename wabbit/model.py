@@ -464,6 +464,15 @@ class Const(Definition):
     def __repr__(self):
         return f"Const({self.name}, {self.type}, {self.value})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return (
+            self.name == other.name
+            and self.type == other.type
+            and self.value == other.value
+        )
+
 
 class Var(Definition):
     """
@@ -481,6 +490,15 @@ class Var(Definition):
 
     def __repr__(self):
         return f"Var({self.name}, {self.type}, {self.value})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return (
+            self.name == other.name
+            and self.value == other.value
+            and self.type == other.type
+        )
 
 
 class Let(Definition):
@@ -509,6 +527,11 @@ class Variable(Location):
 
     def __repr__(self):
         return f"Variable({self.name})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.name == other.name
 
 
 class Integer(Expression):
