@@ -45,11 +45,13 @@ from .model import *
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
 
+
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = {}
     interpreter = Interpreter(env)
     interpreter.run(model)
+
 
 class Storage():
     def __init__(self, _type, const):

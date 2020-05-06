@@ -42,6 +42,11 @@ class Int(ScalarNode):
 
 
 @dataclass
+class Char(ScalarNode):
+    value: str
+
+
+@dataclass
 class Float(ScalarNode):
     value: float
 

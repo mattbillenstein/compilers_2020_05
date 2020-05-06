@@ -14,41 +14,25 @@ class WabbitParser(Parser):
     def __init__(self):
         self.names = {}
 
+    @_('statements')
+    def program(self, p):
+        return p[0]
+
     @_('{ statement }')
-    def statements():
-        pass
+    def statements(self, p):
+        return p.statement
 
-    @_('print_statement')
+    @_('print_statement',
+       'assignment_statement',
+       'variable_definition',
+       'if_statement',
+       'while_statement',
+       'break_statement',
+       'continue_statement',
+       'expr',
+       )
     def statement(self, p):
-        pass
-
-    @_('assignment_statement')
-    def statement():
-        pass
-
-    @_('variable_definition')
-    def statement():
-        pass
-
-    @_('if_statement')
-    def statement():
-        pass
-
-    @_('while_statement')
-    def statement():
-        pass
-
-    @_('break_statement')
-    def statement():
-        pass
-
-    @_('continue_statement')
-    def statement():
-        pass
-
-    @_('expr')
-    def statement():
-        pass
+        return p[0]
 
     @_('PRINT expr SEMI')
     def print_statement(self, p):
@@ -58,9 +42,13 @@ class WabbitParser(Parser):
     def assignment_statement(self, p):
         return AssignStatement(p.location, p.expr)
 
-    @_('[ VAR | CONST ] NAME [ type ] [ ASSIGN expr ] SEMI')
+    @_('VAR NAME [ type ] [ ASSIGN expr ] SEMI')
     def variable_definition(self, p):
-        return AssignStatement(DeclStorageLocation(p.NAME, p.type, p.VAR/p.CONST), p.expr)
+        return AssignStatement(DeclStorageLocation(p.NAME, p.type, False), p.expr)
+
+    @_('CONST NAME [ type ] [ ASSIGN expr ] SEMI')
+    def variable_definition(self, p):
+        return AssignStatement(DeclStorageLocation(p.NAME, p.type, True), p.expr)
 
     @_('IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def while_statement(self, p):
@@ -134,15 +122,15 @@ class WabbitParser(Parser):
 
     @_('LPAREN RPAREN')
     def literal(self, p):
-        return NotImplementedError
+        return None
 
     @_('NAME')
     def location(self, p):
-        return NotImplementedError
+        return StorageLocation(p.NAME)
 
     @_('NAME')
     def type(self, p):
-        return NotImplementedError
+        return p.NAME
 
     @_('')
     def empty(self, p):
