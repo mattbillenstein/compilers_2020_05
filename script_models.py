@@ -23,7 +23,7 @@
 from collections import ChainMap
 from wabbit.model import *
 from wabbit.interp import interpret
-# from wabbit.parse import parse_source
+from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -135,7 +135,7 @@ expr3 = If(BinOp('<', Name('a'),
 model3 = Statements(expr1, Statements(expr2), Statements(expr3))
 
 # print(to_source(model3))
-
+# print(parse_source(source3))
 # print("\n\nmodel3: expect the following value:", 2, "\n")
 # interpret(model3, {})
 
@@ -172,7 +172,7 @@ Statements(expr4, expr5, expr6))
 
 model4 = Statements(expr1, expr2, expr3, expr7)
 # print(to_source(model4))
-
+# print(parse_source(source4))
 # print("\n\nmodel4: expect factorials, from 1 to 362880", "\n")
 # interpret(model4, {})
 
@@ -203,6 +203,7 @@ expr5 = Print(Name('y'))
 
 model5 = Statements(expr1, expr2, expr3, expr4, expr5)
 # print(to_source(model5))
+# print(parse_source(source5))
 
 # print("\n\nmodel5: expect the values 42 followed by 37", "\n")
 # interpret(model5, {})
@@ -248,6 +249,9 @@ expr_if = If(BinOp('<', Name('x'), Integer(5)),
 
 
 model_if_block = Statements(var_x_1, var_y_37, print_x, expr_if, print_x, print_y)
+
+# print(parse_source(source_if_block))
+
 
 # print("\n\nmodel_if_block: expect the values 1, 10, 37, 20, 1, 37", "\n")
 # env = ChainMap()

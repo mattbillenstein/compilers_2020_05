@@ -93,9 +93,13 @@ class Assignment(Statement):
         return f"Assignment({self.location}, {self.expression})"
 
     def is_valid(self):
-        assert isinstance(self.location, Name)
-        assert isinstance(self.expression, (Name, Expression))
-
+        try:
+            assert isinstance(self.location, Name)
+            assert isinstance(self.expression, (Name, Expression, Statements))
+        except AssertionError:
+            print("self.location", self.location)
+            print("self.expression", self.expression)
+            raise
 
 class BinOp(Expression):
     """
@@ -135,10 +139,10 @@ class Const(Definition):
     def __repr__(self):
         if self.type:
             return ("Const(" +
-                f"{self.name}, {self.type}, {self.expression})")
+                f"'{self.name}', {self.type}, {self.expression})")
         else:
             return ("Const(" +
-                f"{self.name}, {self.expression})")
+                f"'{self.name}', Type(None), {self.expression})")
 
     def is_valid(self):
         assert self.type is None or isinstance(self.type, Type)
@@ -232,36 +236,6 @@ class Integer(Expression):
         assert isinstance(self.value, int)
 
 
-# class LoadLocation(Expression):
-#     '''
-#     Loading a value out of a location for use in an expression.
-#     '''
-#     def __init__(self, location):
-#         self.location = location
-#         self.is_valid()
-
-#     def __repr__(self):
-#         return f'LoadLocation({self.location})'
-
-#     def is_valid(self):
-#         assert isinstance(self.location, Location)
-
-
-# class NamedLocation(Location):
-#     """
-#     A location representing a simple variable name
-#     """
-#     def __init__(self, name):
-#         self.name = name
-#         self.is_valid()
-
-#     def __repr__(self):
-#         return f"NamedLocation({self.name})"
-
-#     def is_valid(self):
-#         assert isinstance(self.name, str)
-
-
 class Name(Node):
     """
     a variable name
@@ -274,8 +248,11 @@ class Name(Node):
         return f"Name({self.name})"
 
     def is_valid(self):
-        assert isinstance(self.name, str)
-
+        try:
+            assert isinstance(self.name, str)
+        except AssertionError:
+            print("problem in Name(); self.name = ", self.name)
+            raise
 
 
 class Print(Statement):
@@ -377,8 +354,13 @@ class While(Statement):
         return (f"While({self.condition}, {self.statements})")
 
     def is_valid(self):
-        assert isinstance(self.condition, Expression)
-        assert isinstance(self.statements, (Statement, Statements))
+        try:
+            assert isinstance(self.condition, Expression)
+            assert isinstance(self.statements, (Statement, Statements))
+        except AssertionError:
+            print("self.condition = ", self.condition)
+            raise
+
 
 ######################## to_source ##################
 

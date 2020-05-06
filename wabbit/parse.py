@@ -157,7 +157,7 @@ class WabbitParser(Parser):
 
     @_('location ASSIGN expression SEMI')
     def assignment_statement(self, p):
-        return Assignment(p.location, LoadLocation(p.expression))
+        return Assignment(p.location, p.expression)
 
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
@@ -184,7 +184,7 @@ class WabbitParser(Parser):
 
     @_('WHILE expression LBRACE statements RBRACE')
     def while_statement(self, p):
-        return While(self.expression, self.statements)
+        return While(p.expression, p.statements)
 
     @_('orterm [ LOR orterm ]')
     def expression(self, p):
@@ -279,11 +279,7 @@ class WabbitParser(Parser):
 
     @_('NAME')
     def location(self, p):
-        return LocadLocation(NamedLocation(repr(p.NAME)))
-
-    @_('NAME')
-    def store_location(self, p):
-        return p.NAME
+        return Name(repr(p.NAME))
 
     @_('NAME')
     def type(self, p):
