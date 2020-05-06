@@ -1,10 +1,18 @@
 import re
+from typing import Generator
+from typing import List
+from typing import Tuple
+from typing import Union
 
 import utils
 
+Token = Tuple[str, str]
+TokenStream = Generator[Token, None, None]
+
+
 KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
 TYPES = {"bool", "char", "int", "float"}
-TOKEN_TYPES = [
+TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("FLOAT", r"\d+\.\d*"),  # TODO: floats with nothing before the "."
     ("INTEGER", r"\d+"),  # Integer or decimal number, TODO: leading "."
     ("SEMICOLON", r";"),
@@ -38,17 +46,17 @@ IGNORE = " "
 #
 
 
-def tokenize(text):
+def tokenize(text: str) -> TokenStream:
     while text:
         # Ignore white space
         if match := re.match(IGNORE, text):
-            text = text[match.end() :]
+            text = text[match.end() :]  # noqa
             continue
         # Comments
         if text[:2] == "//":
-            text = text[text.find("\n") :]
+            text = text[text.find("\n") :]  # noqa
         if text[:2] == "/*":
-            text = text[text.find("*/") :]
+            text = text[text.find("*/") :]  # noqa
 
         for type_, *regexp in TOKEN_TYPES:
             # The tuple may specify the capture group as an optional third element.
@@ -56,9 +64,9 @@ def tokenize(text):
                 regexp, group = regexp  # type: ignore
             else:
                 [regexp], group = regexp, 0  # type: ignore
-            if match := re.match(regexp, text):
-                matched = match.string[match.start(group) : match.end(group)]  # type: ignore
-                text = text[match.end() :]
+            if match := re.match(regexp, text):  # type: ignore
+                matched = match.string[match.start(group) : match.end(group)]  # type: ignore  # noqa
+                text = text[match.end() :]  # noqa
                 if type_ == "NAME":
                     if matched in KEYWORDS:
                         type_ = "KEYWORD"
