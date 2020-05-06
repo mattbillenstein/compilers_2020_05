@@ -15,6 +15,7 @@
 #
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitFunc.md
 
+from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.source_visitor import compare_source
 
@@ -115,6 +116,8 @@ model6 = Block([
 ])
 
 compare_source(model6, source6)
+x, env, stdout = interpret(model6)
+assert stdout == [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 

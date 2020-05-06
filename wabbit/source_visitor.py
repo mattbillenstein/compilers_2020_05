@@ -13,7 +13,7 @@ class SourceVisitor:
         return s
 
     def visit_Name(self, node):
-        return node.name
+        return node.value
 
     def visit_Attribute(self, node):
         return f'{self.visit(node.name)}.{self.visit(node.attr)}'
@@ -48,15 +48,15 @@ class SourceVisitor:
 
     def visit_Const(self, node):
         type = self.visit(node.type, ' %s')
-        return f'const {self.visit(node.loc)}{type} = {self.visit(node.arg)}'
+        return f'const {self.visit(node.name)}{type} = {self.visit(node.arg)}'
 
     def visit_Var(self, node):
         arg = self.visit(node.arg, ' = %s')
         type = self.visit(node.type, ' %s')
-        return f'var {self.visit(node.loc)}{type}{arg}'
+        return f'var {self.visit(node.name)}{type}{arg}'
 
     def visit_Assign(self, node):
-        return f'{self.visit(node.loc)} = {self.visit(node.arg)}'
+        return f'{self.visit(node.name)} = {self.visit(node.arg)}'
 
     def visit_If(self, node):
         els = self.visit(node.eblock, ' else {\n%s}')

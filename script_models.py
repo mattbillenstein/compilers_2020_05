@@ -22,6 +22,7 @@
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
 
 
+from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.source_visitor import compare_source
 
@@ -31,16 +32,18 @@ from wabbit.source_visitor import compare_source
 # This one is given to you as an example. You might need to adapt it
 # according to the names/classes you defined in wabbit.model
 
-expr_source = "2 + 3 * 4;"
+source0 = "2 + 3 * 4;"
 
-expr_model  = Block([
+model0  = Block([
     BinOp('+',
         Integer(2),
         BinOp('*', Integer(3), Integer(4)),
     ),
 ])
 
-compare_source(expr_model, expr_source)
+compare_source(model0, source0)
+x, env, stdout = interpret(model0)
+assert x == 14, x
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -64,6 +67,8 @@ model1 = Block([
 ], indent=' '*4)
 
 compare_source(model1, source1)
+x, env, stdout = interpret(model1)
+assert stdout == [-10, 2.75, 1, 2]
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -86,6 +91,8 @@ model2 = Block([
 ], indent=' '*4)
 
 compare_source(model2, source2)
+x, env, stdout = interpret(model2)
+assert env == {'pi': 3.14159, 'tau': 6.28318}, (x, env, stdout)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -112,6 +119,8 @@ model3 = Block([
 ], indent=' '*4)
 
 compare_source(model3, source3)
+x, env, stdout = interpret(model3)
+assert stdout == [2], (x, env, stdout)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -143,6 +152,8 @@ model4 = Block([
 ], indent=' '*4)
 
 compare_source(model4, source4)
+x, env, stdout = interpret(model4)
+assert stdout == [1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -171,6 +182,8 @@ model5 = Block([
 ], indent=' '*4)
 
 compare_source(model5, source5)
+x, env, stdout = interpret(model5)
+assert stdout == [42, 37], (x, env, stdout)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

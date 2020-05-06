@@ -52,12 +52,12 @@ class Node:
     is_statement = False
 
 class Name(Node):
-    def __init__(self, name):
-        assert isinstance(name, str)
-        self.name = name
+    def __init__(self, value):
+        assert isinstance(value, str)
+        self.value = value
 
     def __repr__(self):
-        return f'Name({self.name})'
+        return f'Name({self.value})'
 
 class Type(Node):
     def __init__(self, type):
@@ -147,41 +147,42 @@ class Print(Node):
         return f'Print({self.arg})'
 
 class Const(Node):
-    def __init__(self, loc, arg, type=None):
-        assert isinstance(loc, Node)
+    def __init__(self, name, arg, type=None):
+        assert isinstance(name, Name)
         assert isinstance(arg, Node)
         assert isinstance(type, (Type, NoneType))
-        self.loc = loc
+        self.name = name
         self.arg = arg
         self.type = type
 
     def __repr__(self):
         type = f', type={self.type}' if self.type is not None else ''
-        return f'Const({self.loc}, {self.arg}{type})'
+        return f'Const({self.name}, {self.arg}{type})'
 
 class Var(Node):
-    def __init__(self, loc, arg=None, type=None):
-        assert isinstance(loc, Node)
+    def __init__(self, name, arg=None, type=None):
+        assert isinstance(name, Name)
         assert isinstance(arg, (Node, NoneType))
         assert isinstance(type, (Type, NoneType))
-        self.loc = loc
+        assert arg is not None or type is not None
+        self.name = name
         self.arg = arg
         self.type = type
 
     def __repr__(self):
         arg = f', {self.arg}' if self.arg is not None else ''
         type = f', type={self.type}' if self.type is not None else ''
-        return f'Var({self.loc}{self.arg}{self.type})'
+        return f'Var({self.name}{arg}{type})'
 
 class Assign(Node):
-    def __init__(self, loc, arg):
-        assert isinstance(loc, Node)
+    def __init__(self, name, arg):
+        assert isinstance(name, (Name, Attribute))
         assert isinstance(arg, Node)
-        self.loc = loc
+        self.name = name
         self.arg = arg
 
     def __repr__(self):
-        return f'Assign({self.loc}, {self.arg})'
+        return f'Assign({self.name}, {self.arg})'
 
 class If(Node):
     is_statement = True
@@ -236,7 +237,7 @@ class Func(Node):
 
     def __repr__(self):
         args = (', '+ repr(self.args)) if self.args else ''
-        ret_type = (', ' + self.ret_type) if self.ret_type is not None else ''
+        ret_type = (', ' + self.ret_type.type) if self.ret_type is not None else ''
         return f'Func({self.name}, {self.block}{args}{ret_type})'
 
 class Return(Node):
