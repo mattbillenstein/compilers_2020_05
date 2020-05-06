@@ -1,4 +1,5 @@
 # parse.py
+# flake8: noqa
 #
 # Wabbit parser.  The parser needs to construct the data model or an
 # abstract syntax tree from text input.  The grammar shown here represents
@@ -8,7 +9,7 @@
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
 # The following conventions are used:
-# 
+#
 #       ALLCAPS       --> A token
 #       { symbols }   --> Zero or more repetitions of symbols
 #       [ symbols ]   --> Zero or one occurences of symbols (optional)
@@ -59,18 +60,18 @@
 #      | PLUS expr
 #      | MINUS expr
 #      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
+#      | LPAREN expr RPAREN
 #      | location
 #      | literal
-#      | LBRACE statements RBRACE 
-#       
+#      | LBRACE statements RBRACE
+#
 # literal : INTEGER
 #         | FLOAT
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
-# 
+#         | LPAREN RPAREN
+#
 # location : NAME
 #
 # type      : NAME
@@ -78,7 +79,7 @@
 # empty     :
 # ======================================================================
 
-# How to proceed:  
+# How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
 # take it in tiny pieces.  Focus on one specific part of the language.
@@ -108,20 +109,219 @@
 #
 # If you are highly motivated and want to know how a parser works at a
 # low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
+# It is also fine to use high-level tools such as
 #
-#    - SLY (https://github.com/dabeaz/sly), 
+#    - SLY (https://github.com/dabeaz/sly),
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
 from .model import *
-from .tokenize import tokenize
+from .tokenize import WabbitLexer, tokenize
+from sly import Parser
 
-# Top-level function that runs everything    
+
+class WabbitParser(Parser):
+    debugfile = 'parser.out'
+    tokens = WabbitLexer.tokens      # Token names
+
+    # program : statements
+    @_('statements')
+    def program(self, p):
+        return p.statements
+    #
+    # statements : { statement }      # zero or more statements { }
+    #
+    @_('{ statement }')
+    def statements(self, p):
+        # p.statement   --- it's already a list of statement (by SLY)
+        return Statements(*p.statement)
+
+    @_('print_statement',
+       'assignment_statement',
+       'const_definition',
+       'var_definition',
+       'if_statement',
+       'while_statement'
+       )
+    def statement(self, p):
+        return p[0] # Just return whatever the thing is
+
+    @_('expression SEMI')
+    def statement(self, p):
+        return ExpressionStatement(p.expression)
+
+
+    @_('PRINT expression SEMI')
+    def print_statement(self, p):
+        return Print(p.expression)
+
+    @_('location ASSIGN expression SEMI')
+    def assignment_statement(self, p):
+        return Assignment(p.location, LoadLocation(p.expression))
+
+    @_('CONST NAME [ type ] ASSIGN expression SEMI')
+    def const_definition(self, p):
+        return Const(p.NAME, p.type, p.expression)
+
+    @_('VAR NAME ASSIGN expression SEMI')
+    def var_definition(self, p):
+        return Var(p.NAME, Type(None), p.expression)
+
+    @_('VAR NAME type [ ASSIGN expression ] SEMI')
+    def var_definition(self, p):
+        if p.ASSIGN:
+            return Var(p.NAME, p.type, p.expression)
+        else:
+            return Var(p.NAME, p.type)
+
+    @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
+    def if_statement(self, p):
+        if p.ELSE:
+            return If(p.expression, p.statements0, p.statements1)
+        else:
+            return If(p.expression, p.statements0)
+
+
+    @_('WHILE expression LBRACE statements RBRACE')
+    def while_statement(self, p):
+        return While(self.expression, self.statements)
+
+    @_('orterm [ LOR orterm ]')
+    def expression(self, p):
+        if p.LOR:
+            return BinOp('||', p.orterm0, p.orterm1)
+        else:
+            return p.orterm0
+
+# orterm:
+    @_('andterm [ LAND andterm ]')
+    def orterm(self, p):
+        if p.LAND:
+            return BinOp('&&', p.andterm0, p.andterm1)
+        else:
+            return p.andterm0
+
+
+# andterm:
+    @_('sumterm LT sumterm',
+       'sumterm LE sumterm',
+       'sumterm GT sumterm',
+       'sumterm GE sumterm',
+       'sumterm EQ sumterm',
+       'sumterm NE sumterm')
+    def andterm(self, p):
+        if p.LT:
+            return BinOp('<', p.sumterm0, p.sumterm1)
+        elif p.LE:
+            return BinOp('<=', p.sumterm0, p.sumterm1)
+        if p.GT:
+            return BinOp('>', p.sumterm0, p.sumterm1)
+        elif p.GE:
+            return BinOp('>=', p.sumterm0, p.sumterm1)
+        if p.EQ:
+            return BinOp('==', p.sumterm0, p.sumterm1)
+        elif p.NE:
+            return BinOp('!=', p.sumterm0, p.sumterm1)
+        else:
+            raise SyntaxError()
+
+    @_('sumterm')
+    def andterm(self, p):
+        return p.sumterm
+
+# sumterm:
+    @_('multerm PLUS multerm',
+       'multerm MINUS multerm')
+    def sumterm(self, p):
+        if p.PLUS:
+            return BinOp('+', p.multerm0, p.multerm1)
+        elif p.MINUS:
+            return BinOp('-', p.multerm0, p.multerm1)
+        else:
+            raise SyntaxError()
+
+    @_('multerm')
+    def sumterm(self, p):
+        return p.multerm
+
+# multerm:
+    @_('factor TIMES factor',
+       'factor DIVIDE factor')
+    def multerm(self, p):
+        if p.TIMES:
+            return BinOp('*', p.factor0, p.factor1)
+        elif p.DIVIDE:
+            return BinOp('/', p.factor0, p.factor1)
+        else:
+            raise SyntaxError()
+
+    @_('factor')
+    def multerm(self, p):
+        return p.factor
+
+# factor :
+    @_('literal')
+    def factor(self, p):
+        return p.literal
+
+    @_('location')
+    def factor(self, p):
+        return p.location
+
+# factor :
+    @_('PLUS expression',
+       'MINUS expression',
+       'LNOT expression')
+    def factor(self, p):
+        return Unary(p[1], p.expression)
+
+
+    @_('LBRACE statements RBRACE')
+    def factor(self, p):
+        return p.statements
+
+
+# literal :
+
+    @_('INTEGER')
+    def literal(self, p):
+        return Integer(int(p.INTEGER))
+
+
+    @_('FLOAT',
+       'CHAR',
+       'TRUE',
+       'FALSE',
+       'LPAREN RPAREN'
+       )
+    def literal(self, p):
+        if p.FLOAT:
+            return Float(float(p.FLOAT))
+        else:
+            print("Other literals need to be implemented.")
+            raise SyntaxError()
+
+    @_('NAME')
+    def location(self, p):
+        return NamedLocation(repr(p.NAME))
+
+    @_('NAME')
+    def type(self, p):
+        if p.NAME is not None:
+            return Type(repr(p.NAME))
+        else:
+            return Type(None)
+
+def parse_tokens(raw_tokens):
+    parser = WabbitParser()
+    return parser.parse(raw_tokens)
+
+# Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)     # You need to implement this part
+    model = parse_tokens(tokens)  # You need to implement this part
     return model
+
 
 # Example of a main program
 def parse_file(filename):
@@ -129,11 +329,11 @@ def parse_file(filename):
         text = file.read()
     return parse_source(text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
+        raise SystemExit("Usage: wabbit.parse filename")
     model = parse(sys.argv[1])
     print(model)
-
-

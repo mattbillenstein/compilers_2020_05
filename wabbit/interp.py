@@ -114,6 +114,10 @@ def interpret_Compound(node, env):
         result = interpret(s, new_env)
     return result
 
+@add(ExpressionStatement)
+def interpret_ExpressionStatement(node, env):
+    return interpret(node.expression, env)
+
 @add(Float)
 def interpret_Float(node, env):
     return node.value
