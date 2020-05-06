@@ -90,7 +90,9 @@ about a day in advance (an email notification will also be sent).
 * [Part 2 - Evaluation of Programs](https://vimeo.com/414763523/fb21573130) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/02Evaluation.pdf)
 * [Part 3 - Lexing](https://github.com/dabeaz/compilers_2020_05/raw/master/present/03Lexing.pdf) (PDF)
 * [Part 4 - Parsing](https://vimeo.com/414973515/c64a69c8bb) (26 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/04Parsing.pdf)
- 
+* [Part 5 - Type Checking](https://vimeo.com/415496010/c8a7d880fd) (13 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/05TypeChecking.pdf) 
+* [Part 6 - Code Generation](https://vimeo.com/415496570/329760928e) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/06CodeGeneration.pdf) 
+
 ## Live Session Recordings
 
 Video recordings of live sessions will be posted here.
