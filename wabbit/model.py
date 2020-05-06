@@ -390,7 +390,7 @@ class ExpressionStatement(Statement):
 		return f"ExpressionStatement({self.expr})"
 		
 	def to_source(self):
-		return ""
+		return f"{self.expr.to_source()};"
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 

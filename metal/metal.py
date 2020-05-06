@@ -344,7 +344,7 @@ if __name__ == '__main__':
     	('CONST', 3, 'R5'),			# prologue
 		('SUB', 'R7', 'R5', 'R7'),
 		('STORE', 'R1', 'R7', 1),	# n
-		('STORE', 'R1', 'R7', 2),	# tmp = n
+		('STORE', 'R2', 'R7', 2),	# tmp = n
 		
 		('BZ', 'R1', 9),
 		('DEC', 'R1'),
@@ -354,7 +354,7 @@ if __name__ == '__main__':
 		('JMP', 'PC', -9),			# 	CALL fact
 		
 		('STORE', 'R6', 'R7', 0),	
-		('LOAD', 'R7', 'R2', 0),	# MOV R2, R6
+		('LOAD', 'R7', 'R1', 0),	# MOV R1, R6
 		
 		('STORE', 'PC', 'R7', 0),	#	save retaddr
 		('JMP', 'R0', 5),			# 	CALL mul
