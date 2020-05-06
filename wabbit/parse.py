@@ -91,7 +91,7 @@ class Parser(BaseParser):
 
     def statement(self) -> Statement:
 
-        node = self.print() or self.assign()
+        node = self.print() or self.assign() or self.vardef()
 
         assert node
 
@@ -122,8 +122,7 @@ class Parser(BaseParser):
             return None
         location = Location(tok.token)
 
-        if not self.accept("ASSIGN"):
-            return None
+        self.expect("ASSIGN")
 
         expression = self.expression()
         self.expect("SEMICOLON")
@@ -132,17 +131,25 @@ class Parser(BaseParser):
         print(green(f"    Parsed {node}"))
         return node
 
-        tok = self.accept("NAME")  # TODO: location
-        if not tok:
-            return None
-        location = Location(tok.token)
+    # variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
+    #                     | VAR NAME type [ ASSIGN expr ] SEMI
+    def vardef(self):
+        print(blue(f"vardef(): next = {self.peek()}"))
 
-        if not self.accept("ASSIGN"):
-            return None
+        if not self.accept("VAR"):
+            return
 
-        expression = self.expression()
+        name = Name(self.expect("NAME").token)
+
+        tok = self.accept("TYPE")
+        type_ = tok.token if tok else None
+
+        self.expect("ASSIGN")
+
+        value = self.expression()  # TODO: value might be missing
+
         self.expect("SEMICOLON")
-        node = Assign(location, expression)
+        node = VarDef(name, type_, value)
 
         print(green(f"    Parsed {node}"))
         return node
