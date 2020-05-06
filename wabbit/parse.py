@@ -173,11 +173,17 @@ class WabbitParser(Parser):
     # struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
     @_("STRUCT NAME LBRACE { struct_field } RBRACE")
     def struct_definition(self, p):
-        pass
+        return Struct(p.NAME, *p.struct_field)
 
-    # struct_field : NAME type SEMI
+    # struct_field : NAME NAME SEMI
+    @_("NAME NAME SEMI")
+    def struct_field(self, p):
+        return Argument(p.NAME0, p.NAME1)
 
     # enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
+    @_("ENUM NAME LBRACE { enum_choice } RBRACE")
+    def enum_definition(self, p):
+        pass
 
     # enum_choice : NAME SEMI
     #             | NAME LPAREN type RPAREN

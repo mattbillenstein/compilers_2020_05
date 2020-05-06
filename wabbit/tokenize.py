@@ -126,6 +126,7 @@ class WabbitLexer(Lexer):
         LNOT,
         STRUCT,
         FUNC,
+        ENUM,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
     ignore_line_comment = r"//.*"
@@ -175,6 +176,7 @@ class WabbitLexer(Lexer):
     NAME["print"] = PRINT
     NAME["struct"] = STRUCT
     NAME["func"] = FUNC
+    NAME["enum"] = ENUM
 
     CHAR = r"\'.{1,4}\'"
 

@@ -179,6 +179,9 @@ class Struct(Definition):
     """
 
     def __init__(self, name, *args):
+        assert isinstance(name, str)
+        for arg in args:
+            assert isinstance(arg, Argument)
         self.name = name
         self.args = args
 
