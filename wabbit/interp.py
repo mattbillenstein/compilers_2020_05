@@ -63,9 +63,13 @@ add = interpret.register
 
 @add(Assignment)
 def interpret_Assignment(node, env):
-    value = interpret(node.expression, env);
+    value = interpret(node.expression, env)
     name = interpret(node.location, env)
-    env[name] = value
+    # find the nearest environment in which this variable is known.
+    for e in env.maps:
+        if name in e:
+            e[name] = value
+            return
 
 @add(BinOp)
 def interpret_BinOp(node, env):
@@ -105,8 +109,9 @@ def interpret_Const(node, env):
 
 @add(Compound)
 def interpret_Compound(node, env):
+    new_env = env.new_child()
     for s in node.statements:
-        result = interpret(s, env)
+        result = interpret(s, new_env)
     return result
 
 @add(Float)
@@ -161,6 +166,8 @@ def interpret_UnaryOp(node, env):
 
 @add(Var)
 def interpret_Var(node, env):
+    # Assign default values of 0 if none are given
+    # This is not defined in the specs.
     type = interpret(node.type, env)
     if node.expression:
         value = interpret(node.expression, env)
@@ -176,6 +183,6 @@ def interpret_While(node, env):
     while True:
         condition = interpret(node.condition, env)
         if condition:
-            interpret(node.statements, env)
+            interpret(node.statements, env.new_child())
         else:
             break
