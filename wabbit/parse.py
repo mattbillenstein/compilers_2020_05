@@ -102,9 +102,12 @@ class Parser(BaseParser):
     #
     def print(self) -> Optional[Statement]:
         print(blue(f"print(): next = {self.peek()}"))
-        tok = self.accept("PRINT")
-        if not tok:
+
+        if self.accept("PRINT"):
+            self.lookahead = None
+        else:
             return None
+
         expression = self.expression()
         self.expect("SEMICOLON")
         node = Print(expression)
@@ -117,10 +120,11 @@ class Parser(BaseParser):
     def assign(self) -> Optional[Statement]:
         print(blue(f"assign(): next = {self.peek()}"))
 
-        tok = self.accept("NAME")  # TODO: location
-        if not tok:
+        if tok := self.accept("NAME"):  # TODO: location
+            location = Location(tok.token)
+            self.lookahead = None
+        else:
             return None
-        location = Location(tok.token)
 
         self.expect("ASSIGN")
 
@@ -136,17 +140,25 @@ class Parser(BaseParser):
     def vardef(self):
         print(blue(f"vardef(): next = {self.peek()}"))
 
-        if not self.accept("VAR"):
-            return
+        if self.accept("VAR"):
+            self.lookahead = None
+        else:
+            return None
 
         name = Name(self.expect("NAME").token)
 
-        tok = self.accept("TYPE")
-        type_ = tok.token if tok else None
+        type_: Optional[str]
+        if tok := self.accept("TYPE"):
+            type_ = tok.token
+            self.lookahead = None
+        else:
+            type_ = None
 
         self.expect("ASSIGN")
 
-        value = self.expression()  # TODO: value might be missing
+        value = (
+            self.expression()
+        )  # TODO: value might be missing, in which case type must be present
 
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
