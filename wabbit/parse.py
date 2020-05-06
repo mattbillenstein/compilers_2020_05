@@ -138,11 +138,25 @@ class WabbitParser(Parser):
     def statement(self, p):
         return PrintStatement(p[1])
 
-    @_('VAR NAME [ NAME ] ASSIGN expr SEMI')
+    @_('VAR NAME [ NAME ] [ ASSIGN expr ] SEMI')
     def statement(self, p):
-        var = Var(p.NAME0, p.NAME1)
-        assign = Assign(var, p.expr)
-        return assign
+        result = Var(p.NAME0, p.NAME1)
+        if p.ASSIGN is not None:
+            result = Assign(result, p.expr)
+        return result
+
+    @_('CONST NAME ASSIGN expr SEMI')
+    def statement(self, p):
+        result = Const(p.NAME, p.expr)
+        return result
+
+    @_('NAME ASSIGN expr SEMI')
+    def statement(self, p):
+        return Assign(Variable(p.NAME), p.expr)
+
+    @_('IF expr LBRACE statements RBRACE ELSE LBRACE statements RBRACE')
+    def statement(self, p):
+        return IfElse(p.expr, p.statements0, p.statements1)
 
     # EXPRESSIONS==============================
     @_('NUMBER')
@@ -157,6 +171,7 @@ class WabbitParser(Parser):
         'expr MINUS expr',
         'expr TIMES expr',
         'expr DIVIDE expr',
+        'expr LT expr',
             )
     def expr(self, p):
         return BinOp(p[1], p[0], p[2])

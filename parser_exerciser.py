@@ -65,3 +65,28 @@ s = """
 print(s)
 print(parse_source(s))
 print()
+
+print(2)
+s = """
+    const pi = 3.14159;
+    var tau float;
+    tau = 2.0 * pi;
+    print tau;
+"""
+print(s)
+print(parse_source(s))
+print()
+
+print(3)
+s = '''
+    var a int = 2;
+    var b int = 3;
+    if a < b {
+        print a;
+    } else {
+        print b;
+    }
+'''
+print(s)
+print(parse_source(s))
+print()

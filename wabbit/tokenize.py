@@ -93,8 +93,8 @@ class WabbitLexer(Lexer):
     NAME = r'[a-zA-Z_]+'
     NAME['print'] = PRINT
     NAME['const'] = CONST
-    NAME['float'] = FLOAT
-    NAME['int'] = INT
+    # NAME['float'] = FLOAT
+    # NAME['int'] = INT
     NAME['if'] = IF
     NAME['else'] = ELSE
     NAME['while'] = WHILE
