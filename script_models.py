@@ -193,6 +193,28 @@ models.append(
 )
 
 
+sources.append(
+    """
+var i = 0;
+while i < 3 {
+    print i;
+    i = i + 1;
+}
+"""
+)
+
+models.append(
+    Statements(
+        [
+            VarDef("i", None, Integer(0)),
+            While(
+                BinOp("<", Name("i"), Integer(3)),
+                Statements([Print(Name("i")), Assign("i", BinOp("+", Name("i"), Integer(1)))]),
+            ),
+        ]
+    )
+)
+
 if __name__ == "__main__":
     for i, (source, model) in enumerate(zip(sources, models)):
         print("\n\n--------------------------------------------------------------------------")
