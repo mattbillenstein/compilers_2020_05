@@ -176,6 +176,7 @@ print y;
 models.append(
     Statements(
         [
+            VarDef("t", None, Integer(77)),
             VarDef("x", None, Integer(37)),
             VarDef("y", None, Integer(42)),
             Assign(
@@ -184,6 +185,7 @@ models.append(
                     Statements([VarDef("t", None, Name("y")), Assign("y", Name("x")), Name("t")])
                 ),
             ),
+            Print(Name("t")),
             Print(Name("x")),
             Print(Name("y")),
         ]
