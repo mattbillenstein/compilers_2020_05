@@ -4,10 +4,10 @@ BLACK = $(BIN)/black
 FLAKE8 = $(BIN)/flake8
 MYPY = $(BIN)/mypy
 PYTEST = $(BIN)/pytest
-PYTHON_FILES = wabbit/model.py script_models.py
+PYTHON_FILES = wabbit/model.py wabbit/tokenize.py wabbit/parse.py script_models.py
 WABBITSCRIPT_FILES = tests/Script/*.wb
 
-all: lint type-check test wabbitscript-examples
+all: lint type-check test wabbitscript-examples parse
 
 format:
 	@$(BIN) --quiet --line-length 99 $(PYTHON_FILES)
@@ -28,10 +28,13 @@ test-python-exercises:
 	done
 
 wabbitscript-examples:
-	$(PYTHON) script_models.py
+	@$(PYTHON) script_models.py
 	@for f in $(WABBITSCRIPT_FILES); do \
 		$(PYTHON) -m wabbit.tokenize $$f > /dev/null; \
 	done
+
+parse:
+	@for f in *.wb; do $(PYTHON) -m wabbit.parse $$f; done
 
 ELISP_FILES = $(shell fd .el$$ exercises)
 test-elisp:
