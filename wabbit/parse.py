@@ -146,13 +146,13 @@ class WabbitParser(Parser):
 	#		   | expr
 	@_('print_statement',
 		'assignment_statement',
-#		'variable_definition', 
-#		'const_definition',
-#		'if_statement',
+		'variable_definition', 
+		'const_definition',
+		'if_statement',
 #		'while_statement',
 #		'break_statement',
 #		'continue_statement',
-#		'expr'
+		'expr'
 	)
 	def statement(tokens):
 		return p[0]					# this is basically a pass through
@@ -172,7 +172,6 @@ class WabbitParser(Parser):
 		return Assignment(p.location, p.expr)
 
 
-
 	# variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
 	#					 | VAR NAME type [ ASSIGN expr ] SEMI
 	@_("VAR NAME [ type ] ASSIGN expr SEMI")
@@ -183,13 +182,23 @@ class WabbitParser(Parser):
 	def variable_definition(self, p):
 		return VarDef(p.NAME, p.type, p.expr)
 
-	#
 	# const_definition : CONST NAME [ type ] ASSIGN expr SEMI
 	#
+	@_("CONST NAME [ type ] ASSIGN expr SEMI")
+	def const_definition(self,p):
+		return ConstDef(p.Name, p.Type, p.expr)
+
 	# if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
 	#
+	@_("IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]")
+	def if_statement(self, p):
+		return IfConditional(expr, statements0, statements1)
+		
+
 	# while_statement : WHILE expr LBRACE statements RBRACE
 	#
+	
+	
 	# break_statement : BREAK SEMI
 	#
 	# continue_statement : CONTINUE SEMI
@@ -220,11 +229,47 @@ class WabbitParser(Parser):
 		"expr DIVIDE expr")
 	def expr(self, p):
 		op = p[1]
-		left = p.expression0
-		right = p.expression1
+		left = p.expr1
+		right = p.expr1
 		return BinOp(op, left, right)
 		
-	   
+
+	@_("expr LT expr",
+		"expr LE expr",
+		"expr GT expr",
+		"expr GE expr",
+		"expr EQ expr",
+		"expr NE expr",
+		"expr LAND expr",
+		"expr LOR expr")
+	def expr(self,p):		# logical ops
+		op = p[1]
+		left = p.expr0
+		right = p.expr1
+		return BinOp(op, left, right)
+
+
+	@_("PLUS expr", "MINUS expr", "LNOT expr")
+	def expr(self,p):		# unary ops
+		return UnaryOp(p.expr)		
+
+	@_("LPAREN expr RPAREN")
+	def expr(self, p):
+		return Grouping(p.expr)
+		
+	@_("location")
+	def expr(self,p):
+		return p.location	
+		
+	@_("literal")
+	def expr(self,p):
+		return p.literal
+
+	@_("LBRACE statements RBRACE")
+	def expr(self,p):
+		return Block(p.statements)
+		
+		
 	# literal : INTEGER
 	#		 | FLOAT
 	#		 | CHAR
@@ -233,15 +278,15 @@ class WabbitParser(Parser):
 	#		 | LPAREN RPAREN   
 	@_("INTEGER")
 	def literal(self, p):
-		return Integer(p.value)
+		return Integer(p.INTEGER)
 		
 	@_("FLOAT")
 	def literal(self, p):
-		return Float(p.value)
+		return Float(p.FLOAT)
 
 	@_("CHAR")
 	def literal(self, p):
-		return Char(p.value)
+		return Char(p.CHAR)
 		
 	@_("TRUE")
 	def literal(self, p):
@@ -261,7 +306,6 @@ class WabbitParser(Parser):
 	def location(tokens):
 		return Var(tokens.NAME)
 
-
 	# type	  : NAME
 	#
 	@_("NAME")
@@ -269,17 +313,13 @@ class WabbitParser(Parser):
 		return tokens.NAME
 
 
-	# empty	 :
-	@_("")
-	def empty(tokens):
-		pass
-
-
 
 # Top-level function that runs everything	
 def parse_source(raw_tokens):
-	parser = WabitParser()
-	return parser.parse(raw_tokens)
+	print(raw_tokens)
+	lexer = WabbitLexer().tokenize(raw_tokens)
+	parser = WabbitParser()
+	return parser.parse(lexer)
 	
 	
 # Example of a main program
