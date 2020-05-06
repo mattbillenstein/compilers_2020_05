@@ -21,13 +21,15 @@
 
 
 from wabbit.model import *
-from wabbit.decompiler import Decompiler
+from wabbit.decompile import WabbitDecompiler
+from wabbit.parse import WabbitParser
 from textwrap import dedent
 import unittest
 
 class ScriptModels(unittest.TestCase):
     def setUp(self):
-        self.decompiler = Decompiler()
+        self.decompiler = WabbitDecompiler()
+        self.parser = WabbitParser()
 
     def test_simple(self):
         # ----------------------------------------------------------------------
@@ -40,6 +42,7 @@ class ScriptModels(unittest.TestCase):
         expr_model = BinOp('+', Int(2),
                                  BinOp('*', Int(3), Int(4)))
         self.assertEqual(self.decompiler.to_source(expr_model), expr_source)
+        self.assertEqual(self.parser.to_model(source), model)
 
     def test_print(self):
         
@@ -64,6 +67,7 @@ class ScriptModels(unittest.TestCase):
         ]
         
         self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(self.parser.to_model(source), model)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -85,6 +89,7 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation('tau'))
         ]
         self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(self.parser.to_model(source), model)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -111,6 +116,7 @@ class ScriptModels(unittest.TestCase):
             ),
         ]
         self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(self.parser.to_model(source), model)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -139,6 +145,7 @@ class ScriptModels(unittest.TestCase):
         ]
         
         self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(self.parser.to_model(source), model)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -165,6 +172,7 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation('y')),
                 ]
         self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(self.parser.to_model(source), model)
 
 
 if __name__ == '__main__':

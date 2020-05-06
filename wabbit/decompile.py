@@ -2,7 +2,7 @@ from wabbit.model import ModelVisitor, ConditionalStatement, FuncDeclStatement, 
 from typing import List
 
 
-class Decompiler(ModelVisitor):
+class WabbitDecompiler(ModelVisitor):
     def __init__(self):
         return
 
