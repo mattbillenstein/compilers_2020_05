@@ -107,6 +107,8 @@ Video recordings of live sessions will be posted here.
 * [Project 2, Interpreter](https://vimeo.com/415255889/afc6ba5e32) (29 min)
 * [Project 2, Interpreter - Continued](https://vimeo.com/415257318/24d5d31cd4) (33 min)
 * [Project 2 End, Project 3 Start](https://vimeo.com/415258940/df543c3b50) (50 min)
+* [Project 3, Tokenizing, Checkin](https://vimeo.com/415330823/8be50c609f) (11 min)
+* [Project 4, Parsing Introduction](https://vimeo.com/415331200/7bee239ef9) (95 min)
 
 
 
