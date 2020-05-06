@@ -90,3 +90,31 @@ s = '''
 print(s)
 print(parse_source(s))
 print()
+
+print(4)
+s = '''
+    const n = 10;
+    var x int = 1;
+    var fact int = 1;
+
+    while x < n {
+        fact = fact * x;
+        print fact;
+        x = x + 1;
+    }
+'''
+print(s)
+print(parse_source(s))
+print()
+
+print(5)
+s = '''
+    var x = 37;
+    var y = 42;
+    x = { var t = y; y = x; t; };     // Compound expression.
+    print x;
+    print y;
+'''
+print(s)
+print(parse_source(s))
+print()

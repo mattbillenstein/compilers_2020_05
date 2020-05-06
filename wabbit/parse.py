@@ -158,6 +158,10 @@ class WabbitParser(Parser):
     def statement(self, p):
         return IfElse(p.expr, p.statements0, p.statements1)
 
+    @_('WHILE expr LBRACE statements RBRACE')
+    def statement(self, p):
+        return While(p.expr, p.statements)
+
     # EXPRESSIONS==============================
     @_('NUMBER')
     def expr(self, p):
@@ -183,6 +187,10 @@ class WabbitParser(Parser):
     @_('PLUS expr', 'MINUS expr', 'LNOT expr')
     def expr(self, p):
         return UnaryOp(p[0], p.expr)
+
+    @_('LBRACE statements RBRACE')
+    def expr(self, p):
+        return CompoundExpression(p.statements)
 
 def parse_tokens(tokens):
     parser = WabbitParser()
