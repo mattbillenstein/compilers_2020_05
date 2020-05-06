@@ -271,7 +271,7 @@ class WabbitParser(Parser):
 
 	# empty	 :
 	@_("")
-	def location(tokens):
+	def empty(tokens):
 		pass
 
 
