@@ -166,6 +166,19 @@ class Float(Expression):
         assert isinstance(self.value, float)
 
 
+class Group(Expression):
+    '''
+    ( expression )      # Expression surrounded by parenthesis
+    '''
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __repr__(self):
+        return f'Group({self.expression})'
+
+    def is_valid(self):
+        assert isinstance(self.expression, Expression)
+
 class If(Statement):
     def __init__(self, condition, result, alternative=None):
         self.condition = condition
@@ -364,6 +377,10 @@ def to_source_Compound(node):
 @add(Float)
 def to_source_Float(node):
     return repr(node.value)
+
+@add(Group)
+def to_source_Group(node):
+    return f"({to_source(node.expression)})"
 
 @add(If)
 def to_source_If(node):

@@ -53,3 +53,10 @@ def test_model5():
     env['capture_print'] = []
     interpret(sm.model5, env)
     assert env['capture_print'] == [42, 37]
+
+
+def test_group():
+    env = ChainMap()
+    env['capture_print'] = []
+    interpret(sm.model_group_print, env)
+    assert env['capture_print'] == [21]

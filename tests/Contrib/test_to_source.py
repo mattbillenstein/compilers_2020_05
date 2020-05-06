@@ -61,3 +61,9 @@ def test_model5():
     expected = remove_unwanted(sm.source5)
     result = remove_unwanted(to_source(sm.model5))
     assert result == expected
+
+
+def test_group():
+    expected = sm.source_group
+    result = to_source(sm.model_group)
+    assert expected == result

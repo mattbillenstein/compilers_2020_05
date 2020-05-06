@@ -33,7 +33,7 @@ from wabbit.interp import interpret
 expr_source = "2 + 3 * 4"
 
 expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
-expr_model_a = Print(expr_model)
+expr_model_a = Print(expr_model)  # for automated test with interpreter
 
 # Can you turn it back into source code?
 # print(to_source(expr_model))
@@ -267,3 +267,10 @@ model_else_block = Statements(var_x_1, var_y_37, print_x, expr_else, print_x, pr
 print("\n\nmodel_if_block: expect the values 1, 100, 1, 37", "\n")
 env = ChainMap()
 interpret(model_else_block, env)
+
+
+# add example of grouping variable with parens
+
+source_group = "3 * (3 + 4)"
+model_group = BinOp('*', Integer(3), Group(BinOp('+', Integer(3), Integer(4))))
+model_group_print = Print(model_group)  # for automated test with interpreter

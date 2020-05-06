@@ -130,6 +130,10 @@ def interpret_If(node, env):
 def interpret_Integer(node, env):
     return node.value
 
+@add(Group)
+def interpret_Group(node, env):
+    return interpret(node.expression, env)
+
 @add(LoadLocation)
 def interpret_LoadLocation(node, env):
     name = interpret(node.location, env)
