@@ -124,6 +124,7 @@ from sly import Parser
 
 
 class WabbitParser(Parser):
+    debugfile = 'parser.out'
     tokens = WabbitLexer.tokens  # Token names
 
     precedence = [
@@ -131,11 +132,8 @@ class WabbitParser(Parser):
         ("left", LAND),  # a && b
         ("left", LT, LE, GT, GE, EQ, NE),  #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
         ("left", PLUS, MINUS),  # Lower precedence      2 + 3 + 4 --> (2+3) + 4
-        (
-            "left",
-            TIMES,
-            DIVIDE,
-        ),  # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
+        ("left", TIMES, DIVIDE,),
+        # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
         # Unary -x.   -> Super high precedence    2 * -x.
         ("right", UNARY),  # 'UNARY' is a fake token (does not exist in tokenizer)
     ]
@@ -166,8 +164,7 @@ class WabbitParser(Parser):
         "const_definition",
         "expression_statement",
         "var_definition",
-        'while_statement',
-
+        "while_statement",
     )
     def statement(self, p):
         return p[0]  # Just return whatever the thing is
@@ -207,12 +204,11 @@ class WabbitParser(Parser):
     def const_definition(self, p):
         return ConstDefinition(name=p.NAME0, type=p.NAME1, value=p.expression)
 
-    @_("VAR NAME [ type ] ASSIGN expression SEMI")
+    @_("VAR NAME [ type ] [ ASSIGN expression ] SEMI")
     def var_definition(self, p):
-        return VariableDefinition(name=p.NAME, type=p.type, value=p.expression)
-
-    @_("VAR NAME type [ ASSIGN expression ] SEMI")
-    def var_definition(self, p):
+        if not p.type and not p.expression:
+            #  I think this is the right way to handle it?
+            raise SyntaxError("Var definition must include either or both: type and assign expression")
         return VariableDefinition(name=p.NAME, type=p.type, value=p.expression)
 
     @_("expression SEMI")
@@ -262,7 +258,6 @@ class WabbitParser(Parser):
     @_("CHAR")
     def expression(self, p):
         return CharacterLiteral(value=p[0])
-
 
     @_("LPAREN RPAREN")
     def expression(self, p):
