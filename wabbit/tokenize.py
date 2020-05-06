@@ -13,18 +13,16 @@ TOKENS = [
     ("RPAREN", r"\)"),
     ("LBRACE", "{"),
     ("RBRACE", "}"),
-    # Operators
     ("LE", "<="),
     ("LT", "<"),
     ("GE", ">="),
     ("GT", ">"),
     ("EQ", "=="),
-    ("ASSIGN", r"="),  # Assignment operator
+    ("ASSIGN", r"="),
     ("NE", "!="),
     ("LNOT", "!"),
     ("LAND", "&&"),
     ("LOR", r"\|\|"),
-    # Literals:
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
     # Comments:  To be ignored
     #      //             Skips the rest of the line
