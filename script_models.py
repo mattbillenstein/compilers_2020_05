@@ -27,6 +27,10 @@ from wabbit.tokenize import to_tokens, Token
 from textwrap import dedent
 import unittest
 
+if 'unittest.util' in __import__('sys').modules:
+    # Show full diff in self.assertEqual.
+    __import__('sys').modules['unittest.util']._MAX_LENGTH = 999999999
+
 
 class ScriptModels(unittest.TestCase):
     def setUp(self):
@@ -40,15 +44,16 @@ class ScriptModels(unittest.TestCase):
         # This one is given to you as an example. You might need to adapt it
         # according to the names/classes you defined in wabbit.model
         
-        source = "2 + 3 * 4"
+        source = "2 + 3 * 4;"
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
             Token(type='PLUS', value='+', lineno=1, index=2),
             Token(type='INTEGER', value='3', lineno=1, index=4),
             Token(type='TIMES', value='*', lineno=1, index=6),
-            Token(type='INTEGER', value='4', lineno=1, index=8)
+            Token(type='INTEGER', value='4', lineno=1, index=8),
+            Token(type='SEMI', value=';', lineno=1, index=9),
         ]
-        model = [BinOp('+', Int(2), BinOp('*', Int(3), Int(4)))]
+        model = [ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))]
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -146,10 +151,11 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=60)
         ]
         model = [
-            AssignStatement(DeclStorageLocation('pi', None, True), Float(3.14159)),
-            AssignStatement(DeclStorageLocation('tau', 'float', False), value=None),
-            AssignStatement(StorageLocation('tau'), BinOp('*', Float(2.0), StorageLocation('pi'))),
-            PrintStatement(StorageLocation('tau'))
+            AssignStatement(DeclStorageLocation(StorageIdentifier('pi'), None, True), Float(3.14159)),
+            AssignStatement(DeclStorageLocation(StorageIdentifier('tau'), 'float', False), value=None),
+            AssignStatement(StorageIdentifier('tau'), BinOp('*', Float(2.0),
+                StorageLocation(StorageIdentifier('pi')))),
+            PrintStatement(StorageLocation(StorageIdentifier('tau')))
             ]
 
         self.assertEqual(self.decompiler.to_source(model), source)
@@ -201,12 +207,13 @@ class ScriptModels(unittest.TestCase):
         ]
 
         model = [
-            AssignStatement(DeclStorageLocation('a', 'int', False), Int(2)),
-            AssignStatement(DeclStorageLocation('b', 'int', False), Int(3)),
-            ConditionalStatement(BinOp('<', StorageLocation('a'), StorageLocation('b')), [
-                    PrintStatement(StorageLocation('a'))
+            AssignStatement(DeclStorageLocation(StorageIdentifier('a'), 'int', False), Int(2)),
+            AssignStatement(DeclStorageLocation(StorageIdentifier('b'), 'int', False), Int(3)),
+            ConditionalStatement(BinOp('<', StorageLocation(StorageIdentifier('a')),
+                StorageLocation(StorageIdentifier('b'))), [
+                    PrintStatement(StorageLocation(StorageIdentifier('a')))
                 ], [
-                    PrintStatement(StorageLocation('b'))
+                    PrintStatement(StorageLocation(StorageIdentifier('b')))
                 ]
             ),
             ]
@@ -271,13 +278,17 @@ class ScriptModels(unittest.TestCase):
         ]
         
         model = [
-                AssignStatement(DeclStorageLocation('n', None, True), Int(10)),
-                AssignStatement(DeclStorageLocation('x', 'int', False), Int(1)),
-                AssignStatement(DeclStorageLocation('fact', 'int', False), Int(1)),
-                ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('n')), [
-                    AssignStatement(StorageLocation('fact'), BinOp('*', StorageLocation('fact'), StorageLocation('x'))),
-                    PrintStatement(StorageLocation('fact')),
-                    AssignStatement(StorageLocation('x'), BinOp('+', StorageLocation('x'), Int(1)))
+                AssignStatement(DeclStorageLocation(StorageIdentifier('n'), None, True), Int(10)),
+                AssignStatement(DeclStorageLocation(StorageIdentifier('x'), 'int', False), Int(1)),
+                AssignStatement(DeclStorageLocation(StorageIdentifier('fact'), 'int', False), Int(1)),
+                ConditionalLoopStatement(BinOp('<', StorageLocation(StorageIdentifier('x')),
+                    StorageLocation(StorageIdentifier('n'))), [
+                    AssignStatement(StorageIdentifier('fact'), BinOp('*',
+                        StorageLocation(StorageIdentifier('fact')),
+                        StorageLocation(StorageIdentifier('x')))),
+                    PrintStatement(StorageLocation(StorageIdentifier('fact'))),
+                    AssignStatement(StorageIdentifier('x'), BinOp('+',
+                        StorageLocation(StorageIdentifier('x')), Int(1)))
                 ]),
                 ]
         self.assertEqual(self.decompiler.to_source(model), source)
@@ -333,15 +344,15 @@ class ScriptModels(unittest.TestCase):
         ]
         
         model = [
-            AssignStatement(DeclStorageLocation('x'), Int(37)),
-            AssignStatement(DeclStorageLocation('y'), Int(42)),
-            AssignStatement(StorageLocation('x'), BlockExpression([
-                AssignStatement(DeclStorageLocation('t'), StorageLocation('y')),
-                AssignStatement(StorageLocation('y'), StorageLocation('x')),
-                ExpressionStatement(StorageLocation('t')),
+            AssignStatement(DeclStorageLocation(StorageIdentifier('x')), Int(37)),
+            AssignStatement(DeclStorageLocation(StorageIdentifier('y')), Int(42)),
+            AssignStatement(StorageIdentifier('x'), BlockExpression([
+                AssignStatement(DeclStorageLocation(StorageIdentifier('t')), StorageLocation(StorageIdentifier('y'))),
+                AssignStatement(StorageIdentifier('y'), StorageLocation(StorageIdentifier('x'))),
+                ExpressionStatement(StorageLocation(StorageIdentifier('t'))),
                 ])),
-            PrintStatement(StorageLocation('x')),
-            PrintStatement(StorageLocation('y')),
+            PrintStatement(StorageLocation(StorageIdentifier('x'))),
+            PrintStatement(StorageLocation(StorageIdentifier('y'))),
             ]
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)

@@ -23,7 +23,7 @@ class WabbitParser(Parser):
 
     @_('{ statement }')
     def statements(self, p):
-        return [p.statement]
+        return p.statement
 
     @_('print_statement',
        'assignment_statement',
@@ -45,15 +45,15 @@ class WabbitParser(Parser):
     def assignment_statement(self, p):
         return AssignStatement(p.location, p.expr)
 
-    @_('VAR NAME [ type ] [ ASSIGN expr ] SEMI')
+    @_('VAR location [ type ] [ ASSIGN expr ] SEMI')
     def variable_definition(self, p):
         if not p.type and not p.expr:
             raise SyntaxError()
-        return AssignStatement(DeclStorageLocation(p.NAME, p.type, False), p.expr)
+        return AssignStatement(DeclStorageLocation(p.location, p.type, False), p.expr)
 
-    @_('CONST NAME [ type ] ASSIGN expr SEMI')
+    @_('CONST location [ type ] ASSIGN expr SEMI')
     def variable_definition(self, p):
-        return AssignStatement(DeclStorageLocation(p.NAME, p.type, True), p.expr)
+        return AssignStatement(DeclStorageLocation(p.location, p.type, True), p.expr)
 
     @_('IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):

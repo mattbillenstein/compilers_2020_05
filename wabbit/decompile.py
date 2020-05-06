@@ -7,11 +7,11 @@ class WabbitDecompiler(ModelVisitor):
         return
 
     def visit_StorageLocation(self, node):
-        return node.identifier
+        return node.identifier.visit(self)
 
     def visit_DeclStorageLocation(self, node):
         ret = 'const' if node.const else 'var'
-        ret += ' ' + node.identifier
+        ret += ' ' + node.identifier.name
         if node._type:
             ret += ' ' + str(node._type)
         return ret
@@ -83,6 +83,9 @@ class WabbitDecompiler(ModelVisitor):
 
     def visit_Grouping(self, node):
         return '(' + node.expr.visit(self) + ')'
+
+    def visit_StorageIdentifier(self, node):
+        return str(node.name)
 
     def to_source(self, block, inner=False):
         if not isinstance(block, list):

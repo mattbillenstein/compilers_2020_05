@@ -32,8 +32,8 @@ class ScalarNode(ExpressionNode):
 
 
 @dataclass
-class StorageIdentifier(ScalarNode):
-    value: str
+class StorageIdentifier(ExpressionNode):
+    name: str
 
 
 @dataclass
@@ -199,4 +199,7 @@ class ModelVisitor:
         raise NotImplementedError
 
     def visit_Grouping(self, node):
+        raise NotImplementedError
+
+    def visit_StorageIdentifier(self, node):
         raise NotImplementedError
