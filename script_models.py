@@ -27,6 +27,7 @@ from wabbit.tokenize import to_tokens, Token
 from textwrap import dedent
 import unittest
 
+
 class ScriptModels(unittest.TestCase):
     def setUp(self):
         self.decompiler = WabbitDecompiler()
@@ -114,6 +115,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
+    @unittest.skip
     def test_var(self):
         # ----------------------------------------------------------------------
         # Program 2: Variable and constant declarations. 
@@ -159,6 +161,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
+    @unittest.skip
     def test_conditional(self):
         # ----------------------------------------------------------------------
         # Program 3: Conditionals.  This program prints out the minimum of
@@ -217,6 +220,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
+    @unittest.skip
     def test_loop(self):
         # ----------------------------------------------------------------------
         # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -287,6 +291,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
+    @unittest.skip
     def test_compexpr(self):
         # ----------------------------------------------------------------------
         # Program 5: Compound Expressions.  This program swaps the values of
