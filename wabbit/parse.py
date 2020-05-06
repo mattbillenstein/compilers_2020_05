@@ -161,18 +161,18 @@ class WabbitParser(Parser):
 
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
-        return Const(p.NAME, p.type, p.expression)
+        return Const(p.NAME.name, p.type, p.expression)
 
     @_('VAR NAME ASSIGN expression SEMI')
     def var_definition(self, p):
-        return Var(p.NAME, Type(None), p.expression)
+        return Var(p.NAME.name, Type(None), p.expression)
 
     @_('VAR NAME type [ ASSIGN expression ] SEMI')
     def var_definition(self, p):
         if p.ASSIGN:
-            return Var(p.NAME, p.type, p.expression)
+            return Var(p.NAME.name, p.type, p.expression)
         else:
-            return Var(p.NAME, p.type)
+            return Var(p.NAME.name, p.type)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
@@ -233,27 +233,17 @@ class WabbitParser(Parser):
     @_('multerm PLUS multerm',
        'multerm MINUS multerm')
     def sumterm(self, p):
-        if p.PLUS:
-            return BinOp('+', p.multerm0, p.multerm1)
-        elif p.MINUS:
-            return BinOp('-', p.multerm0, p.multerm1)
-        else:
-            raise SyntaxError()
+        return BinOp(p[1], p.multerm0, p.multerm1)
 
     @_('multerm')
     def sumterm(self, p):
         return p.multerm
 
 # multerm:
-    @_('factor TIMES factor',
-       'factor DIVIDE factor')
+    @_('factor DIVIDE factor',
+       'factor TIMES factor')
     def multerm(self, p):
-        if p.TIMES:
-            return BinOp('*', p.factor0, p.factor1)
-        elif p.DIVIDE:
-            return BinOp('/', p.factor0, p.factor1)
-        else:
-            raise SyntaxError()
+        return BinOp(p[1], p.factor0, p.factor1)
 
     @_('factor')
     def multerm(self, p):
@@ -273,7 +263,7 @@ class WabbitParser(Parser):
        'MINUS expression',
        'LNOT expression')
     def factor(self, p):
-        return Unary(p[1], p.expression)
+        return UnaryOp(p[0], p.expression)
 
 
     @_('LBRACE statements RBRACE')

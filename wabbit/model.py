@@ -313,7 +313,11 @@ class UnaryOp(Expression):
         return f"UnaryOp({self.op}, {self.value})"
 
     def is_valid(self):
-        assert self.op == "-"
+        try:
+            assert self.op in  ["-", "+", "!"]
+        except AssertionError:
+            print(self.op)
+            raise
         assert isinstance(self.value, Expression)
 
 

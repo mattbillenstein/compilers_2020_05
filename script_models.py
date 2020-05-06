@@ -53,7 +53,7 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-# print(parse_source("print 2 + 3;"))
+print(parse_source("print 2.0 - 3.0 / -4.0;"))
 
 
 expr1 = BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
