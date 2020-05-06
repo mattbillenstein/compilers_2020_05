@@ -165,9 +165,28 @@ class WabbitParser(Parser):
         "expression_statement",
         "var_definition",
         "while_statement",
+        'break_statement',
+        'continue_statement',
+        'struct_definition',
+        'return_statement',
+        'function_definition',
     )
     def statement(self, p):
         return p[0]  # Just return whatever the thing is
+
+    @_("BREAK SEMI")
+    def break_statement(self, p):
+        return BreakStatement()
+
+    @_("CONTINUE SEMI")
+    def continue_statement(self, p):
+        return ContinueStatement()
+
+    @_("RETURN expression SEMI")
+    def return_statement(self, p):
+        return ReturnStatement(expression=p.expression)
+
+
 
     # print_statement : PRINT expression SEMI
     #
@@ -263,6 +282,38 @@ class WabbitParser(Parser):
     def expression(self, p):
         return Unit()
 
+    @_("TRUE")
+    def expression(self, p):
+        return Bool(True)
+
+    @_("FALSE")
+    def expression(self, p):
+        return Bool(False)
+
+    @_("location DOT NAME")
+    def expression(self, p):
+        return FieldLookup(struct=p.location, fieldname=p.NAME)
+
+    @_("NAME type SEMI")
+    def struct_field(self, p):
+        return StructField(name=p.NAME, type=p.type)
+
+
+    @_("STRUCT NAME LBRACE { struct_field } RBRACE")
+    def struct_definition(self, p):
+        return Struct(*p.struct_field)
+
+    @_("NAME type")
+    def parameter(self, p):
+        return Parameter(name=p.NAME, type=p.type)
+
+    @_("parameter { COMMA parameter }")
+    def parameters(self, p):
+        return [p.parameter0, *p.parameter1]
+
+    @_("FUNC NAME LPAREN [ parameters ] RPAREN type clause")
+    def function_definition(self, p):
+        return FunctionDefinition(name=p.NAME, parameters=p.parameters, rtype=p.type, body=p.clause)
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()

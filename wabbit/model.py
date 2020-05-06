@@ -108,7 +108,7 @@ class ExpressionStatement(Expression, Statement):
         return f"{src};"
 
 
-class Struct(Node):
+class Struct(Definition):
     def __init__(self, *fields):
         super().__init__(fields=tuple(fields))
         assert all(isinstance(field, StructField) for field in self.fields)
@@ -454,6 +454,12 @@ class FunctionCall(Expression):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
 
 
+class BreakStatement(Statement):
+    ...
+
+
+class ContinueStatement(Statement):
+    ...
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 

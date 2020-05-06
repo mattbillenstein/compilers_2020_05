@@ -130,12 +130,16 @@ class WabbitLexer(Lexer):
 
     # Valid token names
     tokens = {
-        PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
+        PLUS, MINUS, TIMES, DIVIDE,
+        #NUMBER,
+        LT, LE, EQ,
+        #DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
         FLOAT, INTEGER, NAME, CHAR, PRINT, IF, CONST, VAR, ELSE, WHILE, BREAK, CONTINUE, COMMA,
         #LOOKUP,
         DCOLON,
-        DOT, FUNC, ARROW, MATCH, STRUCT, TRUE, FALSE, LOR, LAND, LNOT
+        DOT, FUNC, ARROW, MATCH, STRUCT, TRUE, FALSE, LOR, LAND, LNOT,
+        RETURN
         }
     ignore = ' \t\n'       # Ignore these (between tokens)
     ignore_comment = r'//.*'
@@ -176,6 +180,7 @@ class WabbitLexer(Lexer):
     NAME['struct'] = STRUCT
     NAME['true'] = TRUE
     NAME['false'] = FALSE
+    NAME['return'] = RETURN
 
 
 
