@@ -14,6 +14,7 @@ from .model import (  # noqa
     Float,
     If,
     Integer,
+    Literal,
     Location,
     Name,
     Print,
@@ -48,10 +49,10 @@ class BaseParser:
         self.lookahead = None
         return tok
 
-    def accept(self, type_) -> Optional[Token]:
-        print(blue(f"accept({type_}) next = {self.peek()}"))
+    def accept(self, *types_) -> Optional[Token]:
+        print(blue(f"accept({types_}) next = {self.peek()}"))
         tok = self.peek()
-        if tok.type_ == type_:
+        if tok.type_ in types_:
             print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
@@ -94,10 +95,10 @@ class Parser(BaseParser):
     #           | expr
     #
 
-    def statement(self) -> Statement:
+    def statement(self) -> Optional[Statement]:
         print(blue(f"statement(): next = {self.peek()}"))
 
-        statement = self.print() or self.assign() or self.vardef() or self.constdef()
+        statement = self.print() or self.assign() or self.vardef() or self.constdef() or self.if_()
 
         if statement:
             print(green(f"    Parsed {statement}"))
@@ -114,7 +115,7 @@ class Parser(BaseParser):
         else_ = self._else()
         return If(test, then.statements, else_.statements if else_ else None)
 
-    def _else(self):
+    def _else(self) -> Optional[Block]:
         if not self.accept("ELSE"):
             return None
         self.lookahead = None
@@ -166,7 +167,7 @@ class Parser(BaseParser):
 
     # variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
     #                     | VAR NAME type [ ASSIGN expr ] SEMI
-    def vardef(self):
+    def vardef(self) -> Optional[VarDef]:
         print(blue(f"vardef(): next = {self.peek()}"))
 
         if self.accept("VAR"):
@@ -196,7 +197,7 @@ class Parser(BaseParser):
         return node
 
     # const_definition : CONST NAME [ type ] ASSIGN expr SEMI
-    def constdef(self):
+    def constdef(self) -> Optional[ConstDef]:
         print(blue(f"constdef(): next = {self.peek()}"))
 
         if self.accept("CONST"):
@@ -222,20 +223,57 @@ class Parser(BaseParser):
         print(green(f"    Parsed {node}"))
         return node
 
+    # expr : expr PLUS expr        (+)
+    #      | expr MINUS expr       (-)
+    #      | expr TIMES expr       (*)
+    #      | expr DIVIDE expr      (/)
+    #      | expr LT expr          (<)
+    #      | expr LE expr          (<=)
+    #      | expr GT expr          (>)
+    #      | expr GE expr          (>=)
+    #      | expr EQ expr          (==)
+    #      | expr NE expr          (!=)
+    #      | expr LAND expr        (&&)
+    #      | expr LOR expr         (||)
+    #      | PLUS expr
+    #      | MINUS expr
+    #      | LNOT expr              (!)
+    #      | LPAREN expr RPAREN
+    #      | location
+    #      | literal
+    #      | LBRACE statements RBRACE
     def expression(self) -> Expression:
         print(blue(f"expression(): next = {self.peek()}"))
 
-        tok = self.peek()
-        node: Expression  # TODO: why?
+        left = self._literal() or self.name()  # TODO: arbitrary expression
+        if not left:
+            raise RuntimeError(f"Error parsing expression: next = {self.peek()}")
 
-        node = self._literal()
-        if not node:
-            raise RuntimeError(f"Error parsing expression: {tok}")
+        if tok := self.accept(
+            "PLUS", "MINUS", "TIMES", "DIVIDE", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
+        ):
+            self.lookahead = None
+            right = self._literal() or self.name()  # TODO: arbitrary expression
+            assert right, "Expected right"
+            left = BinOp(tok.token, left, right)  # type: ignore
 
-        print(green(f"    Parsed {node}"))
-        return node
+        print(green(f"    Parsed {left}"))
+        return left
 
-    def _literal(self):
+    def name(self) -> Optional[Name]:
+        if tok := self.accept("NAME"):
+            self.lookahead = None
+            return Name(tok.token)
+        else:
+            return None
+
+    # literal : INTEGER
+    #         | FLOAT
+    #         | CHAR
+    #         | TRUE
+    #         | FALSE
+    #         | LPAREN RPAREN
+    def _literal(self) -> Literal:
         return self.bool() or self.char() or self.integer() or self.float()
 
     def integer(self):

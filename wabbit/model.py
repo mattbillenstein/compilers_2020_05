@@ -69,11 +69,14 @@ class BinOp(Expression):
     right: Expression
 
 
+Literal = Union[Bool, Char, Float, Integer]
+
+
 @dataclass
 class ConstDef(Statement):
     name: Name
     type: Optional[str]
-    value: Union[Bool, Char, Float, Integer]
+    value: Literal
 
 
 @dataclass
@@ -98,7 +101,7 @@ class Print(Statement):
 class If(Statement):
     test: Expression
     then: Statements
-    else_: Statements
+    else_: Optional[Statements]
 
 
 @dataclass
