@@ -95,13 +95,37 @@ class Parser(BaseParser):
     #
 
     def statement(self) -> Statement:
+        print(blue(f"statement(): next = {self.peek()}"))
 
-        node = self.print() or self.assign() or self.vardef() or self.constdef()
+        statement = self.print() or self.assign() or self.vardef() or self.constdef()
 
-        assert node
+        if statement:
+            print(green(f"    Parsed {statement}"))
+        return statement
 
-        print(green(f"Parsed {node}"))
-        return node
+    # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+    def if_(self) -> Optional[Statement]:
+        if self.accept("IF"):
+            self.lookahead = None
+        else:
+            return None
+        test = self.expression()
+        then = self.block()
+        else_ = self._else()
+        return If(test, then.statements, else_.statements if else_ else None)
+
+    def _else(self):
+        if not self.accept("ELSE"):
+            return None
+        self.lookahead = None
+        return self.block()
+
+    def block(self) -> Block:
+        # TODO: this demands a block, whereas most methods return Optional[Node]
+        self.expect("LBRACE")
+        statements = self.statements()  # TODO: how does termination work?!
+        self.expect("RBRACE")
+        return Block(statements)
 
     # print_statement : PRINT expr SEMICOLON
     #
