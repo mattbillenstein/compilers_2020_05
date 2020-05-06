@@ -23,6 +23,7 @@
 from collections import ChainMap
 from wabbit.model import *
 from wabbit.interp import interpret
+from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -51,6 +52,9 @@ source1 = """
     print -2 + 3;
     print 2 * 3 + -4;
 """
+
+# print(parse_source("print 2 + 3;"))
+
 
 expr1 = BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
 expr2 = BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
@@ -81,6 +85,8 @@ source2 = """
     tau = 2.0 * pi;
     print tau;
 """
+
+# print(parse_source(source2))
 
 expr1 = Const('pi', Type(None), Float(3.14159))
 expr2 = Var('tau', Type('float'))
@@ -178,7 +184,7 @@ expr2 = Var('y', Type(None), Integer(42))
 
 expr3a = Var('t', Type(None), LoadLocation(NamedLocation('y')))
 expr3b = Assignment(NamedLocation('y'), LoadLocation(NamedLocation('x')))
-expr3c = LoadLocation(NamedLocation('t'))
+expr3c = ExpressionStatement(LoadLocation(NamedLocation('t')))
 expr3 = Assignment(NamedLocation('x'), Compound(expr3a, expr3b, expr3c))
 
 expr4 = Print(LoadLocation(NamedLocation('x')))
@@ -264,9 +270,9 @@ expr_else = If(BinOp('>', LoadLocation(NamedLocation('x')), Integer(5)),
 
 model_else_block = Statements(var_x_1, var_y_37, print_x, expr_else, print_x, print_y)
 
-print("\n\nmodel_if_block: expect the values 1, 100, 1, 37", "\n")
-env = ChainMap()
-interpret(model_else_block, env)
+# print("\n\nmodel_if_block: expect the values 1, 100, 1, 37", "\n")
+# env = ChainMap()
+# interpret(model_else_block, env)
 
 
 # add example of grouping variable with parens

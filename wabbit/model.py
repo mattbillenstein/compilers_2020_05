@@ -166,6 +166,20 @@ class Float(Expression):
         assert isinstance(self.value, float)
 
 
+class ExpressionStatement(Statement):
+    """Currently, the only purpose of this class is to ensure that
+       expressions used as statements are properly recreated with
+       a final semi-colon when converting back to source.
+    """
+    def __init__(self, expression):
+        self.expression = expression
+
+    def __repr__(self):
+        return f"ExpressionStatement({self.expression})"
+
+    def is_valid(self):
+        assert isinstance(self.expression, Expression)
+
 class Group(Expression):
     '''
     ( expression )      # Expression surrounded by parenthesis
@@ -377,6 +391,10 @@ def to_source_Compound(node):
 @add(Float)
 def to_source_Float(node):
     return repr(node.value)
+
+@add(ExpressionStatement)
+def to_source_ExpressionStatement(node):
+    return f"{to_source(node.expression)};"
 
 @add(Group)
 def to_source_Group(node):
