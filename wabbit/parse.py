@@ -69,7 +69,7 @@
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
+#         | LPAREN RPAREN        # unit
 # 
 # location : NAME
 #
@@ -144,8 +144,11 @@ class WabbitParser(Parser):
     #
     @_('print_statement',
        'assignment_statement',
-#       'if_statement',
        'const_definition',
+       'var_definition',
+       'if_statement',
+       'while_statement',
+       'expression_statement',
        )
     def statement(self, p):
         return p[0]               # Just return whatever the thing is
@@ -166,11 +169,23 @@ class WabbitParser(Parser):
 
     # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
     #
-    @_('CONST NAME [ NAME ] ASSIGN expression SEMI')
+    @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
-        return ConstDefinition(p.NAME0,
-                               p.NAME1,
+        return ConstDefinition(p.NAME,
+                               p.type,
                                p.expression)
+
+    @_('VAR NAME [ type ] ASSIGN expression SEMI')
+    def var_definition(self, p):
+        return VarDefinition(p.NAME,
+                             p.type,
+                             p.expression)
+
+    @_('VAR NAME type [ ASSIGN expression ] SEMI')
+    def var_definition(self, p):
+        return VarDefinition(p.NAME,
+                             p.type,
+                             p.expression)
 
     @_('expression PLUS expression',
        'expression MINUS expression',
@@ -193,6 +208,10 @@ class WabbitParser(Parser):
     @_('NAME')
     def location(self, p):
         return NamedLocation(p.NAME)
+
+    @_('NAME')
+    def type(self, p):
+        return p.NAME
 
 def parse_tokens(raw_tokens):  
     parser = WabbitParser()

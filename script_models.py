@@ -54,7 +54,8 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-# model1 = parse(source1)     # Want. A parser
+from .parse import parse_source
+model1_parsed = parse_source(source1)     # Want. A parser
 
 # Are we allowed to use built-in types like list, tuple, for the model?
 # Should everything be represented by a class definition (for consistency)?
@@ -78,6 +79,8 @@ model1 = Statements([
                          BinOp('*', Integer(2), Integer(3)),
                          UnaryOp('-', Integer(4)))),
 ])
+
+assert model1_parsed == model1
 
 # print(to_source(model1))
 print('------ Model 1')
