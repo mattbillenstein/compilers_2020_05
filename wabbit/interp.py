@@ -117,9 +117,9 @@ def interpret_Float(node, env):
 def interpret_If(node, env):
     condition = interpret(node.condition, env)
     if condition:
-        interpret(node.result, env)
+        interpret(node.result, env.new_child())
     elif node.alternative is not None:
-        interpret(node.alternative, env)
+        interpret(node.alternative, env.new_child())
 
 @add(Integer)
 def interpret_Integer(node, env):

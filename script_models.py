@@ -20,8 +20,9 @@
 #
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
 
-
+from collections import ChainMap
 from wabbit.model import *
+from wabbit.interp import interpret
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -65,6 +66,9 @@ model1 = Statements(
 
 # print(to_source(model1))
 
+# print("model1: expect the 4 following values:", -10, 2.75, 1, 2, "\n")
+# interpret(model1, {})
+
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations.
 #            Expressions and assignment.
@@ -87,6 +91,9 @@ expr4 = Print(LoadLocation(NamedLocation('tau')))
 model2 = Statements(expr1, expr2, expr3, expr4)
 
 # print(to_source(model2))
+
+# print("\n\nmodel2: expect the following value:", 6.28318, "\n")
+# interpret(model2, {})
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -113,8 +120,11 @@ model3 = Statements(expr1, Statements(expr2), Statements(expr3))
 
 # print(to_source(model3))
 
+# print("\n\nmodel3: expect the following value:", 2, "\n")
+# interpret(model3, {})
+
 # ----------------------------------------------------------------------
-# Program 4: Loops.  This program prints out the first 10 factorials.
+# Program 4: Loops.  This program prints out the first 9 factorials.
 #
 
 source4 = """
@@ -147,6 +157,9 @@ Statements(expr4, expr5, expr6))
 model4 = Statements(expr1, expr2, expr3, expr7)
 # print(to_source(model4))
 
+# print("\n\nmodel4: expect factorials, from 1 to 362880", "\n")
+# interpret(model4, {})
+
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
 # two variables using a single expression.
@@ -173,8 +186,84 @@ expr5 = Print(LoadLocation(NamedLocation('y')))
 
 
 model5 = Statements(expr1, expr2, expr3, expr4, expr5)
-print(to_source(model5))
+# print(to_source(model5))
+
+# print("\n\nmodel5: expect the values 42 followed by 37", "\n")
+# interpret(model5, {})
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
+
+
+# Let's add a few examples for getting the scoping right for the
+# interpreter, even though it is not required to do.
+
+source_if_block = """
+    var x int = 1;
+    var y int = 37;
+    print x;
+    if x < 5 {
+        var x int = 10;
+        print x;
+        print y;
+        x = x + 10;
+        print x;
+    }
+    print x;
+    print y;
+"""
+
+var_x_1 = Var('x', Type('int'), Integer(1))
+var_x_10 = Var('x', Type('int'), Integer(10))
+var_x_100 = Var('x', Type('int'), Integer(100))
+
+var_y_37 = Var('y', Type('int'), Integer(37))
+
+print_x = Print(LoadLocation(NamedLocation('x')))
+print_y = Print(LoadLocation(NamedLocation('y')))
+
+
+x_inc_10 = Assignment(NamedLocation('x'),
+                   BinOp("+", LoadLocation(NamedLocation('x')), Integer(10)))
+
+expr_if = If(BinOp('<', LoadLocation(NamedLocation('x')), Integer(5)),
+            Statements(var_x_10, print_x, print_y, x_inc_10, print_x))
+
+
+model_if_block = Statements(var_x_1, var_y_37, print_x, expr_if, print_x, print_y)
+
+# print("\n\nmodel_if_block: expect the values 1, 10, 37, 20, 1, 37", "\n")
+# env = ChainMap()
+# interpret(model_if_block, env)
+
+source_else_block = """
+    var x int = 1;
+    var y int = 37;
+    print x;
+    if x > 5 {
+        var x int = 10;
+        print x;
+        print y;
+        x = x + 10;
+        print x;
+    } else {
+        var x int = 100;
+        print x;
+    }
+    print x;
+    print y;
+"""
+
+# else block
+# end else block
+
+expr_else = If(BinOp('>', LoadLocation(NamedLocation('x')), Integer(5)),
+            Statements(var_x_10, print_x, print_y, x_inc_10, print_x),
+            Statements(var_x_100, print_x))
+
+model_else_block = Statements(var_x_1, var_y_37, print_x, expr_else, print_x, print_y)
+
+print("\n\nmodel_if_block: expect the values 1, 100, 1, 37", "\n")
+env = ChainMap()
+interpret(model_else_block, env)
