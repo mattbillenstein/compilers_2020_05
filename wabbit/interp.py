@@ -211,6 +211,18 @@ def interpret_while_statement(node, env):
 def interpret_expr_statement(node, env):
     return interpret(node.expression, env)
 
+# Live dangerously - parse and run!
+def main(filename):
+    from .parse import parse_source
+    with open(filename) as file:
+        source = file.read()
+    model = parse_source(source)
+    interpret_program(model)
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1])
+
 
 
                              
