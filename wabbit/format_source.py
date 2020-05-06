@@ -4,16 +4,18 @@ from wabbit.model import (
     Assign,
     BinOp,
     Block,
+    Bool,
+    Char,
     ConstDef,
     Float,
     If,
     Integer,
     Name,
     Print,
+    Statements,
     UnaryOp,
     VarDef,
     While,
-    Statements,
 )
 
 
@@ -34,6 +36,14 @@ class SourceFormatter:
     @typechecked
     def visit_Integer(self, node: Integer) -> str:
         return str(node.value)
+
+    @typechecked
+    def visit_Char(self, node: Char) -> str:
+        return f"'{node.value}'"
+
+    @typechecked
+    def visit_Bool(self, node: Bool) -> str:
+        return {True: "true", False: "false"}[node.value]
 
     @typechecked
     def visit_Name(self, node: Name) -> str:

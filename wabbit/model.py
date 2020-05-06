@@ -37,6 +37,16 @@ class Float(Expression):
 
 
 @dataclass
+class Bool(Expression):
+    value: bool
+
+
+@dataclass
+class Char(Expression):
+    value: str
+
+
+@dataclass
 class Name(Expression):
     name: str
 

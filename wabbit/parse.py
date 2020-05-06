@@ -1,127 +1,153 @@
-# parse.py
-#
-# Wabbit parser.  The parser needs to construct the data model or an
-# abstract syntax tree from text input.  The grammar shown here represents
-# WabbitScript--a subset of the full Wabbit language.  It's written as
-# a EBNF.  You will need to expand the grammar to include later features.
-#
-# Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
-#
-# The following conventions are used:
-#
-#       ALLCAPS       --> A token
-#       { symbols }   --> Zero or more repetitions of symbols
-#       [ symbols ]   --> Zero or one occurences of symbols (optional)
-#       s | t         --> Either s or t (a choice)
-#
-#
-# statements : { statement }
-#
-# statement : print_statement
-#           | assignment_statement
-#           | variable_definition
-#           | const_definition
-#           | if_statement
-#           | while_statement
-#           | break_statement
-#           | continue_statement
-#           | expr
-#
-# print_statement : PRINT expr SEMI
-#
-# assignment_statement : location ASSIGN expr SEMI
-#
-# variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
-#                     | VAR NAME type [ ASSIGN expr ] SEMI
-#
-# const_definition : CONST NAME [ type ] ASSIGN expr SEMI
-#
-# if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
-#
-# while_statement : WHILE expr LBRACE statements RBRACE
-#
-# break_statement : BREAK SEMI
-#
-# continue_statement : CONTINUE SEMI
-#
-# expr : expr PLUS expr        (+)
-#      | expr MINUS expr       (-)
-#      | expr TIMES expr       (*)
-#      | expr DIVIDE expr      (/)
-#      | expr LT expr          (<)
-#      | expr LE expr          (<=)
-#      | expr GT expr          (>)
-#      | expr GE expr          (>=)
-#      | expr EQ expr          (==)
-#      | expr NE expr          (!=)
-#      | expr LAND expr        (&&)
-#      | expr LOR expr         (||)
-#      | PLUS expr
-#      | MINUS expr
-#      | LNOT expr              (!)
-#      | LPAREN expr RPAREN
-#      | location
-#      | literal
-#      | LBRACE statements RBRACE
-#
-# literal : INTEGER
-#         | FLOAT
-#         | CHAR
-#         | TRUE
-#         | FALSE
-#         | LPAREN RPAREN
-#
-# location : NAME
-#
-# type      : NAME
-#
-# empty     :
-# ======================================================================
+from dataclasses import dataclass
+from typing import Optional
 
-# How to proceed:
-#
-# At first glance, writing a parser might look daunting. The key is to
-# take it in tiny pieces.  Focus on one specific part of the language.
-# For example, the print statement.  Start with something really basic
-# like printing literals:
-#
-#     print 1;
-#     print 2.5;
-#
-# From there, expand it to handle expressions:
-#
-#     print 2 + 3 * -4;
-#
-# Then, expand it to include variable names
-#
-#     var x = 3;
-#     print 2 + x;
-#
-# Keep on expanding to more and more features of the language.  A good
-# trajectory is to follow the programs found in the top level
-# script_models.py file.  That is, write a parser that can recognize the
-# source code for each part and build the corresponding model.  You
-# will find yourself filling in pieces here throughout the project.
-# It's ok to work piecemeal.
-#
-# Usage of tools:
-#
-# If you are highly motivated and want to know how a parser works at a
-# low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as
-#
-#    - SLY (https://github.com/dabeaz/sly),
-#    - PLY (https://github.com/dabeaz/ply),
-#    - ANTLR (https://www.antlr.org).
+from utils import print_source, print_diff
+from .format_source import format_source
+from .model import (  # noqa
+    Assign,
+    BinOp,
+    Block,
+    Bool,
+    Char,
+    ConstDef,
+    Expression,
+    Float,
+    If,
+    Integer,
+    Name,
+    Print,
+    UnaryOp,
+    VarDef,
+    While,
+    Statement,
+    Statements,
+)
+from .tokenize import tokenize, Token, TokenStream
 
-from .model import *
-from .tokenize import tokenize
+blue = lambda s: __import__("clint").textui.colored.blue(s, always=True, bold=True)  # noqa
+green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=True)  # noqa
+
+
+@dataclass
+class BaseParser:
+    tokens: TokenStream
+    lookahead: Optional[Token] = None
+
+    def peek(self):
+        if self.lookahead is None:
+            self.lookahead = next(self.tokens)
+        return self.lookahead
+
+    def expect(self, type_):
+        print(blue(f"expect({type_}) next = {self.peek()}"))
+        tok = self.peek()
+        assert tok.type_ == type_, f"Expected {type_}, got {tok}"
+
+        print(green(f"    -> {tok}"))
+        self.lookahead = None
+        return tok
+
+    def accept(self, type_):
+        print(blue(f"accept({type_}) next = {self.peek()}"))
+        tok = self.peek()
+        if tok.type_ == type_:
+            print(green(f"    -> {tok}"))
+            self.lookahead = None
+            return tok
+
+
+class Parser(BaseParser):
+    # program : statements EOF
+    def program(self) -> Statements:
+        statements = self.statements()
+        self.expect("EOF")  # TODO
+        node = statements
+
+        print(green(f"Parsed {node}"))
+        return node
+
+    # statements : { statement }
+    #
+    def statements(self) -> Statements:
+        statements = []
+        while True:
+            try:
+                statements.append(self.statement())
+            except StopIteration:  # TODO: avoid catching the wrong StopIteration
+                return Statements(statements)
+
+    # statement : print_statement
+    #           | assignment_statement
+    #           | variable_definition
+    #           | const_definition
+    #           | if_statement
+    #           | while_statement
+    #           | break_statement
+    #           | continue_statement
+    #           | expr
+    #
+
+    def statement(self) -> Statement:
+
+        node = self.print_statement()
+
+        print(green(f"Parsed {node}"))
+        return node
+
+    # print_statement : PRINT expr SEMICOLON
+    #
+    def print_statement(self) -> Statement:
+        print(blue(f"print_statement(): next = {self.peek()}"))
+        self.expect("PRINT")
+        expression = self.expression()
+        self.expect("SEMICOLON")
+        node = Print(expression)
+
+        print(green(f"    Parsed {node}"))
+        return node
+
+    def expression(self) -> Expression:
+        print(blue(f"expression(): next = {self.peek()}"))
+
+        tok = self.peek()
+        node: Expression  # TODO: why?
+        if tok.type_ == "INTEGER":
+            node = Integer(int(tok.token))
+        elif tok.type_ == "FLOAT":
+            node = Float(float(tok.token))
+        elif tok.type_ == "BOOL":
+            node = Bool(bool(tok.token))
+        elif tok.type_ == "CHAR":
+            node = Char(tok.token)
+        else:
+            raise RuntimeError(f"Error parsing expression: {tok}")
+
+        print(green(f"    Parsed {node}"))
+        self.lookahead = None
+        return node
 
 
 # Top-level function that runs everything
-def parse_source(text):
-    tokens = tokenize(text)
-    model = parse_tokens(tokens)  # You need to implement this part
+def parse_source(source):
+    print_source(source)
+
+    # Tokenize
+    tokens = list(tokenize(source))
+    for tok in tokens:
+        print(tok)
+    print()
+    token_stream = (tok for tok in tokens)
+
+    # Parse
+
+    model = Parser(token_stream).statements()
+
+    print(model)
+
+    # Format
+    transpiled = format_source(model)
+    print_diff(source, transpiled)
+
     return model
 
 
@@ -137,5 +163,4 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 2:
         raise SystemExit("Usage: wabbit.parse filename")
-    model = parse_file(sys.argv[1])
-    print(model)
+    parse_file(sys.argv[1])

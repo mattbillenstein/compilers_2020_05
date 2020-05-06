@@ -1,12 +1,21 @@
 import re
 from typing import Generator
 from typing import List
+from typing import NamedTuple
 from typing import Tuple
 from typing import Union
 
 import utils
 
-Token = Tuple[str, str]
+
+class Token(NamedTuple):
+    type_: str
+    token: str
+
+    def __repr__(self):
+        return f"Token({self.type_}, '{self.token}')"
+
+
 TokenStream = Generator[Token, None, None]
 
 
@@ -16,9 +25,9 @@ TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("FLOAT", r"\d+\.\d*"),  # TODO: floats with nothing before the "."
     ("INTEGER", r"\d+"),  # Integer or decimal number, TODO: leading "."
     ("SEMICOLON", r";"),
+    ("BOOL", r"(true|false)"),
     ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),
     ("OP", r"[+\-*/]"),
-    ("NEWLINE", r"\n"),
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
     ("LBRACE", "{"),
@@ -36,7 +45,7 @@ TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
 ]
 
-IGNORE = " "
+IGNORE = r"[ \n]"
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
@@ -69,10 +78,10 @@ def tokenize(text: str) -> TokenStream:
                 text = text[match.end() :]  # noqa
                 if type_ == "NAME":
                     if matched in KEYWORDS:
-                        type_ = "KEYWORD"
+                        type_ = matched.upper()
                     if matched in TYPES:
                         type_ = "TYPE"
-                yield type_, matched
+                yield Token(type_, matched)
                 break
         else:
             raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
@@ -107,7 +116,7 @@ def test_tokenizer():
             ],
         ),
         ("frog", [("NAME", "frog")]),
-        ("const CONST", [("KEYWORD", "const"), ("NAME", "CONST")]),
+        ("const CONST", [("CONST", "const"), ("NAME", "CONST")]),
         ("'a'", [("CHAR", "a")]),
         (r"'\xhh'", [("CHAR", r"\xhh")]),
         (r"'\n'", [("CHAR", r"\n")]),
@@ -115,7 +124,7 @@ def test_tokenizer():
         (
             "var a int = 2;",
             [
-                ("KEYWORD", "var"),
+                ("VAR", "var"),
                 ("NAME", "a"),
                 ("TYPE", "int"),
                 ("ASSIGN", "="),
