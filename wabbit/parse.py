@@ -7,56 +7,11 @@
 #
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
-# func_definition : FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE
-
-# parameters : parameter { COMMA parameter }
-#            | empty
-
-# parameter  : NAME type
-
-# struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
-
-# struct_field : NAME type SEMI
-
-# enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
-
-# enum_choice : NAME SEMI
-#             | NAME LPAREN type RPAREN
-
-# if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
-
-# if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
-
-# while_statement : WHILE expr LBRACE statements RBRACE
-
-# while_let_statement : WHILE LET pattern ASSIGN expression LBRACE statements RBRACE
-
-# break_statement : BREAK SEMI
 
 # continue_statement : CONTINUE SEMI
 
 # return_statement : RETURN expression SEMI
 
-# expression : orterm { LOR ortem }
-
-# orterm : andterm { LAND andterm }
-
-# andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
-
-# sumterm : multerm { PLUS|MINUS multerm }
-
-# multerm : factor { TIMES|DIVIDE factor }
-
-# factor : literal
-#        | location
-#        | enum_value
-#        | match
-#        | LPAREN expression RPAREN
-#        | PLUS expression
-#        | MINUS expression
-#        | LNOT expression
-#        | NAME LPAREN exprlist RPAREN
-#        | LBRACE statements RBRACE
 
 # literal : INTEGER
 #         | FLOAT
@@ -196,6 +151,84 @@ class WabbitParser(Parser):
     @_("CONST NAME [ NAME ] ASSIGN expression SEMI")
     def const_definition(self, p):
         return Const(p.NAME0, p.NAME1, expression)
+
+    # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE
+    @_("FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE")
+    def func_definition(self, p):
+        return FunctionDefinition(p.NAME0, parameters, p.NAME1, statements)
+
+    # parameters : parameter { COMMA parameter }
+    #            | empty
+    @_("parameter { COMMA parameter }", "empty")
+    def parameters(self, p):
+        if p.empty:
+            return p.empty
+        return Arguments(*p.parameter)
+
+    # parameter  : NAME NAME
+    @_("NAME NAME")
+    def parameter(self, p):
+        return Argument(p.NAME0, p.NAME1)
+
+    # struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
+
+    # struct_field : NAME type SEMI
+
+    # enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
+
+    # enum_choice : NAME SEMI
+    #             | NAME LPAREN type RPAREN
+
+    # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+
+    # if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+
+    # while_statement : WHILE expr LBRACE statements RBRACE
+
+    # while_let_statement : WHILE LET pattern ASSIGN expression LBRACE statements RBRACE
+
+    # break_statement : BREAK SEMI
+
+    # expression : orterm { LOR ortem }
+    @_("orterm { LOR orterm }")
+    def expression(self, p):
+        return BinOp("||", p.orterm0, p.orterm1)
+
+    # orterm : andterm { LAND andterm }
+    @_("andterm { LAND andterm }")
+    def orterm(self, p):
+        return BinOp("&&", p.andterm0, p.andterm1)
+
+    # andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
+    @_("sumterm { LT|LE|GT|GE|EQ|NE sumterm }")
+    def andterm(self, p):
+        return BinOp(p[1], p.sumterm0, p.sumterm1)
+
+    # sumterm : multerm { PLUS|MINUS multerm }
+    @_("multerm { PLUS|MINUS } multerm")
+    def sumterm(self, p):
+        return BinOp(p[1], p.multerm0, p.multerm1)
+
+    # multerm : factor { TIMES|DIVIDE factor }
+    @_("factor { TIMES|DIVIDE factor }")
+    def multerm(self, p):
+        return BinOp(p[1], p.factor0, p.factor1)
+
+    # factor : literal
+    @_(
+        "location",
+        "enum_value",
+        "match",
+        "LPAREN expression RPAREN",
+        "PLUS expression",
+        "MINUS expression",
+        "LNOT expression",
+        "NAME LPAREN exprlist RPAREN",
+        "LBRACE statements RBRACE",
+    )
+    def factor(self, p):
+        print(p)
+        pass
 
     @_("INTEGER")
     def literal(self, p):

@@ -233,7 +233,8 @@ class FunctionDefinition(Definition):
     }
     """
 
-    def __init__(self, name, args=None, return_type=None, body=None):
+    def __init__(self, name, args=None, return_type, body=None):
+        assert isinstance(name, str)
         self.name = name
         self.args = args
         self.return_type = return_type
