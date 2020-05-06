@@ -23,7 +23,7 @@
 from collections import ChainMap
 from wabbit.model import *
 from wabbit.interp import interpret
-from wabbit.parse import parse_source
+# from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -53,7 +53,7 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-print(parse_source("print 2.0 - 3.0 / -4.0;"))
+# print(parse_source(source1))
 
 
 expr1 = BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
@@ -69,6 +69,7 @@ model1 = Statements(
     )
 
 # print(to_source(model1))
+# print(parse_source(source1))
 
 # print("model1: expect the 4 following values:", -10, 2.75, 1, 2, "\n")
 # interpret(model1, {})
@@ -90,11 +91,20 @@ source2 = """
 
 expr1 = Const('pi', Type(None), Float(3.14159))
 expr2 = Var('tau', Type('float'))
-expr3 = Assignment(NamedLocation('tau'),
+# expr3 = Assignment(NamedLocation('tau'),
+#                    BinOp("*", Float(2.0),
+#                    LoadLocation(NamedLocation('pi'))))
+# expr4 = Print(LoadLocation(NamedLocation('tau')))
+
+expr3 = Assignment(Name('tau'),
                    BinOp("*", Float(2.0),
-                   LoadLocation(NamedLocation('pi'))))
-expr4 = Print(LoadLocation(NamedLocation('tau')))
+                   Name('pi')))
+expr4 = Print(Name('tau'))
+
+
 model2 = Statements(expr1, expr2, expr3, expr4)
+
+# print(parse_source(source2))
 
 # print(to_source(model2))
 
@@ -117,10 +127,10 @@ source3 = """
 
 expr1 = Var('a', Type('int'), Integer(2))
 expr2 = Var('b', Type('int'), Integer(3))
-expr3 = If(BinOp('<', LoadLocation(NamedLocation('a')),
-                    LoadLocation(NamedLocation('b'))),
-            Print(LoadLocation(NamedLocation('a'))),
-            Print(LoadLocation(NamedLocation('b'))))
+expr3 = If(BinOp('<', Name('a'),
+                    Name('b')),
+            Print(Name('a')),
+            Print(Name('b')))
 
 model3 = Statements(expr1, Statements(expr2), Statements(expr3))
 
@@ -149,15 +159,15 @@ expr1 = Const('n', Type(None), Integer(10))
 expr2 = Var('x', Type('int'), Integer(1))
 expr3 = Var('fact', Type('int'), Integer(1))
 
-expr4 = Assignment(NamedLocation('fact'),
-                   BinOp("*", LoadLocation(NamedLocation('fact')),
-                         LoadLocation(NamedLocation('x'))))
-expr5 = Print(LoadLocation(NamedLocation('fact')))
-expr6 = Assignment(NamedLocation('x'),
-                   BinOp("+", LoadLocation(NamedLocation('x')), Integer(1)))
+expr4 = Assignment(Name('fact'),
+                   BinOp("*", Name('fact'),
+                         Name('x')))
+expr5 = Print(Name('fact'))
+expr6 = Assignment(Name('x'),
+                   BinOp("+", Name('x'), Integer(1)))
 
-expr7 = While(BinOp('<', LoadLocation(NamedLocation('x')),
-                    LoadLocation(NamedLocation('n'))),
+expr7 = While(BinOp('<', Name('x'),
+                    Name('n')),
 Statements(expr4, expr5, expr6))
 
 model4 = Statements(expr1, expr2, expr3, expr7)
@@ -182,13 +192,13 @@ source5 = """
 expr1 = Var('x', Type(None), Integer(37))
 expr2 = Var('y', Type(None), Integer(42))
 
-expr3a = Var('t', Type(None), LoadLocation(NamedLocation('y')))
-expr3b = Assignment(NamedLocation('y'), LoadLocation(NamedLocation('x')))
-expr3c = ExpressionStatement(LoadLocation(NamedLocation('t')))
-expr3 = Assignment(NamedLocation('x'), Compound(expr3a, expr3b, expr3c))
+expr3a = Var('t', Type(None), Name('y'))
+expr3b = Assignment(Name('y'), Name('x'))
+expr3c = ExpressionStatement(Name('t'))
+expr3 = Assignment(Name('x'), Compound(expr3a, expr3b, expr3c))
 
-expr4 = Print(LoadLocation(NamedLocation('x')))
-expr5 = Print(LoadLocation(NamedLocation('y')))
+expr4 = Print(Name('x'))
+expr5 = Print(Name('y'))
 
 
 model5 = Statements(expr1, expr2, expr3, expr4, expr5)
@@ -226,14 +236,14 @@ var_x_100 = Var('x', Type('int'), Integer(100))
 
 var_y_37 = Var('y', Type('int'), Integer(37))
 
-print_x = Print(LoadLocation(NamedLocation('x')))
-print_y = Print(LoadLocation(NamedLocation('y')))
+print_x = Print(Name('x'))
+print_y = Print(Name('y'))
 
 
-x_inc_10 = Assignment(NamedLocation('x'),
-                   BinOp("+", LoadLocation(NamedLocation('x')), Integer(10)))
+x_inc_10 = Assignment(Name('x'),
+                   BinOp("+", Name('x'), Integer(10)))
 
-expr_if = If(BinOp('<', LoadLocation(NamedLocation('x')), Integer(5)),
+expr_if = If(BinOp('<', Name('x'), Integer(5)),
             Statements(var_x_10, print_x, print_y, x_inc_10, print_x))
 
 
@@ -264,7 +274,7 @@ source_else_block = """
 # else block
 # end else block
 
-expr_else = If(BinOp('>', LoadLocation(NamedLocation('x')), Integer(5)),
+expr_else = If(BinOp('>', Name('x'), Integer(5)),
             Statements(var_x_10, print_x, print_y, x_inc_10, print_x),
             Statements(var_x_100, print_x))
 

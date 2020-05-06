@@ -57,11 +57,11 @@ class Expression(Node):
     """
     pass
 
-class Location(Node):
-    '''
-    A location represents a place to load/store values.  For example, a variable,
-    an object attribute, an index in an array, etc.
-    '''
+# class Location(Node):
+#     '''
+#     A location represents a place to load/store values.  For example, a variable,
+#     an object attribute, an index in an array, etc.
+#     '''
 
 class Statement(Node):
     """A statement is a single complete instruction"""
@@ -93,8 +93,8 @@ class Assignment(Statement):
         return f"Assignment({self.location}, {self.expression})"
 
     def is_valid(self):
-        assert isinstance(self.location, Location)
-        assert isinstance(self.expression, Expression)
+        assert isinstance(self.location, Name)
+        assert isinstance(self.expression, (Name, Expression))
 
 
 class BinOp(Expression):
@@ -111,9 +111,15 @@ class BinOp(Expression):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
     def is_valid(self):
-        assert self.op in {'+', '*', '-', '/', '<', '>', '>=', '<=', '=='}
-        assert isinstance(self.left, Expression)
-        assert isinstance(self.right, Expression)
+        try:
+            assert self.op in {'+', '*', '-', '/', '<', '>', '>=', '<=', '=='}
+            # assert isinstance(self.left, Expression)
+            # assert isinstance(self.right, Expression)
+        except AssertionError:
+            print("in BinOp, self.op = ", self.op)
+            print("in BinOp, self.left = ", self.left)
+            print("in BinOp, self.right = ", self.right)
+            raise
 
 class Const(Definition):
     """Examples:
@@ -135,7 +141,7 @@ class Const(Definition):
                 f"{self.name}, {self.expression})")
 
     def is_valid(self):
-        assert isinstance(self.type, Type)
+        assert self.type is None or isinstance(self.type, Type)
         assert isinstance(self.name, str)
         assert isinstance(self.expression, Expression)
 
@@ -226,34 +232,50 @@ class Integer(Expression):
         assert isinstance(self.value, int)
 
 
-class LoadLocation(Expression):
-    '''
-    Loading a value out of a location for use in an expression.
-    '''
-    def __init__(self, location):
-        self.location = location
-        self.is_valid()
+# class LoadLocation(Expression):
+#     '''
+#     Loading a value out of a location for use in an expression.
+#     '''
+#     def __init__(self, location):
+#         self.location = location
+#         self.is_valid()
 
-    def __repr__(self):
-        return f'LoadLocation({self.location})'
+#     def __repr__(self):
+#         return f'LoadLocation({self.location})'
 
-    def is_valid(self):
-        assert isinstance(self.location, Location)
+#     def is_valid(self):
+#         assert isinstance(self.location, Location)
 
 
-class NamedLocation(Location):
+# class NamedLocation(Location):
+#     """
+#     A location representing a simple variable name
+#     """
+#     def __init__(self, name):
+#         self.name = name
+#         self.is_valid()
+
+#     def __repr__(self):
+#         return f"NamedLocation({self.name})"
+
+#     def is_valid(self):
+#         assert isinstance(self.name, str)
+
+
+class Name(Node):
     """
-    A location representing a simple variable name
+    a variable name
     """
     def __init__(self, name):
         self.name = name
         self.is_valid()
 
     def __repr__(self):
-        return f"NamedLocation({self.name})"
+        return f"Name({self.name})"
 
     def is_valid(self):
         assert isinstance(self.name, str)
+
 
 
 class Print(Statement):
@@ -268,7 +290,7 @@ class Print(Statement):
         return f"Print({self.expression})\n"
 
     def is_valid(self):
-        assert isinstance(self.expression, (Expression, str))
+        assert isinstance(self.expression, (Expression, Name, str))
 
 
 class Statements(Statement):
@@ -342,7 +364,7 @@ class Var(Definition):
     def is_valid(self):
         assert isinstance(self.type, Type)
         assert isinstance(self.name, str)
-        assert isinstance(self.expression, (str, Expression))
+        assert isinstance(self.expression, (str, Name, Expression))
 
 
 class While(Statement):
@@ -415,12 +437,16 @@ def to_source_If(node):
 def to_source_Integer(node):
     return repr(node.value)
 
-@add(LoadLocation)
-def to_source_LoadLocation(node):
-    return to_source(node.location)
+# @add(LoadLocation)
+# def to_source_LoadLocation(node):
+#     return to_source(node.location)
 
-@add(NamedLocation)
-def to_source_NamedLocation(node):
+# @add(NamedLocation)
+# def to_source_NamedLocation(node):
+#     return f"{node.name}"
+
+@add(Name)
+def to_source_Name(node):
     return f"{node.name}"
 
 @add(Print)

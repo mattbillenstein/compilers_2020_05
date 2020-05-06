@@ -161,18 +161,18 @@ class WabbitParser(Parser):
 
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
-        return Const(p.NAME.name, p.type, p.expression)
+        return Const(p.NAME, p.type, p.expression)
 
     @_('VAR NAME ASSIGN expression SEMI')
     def var_definition(self, p):
-        return Var(p.NAME.name, Type(None), p.expression)
+        return Var(p.NAME, Type(None), p.expression)
 
     @_('VAR NAME type [ ASSIGN expression ] SEMI')
     def var_definition(self, p):
         if p.ASSIGN:
-            return Var(p.NAME.name, p.type, p.expression)
+            return Var(p.NAME, p.type, p.expression)
         else:
-            return Var(p.NAME.name, p.type)
+            return Var(p.NAME, p.type)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
@@ -210,20 +210,7 @@ class WabbitParser(Parser):
        'sumterm EQ sumterm',
        'sumterm NE sumterm')
     def andterm(self, p):
-        if p.LT:
-            return BinOp('<', p.sumterm0, p.sumterm1)
-        elif p.LE:
-            return BinOp('<=', p.sumterm0, p.sumterm1)
-        if p.GT:
-            return BinOp('>', p.sumterm0, p.sumterm1)
-        elif p.GE:
-            return BinOp('>=', p.sumterm0, p.sumterm1)
-        if p.EQ:
-            return BinOp('==', p.sumterm0, p.sumterm1)
-        elif p.NE:
-            return BinOp('!=', p.sumterm0, p.sumterm1)
-        else:
-            raise SyntaxError()
+        return BinOp(p[1], p.sumterm0, p.sumterm1)
 
     @_('sumterm')
     def andterm(self, p):
@@ -277,7 +264,6 @@ class WabbitParser(Parser):
     def literal(self, p):
         return Integer(int(p.INTEGER))
 
-
     @_('FLOAT',
        'CHAR',
        'TRUE',
@@ -293,7 +279,11 @@ class WabbitParser(Parser):
 
     @_('NAME')
     def location(self, p):
-        return NamedLocation(repr(p.NAME))
+        return LocadLocation(NamedLocation(repr(p.NAME)))
+
+    @_('NAME')
+    def store_location(self, p):
+        return p.NAME
 
     @_('NAME')
     def type(self, p):

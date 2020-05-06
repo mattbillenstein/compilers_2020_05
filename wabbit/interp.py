@@ -64,7 +64,7 @@ add = interpret.register
 @add(Assignment)
 def interpret_Assignment(node, env):
     value = interpret(node.expression, env)
-    name = interpret(node.location, env)
+    name = node.location.name
     # find the nearest environment in which this variable is known.
     for e in env.maps:
         if name in e:
@@ -138,14 +138,19 @@ def interpret_Integer(node, env):
 def interpret_Group(node, env):
     return interpret(node.expression, env)
 
-@add(LoadLocation)
-def interpret_LoadLocation(node, env):
-    name = interpret(node.location, env)
-    return env[name]
+# @add(LoadLocation)
+# def interpret_LoadLocation(node, env):
+#     name = interpret(node.location, env)
+#     return env[name]
 
-@add(NamedLocation)
-def interpret_NamedLocation(node, env):
-    return node.name
+# @add(NamedLocation)
+# def interpret_NamedLocation(node, env):
+#     return node.name
+
+@add(Name)
+def interpret_Name(node, env):
+    print(env)
+    return env[node.name]
 
 @add(Print)
 def interpret_Print(node, env):
