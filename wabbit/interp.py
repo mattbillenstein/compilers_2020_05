@@ -130,8 +130,6 @@ def interpret_Const(node, env):
 
 @rule(Var)
 def interpret_Var(node, env):
-    if env.get(node.name) is not None:
-        raise InterpreterException(f"Attempting to re-declare var {node.name}")
     if node.value is not None:
         value = interpret(node.value, env)
         env[node.name] = ("var", value)

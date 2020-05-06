@@ -413,6 +413,11 @@ class Print(Statement):
     def __repr__(self):
         return f"Print({self.value})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.value == other.value
+
 
 class Return(Statement):
     """
@@ -569,6 +574,11 @@ class UnaryOp(Expression):
     def __repr__(self):
         return f"UnaryOp({self.op}, {self.target})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.op == other.op and self.target == other.target
+
 
 class BinOp(Expression):
     """
@@ -600,4 +610,3 @@ class BinOp(Expression):
 
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
-

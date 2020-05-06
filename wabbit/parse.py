@@ -54,13 +54,14 @@ class WabbitParser(Parser):
 
     debugfile = "parser.out"
 
-    precedence = [
+    precedence = (
         ("left", LOR),
         ("left", LAND),
         ("left", LT, LE, GT, GE, EQ, NE),
         ("left", PLUS, MINUS),
         ("left", TIMES, DIVIDE),
-    ]
+        ("right", UNARY),
+    )
 
     # program : statements EOF
     @_("statements")
@@ -210,48 +211,49 @@ class WabbitParser(Parser):
     def orterm(self, p):
         left_term = p.andterm0
         for and_term in p.andterm1:
-            left_term = BinOp("||", left_term, and_term)
+            left_term = BinOp("&&", left_term, and_term)
         return left_term
 
     # andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
-    @_(
-        "sumterm { LT sumterm }",
-        "sumterm { LE sumterm }",
-        "sumterm { GT sumterm }",
-        "sumterm { GE sumterm }",
-        "sumterm { EQ sumterm }",
-        "sumterm { NE sumterm }",
-    )
+    @_("sumterm { compare_op sumterm }",)
     def andterm(self, p):
         left_term = p.sumterm0
-        for sum_term in p.sumterm1:
-            left_term = BinOp(p[1], left_term, sum_term)
+        for op, term in zip(p.compare_op, p.sumterm1):
+            left_term = BinOp(op, left_term, term)
         return left_term
 
-    # sumterm : multerm { PLUS|MINUS multerm }
-    @_("multerm { sumop multerm }")
+    @_("LT", "LE", "GT", "GE", "EQ", "NE")
+    def compare_op(self, p):
+        return p[0]
+
+    @_("multerm { PLUS multerm }")
     def sumterm(self, p):
         left_term = p.multerm0
-        for op, term in zip(p.sumop, p.multerm1):
-            print(repr(op))
-            left_term = BinOp(op, left_term, term)
+        for term in p.multerm1:
+            left_term = BinOp("+", left_term, term)
         return left_term
 
-    @_("PLUS", "MINUS")
-    def sumop(self, p):
-        return p[0]
+    @_("multerm { MINUS multerm }")
+    def sumterm(self, p):
+        left_term = p.multerm0
+        for term in p.multerm1:
+            left_term = BinOp("-", left_term, term)
+        return left_term
 
     # multerm : factor { TIMES|DIVIDE factor }
-    @_("factor { mulop factor }")
+    @_("factor { TIMES factor }")
     def multerm(self, p):
         left_term = p.factor0
-        for op, term in zip(p.mulop, p.factor1):
-            left_term = BinOp(op, left_term, term)
+        for term in p.factor1:
+            left_term = BinOp("*", left_term, term)
         return left_term
 
-    @_("DIVIDE", "TIMES")
-    def mulop(self, p):
-        return p[0]
+    @_("factor { DIVIDE factor }")
+    def multerm(self, p):
+        left_term = p.factor0
+        for term in p.factor1:
+            left_term = BinOp("/", left_term, term)
+        return left_term
 
     # continue_statement : CONTINUE SEMI
     @_("CONTINUE SEMI")
@@ -273,11 +275,13 @@ class WabbitParser(Parser):
     def factor(self, p):
         return p.expression
 
-    @_(
-        "PLUS expression", "MINUS expression", "LNOT expression",
-    )
+    @_("LNOT expression %prec UNARY",)
     def factor(self, p):
-        return UnaryOp(p[1], p.expression)
+        return UnaryOp("!", p.expression)
+
+    @_("MINUS expression %prec UNARY")
+    def factor(self, p):
+        return UnaryOp("-", p.expression)
 
     @_("NAME LPAREN exprlist RPAREN",)
     def factor(self, p):
@@ -380,8 +384,10 @@ class WabbitParser(Parser):
 
 # Top-level function that runs everything
 def parse_source(text):
+    parser = WabbitParser()
     tokens = tokenize(text)
-    model = parse_tokens(tokens)  # You need to implement this part
+    model = parser.parse(tokens)
+
     return model
 
 

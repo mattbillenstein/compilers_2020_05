@@ -12,15 +12,15 @@ def test_var_assignment():
     assert env["y"] == ("var", 2.0)
 
 
-def test_var_reassignment():
-    env = interpret_program(Var("x", "int", Integer(2)))
-    assert env["x"] == ("var", 2)
+# def test_var_reassignment():
+#     env = interpret_program(Var("x", "int", Integer(2)))
+#     assert env["x"] == ("var", 2)
 
-    try:
-        interpret_program(Var("x", "int", Integer(2)), env)
-        pytest.fail("Did not hit exception when attempting reassignment")
-    except InterpreterException:
-        print("found expected exception")
+#     try:
+#         interpret_program(Var("x", "int", Integer(2)), env)
+#         pytest.fail("Did not hit exception when attempting reassignment")
+#     except InterpreterException:
+#         print("found expected exception")
 
 
 # def test_var_reassignment_to_types():

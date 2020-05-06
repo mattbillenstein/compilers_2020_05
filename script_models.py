@@ -23,6 +23,7 @@
 from wabbit.model import *
 from wabbit.to_source import to_source
 from wabbit.interp import interpret_program
+from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
