@@ -73,7 +73,7 @@ class SourceFormatter:
 
     @typechecked
     def visit_Assign(self, node: Assign) -> str:
-        return " ".join([node.location, "=", self.visit(node.value)])
+        return " ".join([self.visit(node.location), "=", self.visit(node.value)])
 
     @typechecked
     def visit_Print(self, node: Print) -> str:

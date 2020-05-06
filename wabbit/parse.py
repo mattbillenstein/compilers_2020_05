@@ -38,7 +38,7 @@ class BaseParser:
             self.lookahead = next(self.tokens)
         return self.lookahead
 
-    def expect(self, type_):
+    def expect(self, type_) -> Token:
         print(blue(f"expect({type_}) next = {self.peek()}"))
         tok = self.peek()
         assert tok.type_ == type_, f"Expected {type_}, got {tok}"
@@ -47,7 +47,7 @@ class BaseParser:
         self.lookahead = None
         return tok
 
-    def accept(self, type_):
+    def accept(self, type_) -> Optional[Token]:
         print(blue(f"accept({type_}) next = {self.peek()}"))
         tok = self.peek()
         if tok.type_ == type_:
@@ -89,7 +89,9 @@ class Parser(BaseParser):
 
     def statement(self) -> Statement:
 
-        node = self.print_statement()
+        node = self.print_statement() or self.assignment_statement()
+
+        assert node
 
         print(green(f"Parsed {node}"))
         return node
@@ -98,10 +100,32 @@ class Parser(BaseParser):
     #
     def print_statement(self) -> Statement:
         print(blue(f"print_statement(): next = {self.peek()}"))
-        self.expect("PRINT")
+        tok = self.accept("PRINT")
+        if not tok:
+            return
         expression = self.expression()
         self.expect("SEMICOLON")
         node = Print(expression)
+
+        print(green(f"    Parsed {node}"))
+        return node
+
+    # assignment_statement : LOCATION = EXPRESSION SEMICOLON
+    #
+    def assignment_statement(self) -> Statement:
+        print(blue(f"assignment_statement(): next = {self.peek()}"))
+
+        tok = self.accept("NAME")  # TODO: location
+        if not tok:
+            return
+        name = Name(tok.token)
+
+        if not self.accept("ASSIGN"):
+            return
+
+        expression = self.expression()
+        self.expect("SEMICOLON")
+        node = Assign(name, expression)
 
         print(green(f"    Parsed {node}"))
         return node

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Union, Optional, List
+from typing import Union, Optional, List
 
 
 class Node:
@@ -80,7 +80,7 @@ class VarDef(Statement):
 
 @dataclass
 class Assign(Statement):
-    location: Any
+    location: Name
     value: Expression
 
 
