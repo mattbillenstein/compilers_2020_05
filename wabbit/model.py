@@ -48,7 +48,7 @@ class Char(Expression):
 
 @dataclass
 class Name(Expression):
-    name: str
+    value: str
 
 
 @dataclass
@@ -71,14 +71,14 @@ class BinOp(Expression):
 
 @dataclass
 class ConstDef(Statement):
-    name: str
+    name: Name
     type: Optional[str]
     value: Union[int, float]
 
 
 @dataclass
 class VarDef(Statement):
-    name: str
+    name: Name
     type: Optional[str]
     value: Optional[Expression]
 

@@ -81,8 +81,8 @@ print tau;
 models.append(
     Statements(
         [
-            ConstDef("pi", None, 3.14159),
-            VarDef("tau", "float", None),
+            ConstDef(Name("pi"), None, 3.14159),
+            VarDef(Name("tau"), "float", None),
             Assign(Location("tau"), BinOp("*", Float(2.0), Name("pi"))),
             Print(Name("tau")),
         ]
@@ -108,8 +108,8 @@ if a < b {
 models.append(
     Statements(
         [
-            VarDef("a", "int", Integer(2)),
-            VarDef("b", "int", Integer(3)),
+            VarDef(Name("a"), "int", Integer(2)),
+            VarDef(Name("b"), "int", Integer(3)),
             If(
                 BinOp("<", Name("a"), Name("b")),
                 Statements([Print(Name("a"))]),
@@ -141,9 +141,9 @@ while x < n {
 models.append(
     Statements(
         [
-            ConstDef("n", None, 10),
-            VarDef("x", "int", Integer(1)),
-            VarDef("fact", "int", Integer(1)),
+            ConstDef(Name("n"), None, 10),
+            VarDef(Name("x"), "int", Integer(1)),
+            VarDef(Name("fact"), "int", Integer(1)),
             While(
                 BinOp("<", Name("x"), Name("n")),
                 Statements(
@@ -177,14 +177,18 @@ print y;
 models.append(
     Statements(
         [
-            VarDef("t", None, Integer(77)),
-            VarDef("x", None, Integer(37)),
-            VarDef("y", None, Integer(42)),
+            VarDef(Name("t"), None, Integer(77)),
+            VarDef(Name("x"), None, Integer(37)),
+            VarDef(Name("y"), None, Integer(42)),
             Assign(
                 Location("x"),
                 Block(
                     Statements(
-                        [VarDef("t", None, Name("y")), Assign(Location("y"), Name("x")), Name("t")]
+                        [
+                            VarDef(Name("t"), None, Name("y")),
+                            Assign(Location("y"), Name("x")),
+                            Name("t"),
+                        ]
                     )
                 ),
             ),
@@ -209,7 +213,7 @@ while i < 3 {
 models.append(
     Statements(
         [
-            VarDef("i", None, Integer(0)),
+            VarDef(Name("i"), None, Integer(0)),
             While(
                 BinOp("<", Name("i"), Integer(3)),
                 Statements(

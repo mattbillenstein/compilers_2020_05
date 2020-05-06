@@ -55,7 +55,7 @@ class Interpreter:
 
     @typechecked
     def interpret_Name(self, node: Name, env):
-        return env[node.name]
+        return env[node.value]
 
     @typechecked
     def interpret_UnaryOp(self, node: UnaryOp, env):
@@ -70,17 +70,17 @@ class Interpreter:
 
     @typechecked
     def interpret_ConstDef(self, node: ConstDef, env):
-        env[node.name] = node.value
+        env[node.name.value] = node.value
 
     @typechecked
     def interpret_VarDef(self, node: VarDef, env):
         if node.value is not None:
-            env[node.name] = self.interpret(node.value, env)
+            env[node.name.value] = self.interpret(node.value, env)
 
     @typechecked
     def interpret_Assign(self, node: Assign, env):
         # TODO
-        env[node.location.name] = self.interpret(node.value, env)
+        env[node.location.value] = self.interpret(node.value, env)
 
     @typechecked
     def interpret_Print(self, node: Print, env):

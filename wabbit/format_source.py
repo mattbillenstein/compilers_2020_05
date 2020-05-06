@@ -47,7 +47,7 @@ class SourceFormatter:
 
     @typechecked
     def visit_Name(self, node: Name) -> str:
-        return node.name
+        return node.value
 
     @typechecked
     def visit_Location(self, node: Name) -> str:
@@ -63,12 +63,16 @@ class SourceFormatter:
 
     @typechecked
     def visit_ConstDef(self, node: ConstDef) -> str:
-        tokens = ["const", node.name, "="] + ([node.type] if node.type else []) + [str(node.value)]
+        tokens = (
+            ["const", node.name.value, "="]
+            + ([node.type] if node.type else [])
+            + [str(node.value)]
+        )
         return " ".join(tokens)
 
     @typechecked
     def visit_VarDef(self, node: VarDef) -> str:
-        tokens = ["var", node.name]
+        tokens = ["var", node.name.value]
         if node.type is not None:
             tokens.append(node.type)
         if node.value is not None:
