@@ -122,7 +122,7 @@ from sly import Parser
 #
 
 class WabbitParser(Parser):
-    debugfile = 'parser.out'
+    # debugfile = 'parser.out'
     tokens = WabbitLexer.tokens      # Token names
 
     precedence = [
@@ -234,6 +234,10 @@ class WabbitParser(Parser):
     @_('LPAREN expression RPAREN')
     def expression(self, p):
         return Grouping(p.expression)
+
+    @_('LBRACE statements RBRACE')
+    def expression(self, p):
+        return Compound(p.statements)
 
     @_('location')
     def expression(self, p):

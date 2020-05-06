@@ -235,22 +235,56 @@ def parse_var_definition(tokens):
     tokens.expect('SEMI')
     return VarDefinition(nametok.value, typetok.value if typetok else None, expr)
 
+def parse_if_statement(tokens):
+    tokens.expect('IF')
+    testexpr = parse_expression(tokens)
+    tokens.expect('LBRACE')
+    consequence = parse_statements(tokens)
+    tokens.expect('RBRACE')
+    if tokens.accept('ELSE'):
+        tokens.expect('LBRACE')
+        alternative = parse_statements(tokens)
+        tokens.expect('RBRACE')
+    else:
+        alternative = Statements([])
+    return IfStatement(testexpr, consequence, alternative)
+
+def parse_while_statement(tokens):
+    tokens.expect('WHILE')
+    testexpr = parse_expression(tokens)
+    tokens.expect('LBRACE')
+    body = parse_statements(tokens)
+    tokens.expect('RBRACE')
+    return WhileStatement(testexpr, body)
+
 # expression : term { PLUS|MINUS term }       [ term ]  +  [ term ] - [ term ]
+
 #                                                2            3*4       2*3*4
 def parse_expression(tokens):
-    leftterm = parse_term(tokens)
+    leftterm = parse_addterm(tokens)
+    while True:
+        tok = tokens.accept('LT','LE','GT','GE','EQ','NE')
+        if tok:
+            op = tok.value
+            leftterm = BinOp(op, leftterm, parse_addterm(tokens))
+        else:
+            break
+    return leftterm
+
+def parse_addterm(tokens):
+    leftterm = parse_multerm(tokens)
     while True:
         tok = tokens.accept('PLUS','MINUS')
         if tok:
             op = tok.value
-            leftterm = BinOp(op, leftterm, parse_term(tokens))
+            leftterm = BinOp(op, leftterm, parse_multerm(tokens))
         else:
             break
     return leftterm
 
 # term : factor { TIME|DIVIDE factor }        
 #
-def parse_term(tokens):
+def parse_multerm(tokens):
     leftfactor = parse_factor(tokens)
     while True:
         tok = tokens.accept('TIMES', 'DIVIDE')
@@ -280,6 +314,11 @@ def parse_factor(tokens):
         expr = parse_factor(tokens)
         return UnaryOp(tok.value, expr)
         
+    tok = tokens.accept('LBRACE')
+    if tok:
+        statements = parse_statements(tokens)
+        tokens.expect('RBRACE')
+        return Compound(statements)
     # Only other option at this point is a location
     loc = parse_location(tokens)
     return LoadLocation(loc)
