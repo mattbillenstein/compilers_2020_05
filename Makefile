@@ -1,5 +1,6 @@
 BIN = ~/tmp/virtualenvs/compilers/bin
 PYTHON = $(BIN)/python
+BLACK = $(BIN)/black
 PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py script_models.py
 

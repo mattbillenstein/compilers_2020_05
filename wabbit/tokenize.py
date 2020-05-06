@@ -9,7 +9,6 @@ TOKENS = [
     ("NAME", r"[_A-Za-z][_A-Za-z0-9]+"),  # Identifiers
     ("OP", r"[+\-*/]"),  # Arithmetic operators
     ("NEWLINE", r"\n"),  # Line endings
-    ("SKIP", r"[ \t]+"),  # Skip over spaces and tabs
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
     ("LBRACE", "{"),
@@ -34,7 +33,6 @@ TOKENS = [
     # Comments:  To be ignored
     #      //             Skips the rest of the line
     #      /* ... */      Skips a block (no nesting allowed)
-    ("MISMATCH", r"."),  # Any other character
 ]
 
 KEYWORDS = ["const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"]
@@ -49,12 +47,7 @@ IGNORE = " "
 #
 
 
-# def print(*args):
-#     pass
-
-
 def tokenize(text):
-    text = text.rstrip()
     while text:
         if match := re.match(IGNORE, text):
             text = text[match.end() :]
