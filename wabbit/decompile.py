@@ -20,7 +20,7 @@ class WabbitDecompiler(ModelVisitor):
         return repr(node.value)
 
     def visit_AssignStatement(self, node):
-        return node.location.visit(self) + ' = ' + node.value.visit(self) + ';'
+        return node.location.visit(self) + (' = ' + node.value.visit(self) if node.value is not None else '') + ';'
 
     def visit_BinOp(self, node):
         return ' '.join([node.left.visit(self), node.op, node.right.visit(self)])
@@ -72,7 +72,17 @@ class WabbitDecompiler(ModelVisitor):
         return ret
 
     def visit_ReturnStatement(self, node):
-        return 'return ' + node.retval.visit(self) +';'
+        return 'return ' + node.retval.visit(self) + ';'
+
+    def visit_Statements(self, node):
+        return self.to_source(node.statements)
+        ret = []
+        for stmt in node.statements:
+            ret.append(stmt.visit(self))
+        return ret
+
+    def visit_Grouping(self, node):
+        return '(' + node.expr.visit(self) + ')'
 
     def to_source(self, block, inner=False):
         if not isinstance(block, list):

@@ -4,11 +4,14 @@ from .tokenize import to_tokens, WabbitLexer
 from sly import Parser
 
 class WabbitParser(Parser):
+    debugfile = 'parser.out'
     tokens = WabbitLexer.tokens
     precedence = (
+        ('left', LAND, LOR, LNOT),
+        ('left', LT, LE, GT, GE, EQ, NE),
         ('left', PLUS, MINUS),
         ('left', TIMES, DIVIDE),
-        ('left', LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT),
+        ('right', 'UNARY'),
     )
     
     def __init__(self):
@@ -16,11 +19,11 @@ class WabbitParser(Parser):
 
     @_('statements')
     def program(self, p):
-        return p[0]
+        return p.statements
 
     @_('{ statement }')
     def statements(self, p):
-        return p.statement
+        return [p.statement]
 
     @_('print_statement',
        'assignment_statement',
@@ -29,7 +32,7 @@ class WabbitParser(Parser):
        'while_statement',
        'break_statement',
        'continue_statement',
-       'expr',
+       'expr_statement',
        )
     def statement(self, p):
         return p[0]
@@ -48,7 +51,7 @@ class WabbitParser(Parser):
             raise SyntaxError()
         return AssignStatement(DeclStorageLocation(p.NAME, p.type, False), p.expr)
 
-    @_('CONST NAME [ type ] [ ASSIGN expr ] SEMI')
+    @_('CONST NAME [ type ] ASSIGN expr SEMI')
     def variable_definition(self, p):
         return AssignStatement(DeclStorageLocation(p.NAME, p.type, True), p.expr)
 
@@ -56,9 +59,13 @@ class WabbitParser(Parser):
     def if_statement(self, p):
         return ConditionalStatement(p.expr, p.statements0, p.statements1)
 
-    @_('WHILE expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
+    @_('WHILE expr LBRACE statements RBRACE')
     def while_statement(self, p):
-        return ConditionalLoopStatement(p.expr, p.statements0, p.statements1)
+        return ConditionalLoopStatement(p.expr, p.statements)
+
+    @_('expr SEMI')
+    def expr_statement(self, p):
+        return ExpressionStatement(p.expr)
 
     @_('CONTINUE SEMI')
     def continue_statement(self, p):
@@ -79,24 +86,23 @@ class WabbitParser(Parser):
        'expr EQ expr',
        'expr NE expr',
        'expr LAND expr',
-       'expr LOR expr',
-       'expr LNOT expr')
+       'expr LOR expr')
     def expr(self, p):
         return BinOp(p[1], p.expr0, p.expr1)
 
     @_('LPAREN expr RPAREN')
     def expr(self, p):
-        return p.expr
+        return Grouping(p.expr)
 
-    @_('PLUS expr',
-       'MINUS expr',
-       'LNOT expr')
+    @_('PLUS expr %prec UNARY',
+       'MINUS expr %prec UNARY',
+       'LNOT expr %prec UNARY')
     def expr(self, p):
         return UnOp(p[0], p.expr)
 
     @_('location')
     def expr(self, p):
-        return p.location
+        return StorageLocation(p.location)
 
     @_('literal')
     def expr(self, p):
@@ -132,7 +138,7 @@ class WabbitParser(Parser):
 
     @_('NAME')
     def location(self, p):
-        return StorageLocation(p.NAME)
+        return StorageIdentifier(p.NAME)
 
     @_('NAME')
     def type(self, p):

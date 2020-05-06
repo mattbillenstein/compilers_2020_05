@@ -106,7 +106,7 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnOp('-', Float(4.0))))),
             PrintStatement(BinOp('+', UnOp('-', Int(2)), Int(3))),
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
-        ]
+            ]
         
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
@@ -147,10 +147,11 @@ class ScriptModels(unittest.TestCase):
         ]
         model = [
             AssignStatement(DeclStorageLocation('pi', None, True), Float(3.14159)),
-            ExpressionStatement(DeclStorageLocation('tau', 'float', False)),
+            AssignStatement(DeclStorageLocation('tau', 'float', False), value=None),
             AssignStatement(StorageLocation('tau'), BinOp('*', Float(2.0), StorageLocation('pi'))),
             PrintStatement(StorageLocation('tau'))
-        ]
+            ]
+
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -208,7 +209,7 @@ class ScriptModels(unittest.TestCase):
                     PrintStatement(StorageLocation('b'))
                 ]
             ),
-        ]
+            ]
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -278,7 +279,7 @@ class ScriptModels(unittest.TestCase):
                     PrintStatement(StorageLocation('fact')),
                     AssignStatement(StorageLocation('x'), BinOp('+', StorageLocation('x'), Int(1)))
                 ]),
-        ]
+                ]
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
@@ -341,7 +342,7 @@ class ScriptModels(unittest.TestCase):
                 ])),
             PrintStatement(StorageLocation('x')),
             PrintStatement(StorageLocation('y')),
-                ]
+            ]
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)

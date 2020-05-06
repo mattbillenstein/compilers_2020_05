@@ -99,13 +99,16 @@ class ConditionalLoopStatement(StatementNode):
     cond: ExpressionNode
     block: List[StatementNode]
 
+
 @dataclass
 class ContinueLoopStatement(StatementNode):
     pass
 
+
 @dataclass
 class BreakLoopStatement(StatementNode):
     pass
+
 
 @dataclass
 class BlockExpression(ExpressionNode):
@@ -134,6 +137,16 @@ class FuncDeclStatement(StatementNode):
 @dataclass
 class ReturnStatement(StatementNode):
     retval: ExpressionNode
+
+
+@dataclass
+class Statements(StatementNode):
+    statements: List[StatementNode]
+
+
+@dataclass
+class Grouping(ExpressionNode):
+    expr: ExpressionNode
 
 
 class ModelVisitor:
@@ -180,4 +193,10 @@ class ModelVisitor:
         raise NotImplementedError
 
     def visit_ReturnStatement(self, node):
+        raise NotImplementedError
+
+    def visit_Statements(self, node):
+        raise NotImplementedError
+
+    def visit_Grouping(self, node):
         raise NotImplementedError
