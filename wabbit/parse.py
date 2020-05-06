@@ -121,11 +121,25 @@ from sly import Parser
 
 class WabbitParser(Parser):
 	tokens = WabbitLexer.tokens			# token names from the lexer
+	debugfile = "parser.out"
+
+	precedence = [
+		('left', LOR),					# lowest precedence
+		('left', LAND),
+		('left', LT, LE, GT, GE, EQ, NE),
+		('left', PLUS, MINUS),			# lower precdence			2 + 3 + 4 ---> (2+3) + 4
+		('left', TIMES, DIVIDE),		# higher precedences		2 * 3 * 4 ---> (2*3) * 4
+		#('right', TIMES, DIVIDE),		#  right example:			2 * 3 * 4 ---> 2 * (3 * 4)
+		
+		# unary -x  -> super high precedence UNARY is a fake token... used to override below
+		('right', UNARY)
+	]
+	
 	
 	# program: statements
 	@_('statements')
 	def program(self, p):
-		return p[0]
+		return p.statements
 
 	# statements : { statement }
 	#
@@ -143,18 +157,18 @@ class WabbitParser(Parser):
 	#		   | while_statement
 	#		   | break_statement
 	#		   | continue_statement
-	#		   | expr
+	#		   | expr SEMI
 	@_('print_statement',
 		'assignment_statement',
 		'variable_definition', 
 		'const_definition',
 		'if_statement',
-#		'while_statement',
+		'while_statement',
 #		'break_statement',
 #		'continue_statement',
-		'expr'
+		'expression_statement'
 	)
-	def statement(tokens):
+	def statement(self, p):
 		return p[0]					# this is basically a pass through
 
 
@@ -197,12 +211,20 @@ class WabbitParser(Parser):
 
 	# while_statement : WHILE expr LBRACE statements RBRACE
 	#
-	
+	@_("WHILE expr LBRACE statements RBRACE")
+	def while_statement(self, p):
+		return While(p.expr, p.statements)
 	
 	# break_statement : BREAK SEMI
 	#
 	# continue_statement : CONTINUE SEMI
 	#
+	
+	@_("expr SEMI")
+	def expression_statement(self, p):
+		return ExpressionStatement(p.expr)
+	
+	
 	# expr : expr PLUS expr		(+)
 	#	  | expr MINUS expr	   (-)
 	#	  | expr TIMES expr	   (*)
@@ -229,7 +251,7 @@ class WabbitParser(Parser):
 		"expr DIVIDE expr")
 	def expr(self, p):
 		op = p[1]
-		left = p.expr1
+		left = p.expr0
 		right = p.expr1
 		return BinOp(op, left, right)
 		
@@ -249,9 +271,12 @@ class WabbitParser(Parser):
 		return BinOp(op, left, right)
 
 
-	@_("PLUS expr", "MINUS expr", "LNOT expr")
+	@_("PLUS expr %prec UNARY", 
+		"MINUS expr %prec UNARY", 
+		"LNOT expr %prec UNARY")
 	def expr(self,p):		# unary ops
-		return UnaryOp(p.expr)		
+		print ()
+		return UnaryOp(p[0], p.expr)		
 
 	@_("LPAREN expr RPAREN")
 	def expr(self, p):
@@ -259,7 +284,7 @@ class WabbitParser(Parser):
 		
 	@_("location")
 	def expr(self,p):
-		return p.location	
+		return LocationLookup(p.location)
 		
 	@_("literal")
 	def expr(self,p):
@@ -278,11 +303,11 @@ class WabbitParser(Parser):
 	#		 | LPAREN RPAREN   
 	@_("INTEGER")
 	def literal(self, p):
-		return Integer(p.INTEGER)
+		return Integer(int(p.INTEGER))
 		
 	@_("FLOAT")
 	def literal(self, p):
-		return Float(p.FLOAT)
+		return Float(float(p.FLOAT))
 
 	@_("CHAR")
 	def literal(self, p):
@@ -303,14 +328,14 @@ class WabbitParser(Parser):
 	# location : NAME
 	#
 	@_("NAME")
-	def location(tokens):
-		return Var(tokens.NAME)
+	def location(self, p):
+		return Var(p.NAME)
 
 	# type	  : NAME
 	#
 	@_("NAME")
-	def type(tokens):
-		return tokens.NAME
+	def type(self, p):
+		return p.NAME
 
 
 

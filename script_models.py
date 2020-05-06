@@ -32,16 +32,16 @@ from wabbit.parse import parse_source
 
 expr_source = "2 + 3 * 4;"
 
-expr_model  = BinOp('+', Integer(2),
-                         BinOp('*', Integer(3), Integer(4)))
+#expr_model  = BinOp('+', Integer(2),
+#                         BinOp('*', Integer(3), Integer(4)))
 
 
 expr_model = parse_source(expr_source)
-
+#print(expr_model)
 # Can you turn it back into source code?
 print(to_source(expr_model))
 print(Interpreter().interpret(expr_model))
-sys.exit(0)
+
 # ----------------------------------------------------------------------
 # Program 1: Printing
 #
@@ -56,13 +56,16 @@ source1 = """
     print 2 * 3 + -4;
 """
 
+"""
 model1 = Statements(
 			PrintStatement(BinOp('+', Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))),
 			PrintStatement(BinOp('-', Float(2.0), BinOp("*", Float(3.0), UnaryOp("-", Float(4.0))))),
 			PrintStatement(BinOp('+', UnaryOp("-", Integer(2)), Integer(3))),
 			PrintStatement(BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4))))
 )
+"""
 
+model1 = parse_source(source1)
 print("\n\nsource1:")
 print(to_source(model1))
 print(Interpreter().interpret(model1))
@@ -87,6 +90,7 @@ model2 = Statements(
 	PrintStatement(LocationLookup(Var("tau")))
 )
 
+model2 = parse_source(source2)
 print("\n\nsource2:")
 print(to_source(model2))
 print(Interpreter().interpret(model2))
@@ -104,7 +108,7 @@ source3 = '''
         print b;
     }
 '''
-
+"""
 model3 = Statements(
 	VarDef("a", "int", Integer(2)),
 	VarDef("b", "int", Integer(3)),
@@ -113,7 +117,8 @@ model3 = Statements(
 				  Block(PrintStatement(LocationLookup(Var("b")))))
 
 )
-
+"""
+model3 = parse_source(source3)
 print("\n\nsource3:")
 print(to_source(model3))
 print(Interpreter().interpret(model3))
@@ -134,6 +139,7 @@ source4 = '''
     }
 '''
 
+"""
 model4 = Statements(
 			ConstDef("n", None, Integer(10)), 
 			VarDef("x", "int", Integer(1)),
@@ -146,7 +152,9 @@ model4 = Statements(
 				)
 			)
 )
+"""
 
+model4 = parse_source(source4)
 print("\n\nsource4:")
 print(to_source(model4))
 print(Interpreter().interpret(model4))
@@ -165,7 +173,7 @@ source5 = '''
     print y;
 '''
 
-model5 = Statements(
+"""model5 = Statements(
 	VarDef("x", None,  Integer(37)),
 	VarDef("y", None, Integer(42)),
 	Assignment(Var("x"), 
@@ -178,7 +186,9 @@ model5 = Statements(
 			  ),
 	PrintStatement(LocationLookup(Var("x"))),
 	PrintStatement(LocationLookup(Var("y")))
-)
+)"""
+model5 = parse_source(source5)
+
 
 print("\n\nModel5:")
 print(to_source(model5))

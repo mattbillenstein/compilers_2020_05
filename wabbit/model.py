@@ -234,6 +234,21 @@ class Compound(Expression):
 	def to_source(self):
 		return '{\n' + self.stmts.to_source() + '\n}'
 		
+class Grouping(Expression):
+	'''
+	( expression )      # Expression surrounded by parenthesis
+	'''
+	def __init__(self, expr):
+		assert isinstance(expr, Expression)
+		self.expr = expr
+
+	def __repr__(self):
+		return f'Grouping({self.expr})'
+		
+	def to_source(self):
+		return f"({self.expr})"
+		
+
 ###
 ### Locations
 ###
@@ -241,6 +256,7 @@ class Compound(Expression):
 
 class Var(Location):
 	def __init__(self, name):
+		assert isinstance(name, str)
 		self.name = name
 		
 	def __repr__(self):
@@ -338,6 +354,7 @@ class ConstDef(Statement):
 			return f"const {self.name} = {self.value.to_source()};"
 		return f"const {self.name} {self.vartype} = {self.value.to_source()};"
 
+
 class VarDef(Statement):
 	def __init__(self, name, vartype, value = None):
 		assert isinstance(name, str)
@@ -398,6 +415,7 @@ class While(Statement):
 		
 class ExpressionStatement(Statement):
 	def __init__(self, expr):
+		print(expr)
 		assert isinstance(expr, Expression)
 		self.expr = expr
 	

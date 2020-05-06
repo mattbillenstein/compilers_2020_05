@@ -212,6 +212,10 @@ class Interpreter:
 	def interpret_LocationLookup(self, node):
 		return self.env.get(node.var.name)
 		
+	
+	def interpret_Grouping(self, node):
+		return self.interpret(node.exprs)
+		
 		
 	def interpret_Compound(self, node):
 		retval = None
@@ -293,3 +297,11 @@ class Interpreter:
 			self.env.decreaseScope()
 			condition = self.interpret(node.condition)
 		
+		
+		
+	###
+	### The meta container ... Program
+	###
+	
+	def interpret_Program(self, node):
+		self.interpret_Statements(node.stmts)
