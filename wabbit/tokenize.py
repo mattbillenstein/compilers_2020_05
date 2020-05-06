@@ -38,7 +38,7 @@ IGNORE = " "
 #
 
 
-def tokenize(text):
+def _tokenize(text):
     while text:
         if match := re.match(IGNORE, text):
             text = text[match.end() :]
@@ -64,6 +64,10 @@ def tokenize(text):
                 break
         else:
             raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
+
+
+def tokenize(text):
+    return list(_tokenize(text))
 
 
 def test_tokenizer():
