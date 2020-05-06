@@ -124,6 +124,8 @@ class WabbitLexer(Lexer):
         LAND,
         LOR,
         LNOT,
+        STRUCT,
+        FUNC,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
     ignore_line_comment = r"//.*"
@@ -171,6 +173,8 @@ class WabbitLexer(Lexer):
     NAME["true"] = TRUE
     NAME["false"] = FALSE
     NAME["print"] = PRINT
+    NAME["struct"] = STRUCT
+    NAME["func"] = FUNC
 
     CHAR = r"\'.{1,4}\'"
 

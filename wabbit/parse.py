@@ -171,6 +171,9 @@ class WabbitParser(Parser):
         return Argument(p.NAME0, p.NAME1)
 
     # struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
+    @_("STRUCT NAME LBRACE { struct_field } RBRACE")
+    def struct_definition(self, p):
+        pass
 
     # struct_field : NAME type SEMI
 
