@@ -40,6 +40,12 @@ def test_parser_name():
     tokens = tokenize(source)
     assert parser.parse(tokens) == Statements([BinOp("+", Integer(2), Integer(3))])
 
+    source = "2 + 3 * 8;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(8)))]
+    )
+
 
 # def test_parser_basics():
 #     source = "2.9 * 2.7"

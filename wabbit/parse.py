@@ -233,6 +233,7 @@ class WabbitParser(Parser):
     def sumterm(self, p):
         left_term = p.multerm0
         for op, term in zip(p.sumop, p.multerm1):
+            print(repr(op))
             left_term = BinOp(op, left_term, term)
         return left_term
 
@@ -241,15 +242,15 @@ class WabbitParser(Parser):
         return p[0]
 
     # multerm : factor { TIMES|DIVIDE factor }
-    @_("factor { sumop factor }")
+    @_("factor { mulop factor }")
     def multerm(self, p):
         left_term = p.factor0
-        for op, term in zip(p.sumop, p.factor1):
+        for op, term in zip(p.mulop, p.factor1):
             left_term = BinOp(op, left_term, term)
         return left_term
 
     @_("DIVIDE", "TIMES")
-    def sumop(self, p):
+    def mulop(self, p):
         return p[0]
 
     # continue_statement : CONTINUE SEMI

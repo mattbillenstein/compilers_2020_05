@@ -587,7 +587,7 @@ class BinOp(Expression):
         return f"BinOp({self.op}, {self.left}, {self.right})"
 
     def __eq__(self, other):
-        if other is None:
+        if other is None or type(self) != type(other):
             return False
         return (
             self.op == other.op

@@ -110,16 +110,16 @@ Rule 106   _19_repeat -> <empty>
 Rule 107   _19_items -> _19_items _19_item
 Rule 108   _19_items -> _19_item
 Rule 109   _19_item -> sumop multerm
-Rule 110   sumop -> TIMES  [precedence=left, level=5]
-Rule 111   sumop -> DIVIDE  [precedence=left, level=5]
-Rule 112   sumop -> MINUS  [precedence=left, level=4]
-Rule 113   sumop -> PLUS  [precedence=left, level=4]
-Rule 114   multerm -> factor _20_repeat
-Rule 115   _20_repeat -> _20_items
-Rule 116   _20_repeat -> <empty>
-Rule 117   _20_items -> _20_items _20_item
-Rule 118   _20_items -> _20_item
-Rule 119   _20_item -> sumop factor
+Rule 110   sumop -> MINUS  [precedence=left, level=4]
+Rule 111   sumop -> PLUS  [precedence=left, level=4]
+Rule 112   multerm -> factor _20_repeat
+Rule 113   _20_repeat -> _20_items
+Rule 114   _20_repeat -> <empty>
+Rule 115   _20_items -> _20_items _20_item
+Rule 116   _20_items -> _20_item
+Rule 117   _20_item -> mulop factor
+Rule 118   mulop -> TIMES  [precedence=left, level=5]
+Rule 119   mulop -> DIVIDE  [precedence=left, level=5]
 Rule 120   continue_statement -> CONTINUE SEMI
 Rule 121   return_statement -> RETURN expression SEMI
 Rule 122   factor -> LBRACE statements RBRACE
@@ -159,8 +159,8 @@ Rule 155   empty -> <empty>
 
 Unused terminals:
 
-    BREAK
     WHILE
+    BREAK
 
 Terminals, with rules where they appear:
 
@@ -172,7 +172,7 @@ COMMA                : 33 140
 CONST                : 21
 CONTINUE             : 120
 DCOLON               : 143 144
-DIVIDE               : 111
+DIVIDE               : 119
 DOT                  : 141
 ELSE                 : 51 54
 ENUM                 : 42
@@ -193,17 +193,17 @@ LOR                  : 61
 LPAREN               : 24 48 123 127 137 143 153
 LT                   : 103
 MATCH                : 145
-MINUS                : 112 125
+MINUS                : 110 125
 NAME                 : 15 18 21 24 24 34 34 35 41 41 42 48 48 49 123 141 142 143 143 144 144 152 153 153 154
 NE                   : 73
-PLUS                 : 113 126
+PLUS                 : 111 126
 PRINT                : 13
 RBRACE               : 24 35 42 50 51 53 54 122 145
 RETURN               : 121
 RPAREN               : 24 48 123 127 137 143 153
 SEMI                 : 8 13 14 15 18 21 41 49 120 121 151
 STRUCT               : 35
-TIMES                : 110
+TIMES                : 118
 TRUE                 : 133
 VAR                  : 15 18
 WHILE                : 
@@ -242,9 +242,9 @@ _19_repeat           : 104
 _1_item              : 5 6
 _1_items             : 3 5
 _1_repeat            : 2
-_20_item             : 117 118
-_20_items            : 115 117
-_20_repeat           : 114
+_20_item             : 115 116
+_20_items            : 113 115
+_20_repeat           : 112
 _21_item             : 148 149
 _21_items            : 146 148
 _21_repeat           : 145
@@ -272,7 +272,7 @@ enum_definition      :
 enum_value           : 130
 expression           : 8 13 14 16 18 21 50 53 121 124 125 126 127 139 140 140 141 143 145 151
 exprlist             : 123
-factor               : 114 119
+factor               : 112 117
 func_definition      : 
 if_let_statement     : 
 if_statement         : 
@@ -280,6 +280,7 @@ literal              : 128
 location             : 14 131
 match                : 129
 matchcase            : 150
+mulop                : 117
 multerm              : 104 109
 orterm               : 56 61
 parameter            : 28 33
@@ -292,7 +293,7 @@ statement            : 7
 statements           : 1 24 50 51 53 54 122
 struct_definition    : 
 struct_field         : 40
-sumop                : 109 119
+sumop                : 109
 sumterm              : 68 73 74 79 80 85 86 91 92 97 98 103
 type                 : 15 19 22
 variable_definition  : 10
@@ -329,7 +330,7 @@ state 0
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -431,7 +432,7 @@ state 4
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -728,7 +729,7 @@ state 17
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -979,17 +980,15 @@ state 20
     (107) _19_items -> . _19_items _19_item
     (108) _19_items -> . _19_item
     (109) _19_item -> . sumop multerm
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
-  ! shift/reduce conflict for TIMES resolved as shift
-  ! shift/reduce conflict for DIVIDE resolved as shift
+    (110) sumop -> . MINUS
+    (111) sumop -> . PLUS
   ! shift/reduce conflict for MINUS resolved as shift
   ! shift/reduce conflict for PLUS resolved as shift
     SEMI            reduce using rule 106 (_19_repeat -> .)
     DOT             reduce using rule 106 (_19_repeat -> .)
     RPAREN          reduce using rule 106 (_19_repeat -> .)
+    TIMES           reduce using rule 106 (_19_repeat -> .)
+    DIVIDE          reduce using rule 106 (_19_repeat -> .)
     NE              reduce using rule 106 (_19_repeat -> .)
     EQ              reduce using rule 106 (_19_repeat -> .)
     GE              reduce using rule 106 (_19_repeat -> .)
@@ -1000,10 +999,8 @@ state 20
     LOR             reduce using rule 106 (_19_repeat -> .)
     LBRACE          reduce using rule 106 (_19_repeat -> .)
     COMMA           reduce using rule 106 (_19_repeat -> .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
+    MINUS           shift and go to state 83
+    PLUS            shift and go to state 84
 
     _19_repeat                     shift and go to state 79
     _19_items                      shift and go to state 80
@@ -1012,42 +1009,38 @@ state 20
 
 state 21
 
-    (114) multerm -> factor . _20_repeat
-    (115) _20_repeat -> . _20_items
-    (116) _20_repeat -> .
-    (117) _20_items -> . _20_items _20_item
-    (118) _20_items -> . _20_item
-    (119) _20_item -> . sumop factor
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
+    (112) multerm -> factor . _20_repeat
+    (113) _20_repeat -> . _20_items
+    (114) _20_repeat -> .
+    (115) _20_items -> . _20_items _20_item
+    (116) _20_items -> . _20_item
+    (117) _20_item -> . mulop factor
+    (118) mulop -> . TIMES
+    (119) mulop -> . DIVIDE
   ! shift/reduce conflict for TIMES resolved as shift
   ! shift/reduce conflict for DIVIDE resolved as shift
-  ! shift/reduce conflict for MINUS resolved as shift
-  ! shift/reduce conflict for PLUS resolved as shift
-    SEMI            reduce using rule 116 (_20_repeat -> .)
-    DOT             reduce using rule 116 (_20_repeat -> .)
-    RPAREN          reduce using rule 116 (_20_repeat -> .)
-    NE              reduce using rule 116 (_20_repeat -> .)
-    EQ              reduce using rule 116 (_20_repeat -> .)
-    GE              reduce using rule 116 (_20_repeat -> .)
-    GT              reduce using rule 116 (_20_repeat -> .)
-    LE              reduce using rule 116 (_20_repeat -> .)
-    LT              reduce using rule 116 (_20_repeat -> .)
-    LAND            reduce using rule 116 (_20_repeat -> .)
-    LOR             reduce using rule 116 (_20_repeat -> .)
-    LBRACE          reduce using rule 116 (_20_repeat -> .)
-    COMMA           reduce using rule 116 (_20_repeat -> .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
+    SEMI            reduce using rule 114 (_20_repeat -> .)
+    DOT             reduce using rule 114 (_20_repeat -> .)
+    RPAREN          reduce using rule 114 (_20_repeat -> .)
+    MINUS           reduce using rule 114 (_20_repeat -> .)
+    PLUS            reduce using rule 114 (_20_repeat -> .)
+    NE              reduce using rule 114 (_20_repeat -> .)
+    EQ              reduce using rule 114 (_20_repeat -> .)
+    GE              reduce using rule 114 (_20_repeat -> .)
+    GT              reduce using rule 114 (_20_repeat -> .)
+    LE              reduce using rule 114 (_20_repeat -> .)
+    LT              reduce using rule 114 (_20_repeat -> .)
+    LAND            reduce using rule 114 (_20_repeat -> .)
+    LOR             reduce using rule 114 (_20_repeat -> .)
+    LBRACE          reduce using rule 114 (_20_repeat -> .)
+    COMMA           reduce using rule 114 (_20_repeat -> .)
+    TIMES           shift and go to state 89
+    DIVIDE          shift and go to state 90
 
-    _20_repeat                     shift and go to state 87
-    _20_items                      shift and go to state 88
-    _20_item                       shift and go to state 89
-    sumop                          shift and go to state 90
+    _20_repeat                     shift and go to state 85
+    _20_items                      shift and go to state 86
+    _20_item                       shift and go to state 87
+    mulop                          shift and go to state 88
 
 state 22
 
@@ -1079,7 +1072,7 @@ state 22
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1149,7 +1142,7 @@ state 23
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1208,7 +1201,7 @@ state 24
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1266,7 +1259,7 @@ state 25
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1324,7 +1317,7 @@ state 26
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1558,7 +1551,7 @@ state 35
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1735,7 +1728,7 @@ state 42
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1810,7 +1803,7 @@ state 44
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -1891,7 +1884,7 @@ state 47
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2074,7 +2067,7 @@ state 54
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2546,7 +2539,7 @@ state 73
 
     (73) _13_item -> NE . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2604,7 +2597,7 @@ state 74
 
     (79) _14_item -> EQ . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2662,7 +2655,7 @@ state 75
 
     (85) _15_item -> GE . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2720,7 +2713,7 @@ state 76
 
     (91) _16_item -> GT . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2778,7 +2771,7 @@ state 77
 
     (97) _17_item -> LE . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2836,7 +2829,7 @@ state 78
 
     (103) _18_item -> LT . sumterm
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -2917,17 +2910,15 @@ state 80
     (105) _19_repeat -> _19_items .
     (107) _19_items -> _19_items . _19_item
     (109) _19_item -> . sumop multerm
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
-  ! shift/reduce conflict for TIMES resolved as shift
-  ! shift/reduce conflict for DIVIDE resolved as shift
+    (110) sumop -> . MINUS
+    (111) sumop -> . PLUS
   ! shift/reduce conflict for MINUS resolved as shift
   ! shift/reduce conflict for PLUS resolved as shift
     SEMI            reduce using rule 105 (_19_repeat -> _19_items .)
     DOT             reduce using rule 105 (_19_repeat -> _19_items .)
     RPAREN          reduce using rule 105 (_19_repeat -> _19_items .)
+    TIMES           reduce using rule 105 (_19_repeat -> _19_items .)
+    DIVIDE          reduce using rule 105 (_19_repeat -> _19_items .)
     NE              reduce using rule 105 (_19_repeat -> _19_items .)
     EQ              reduce using rule 105 (_19_repeat -> _19_items .)
     GE              reduce using rule 105 (_19_repeat -> _19_items .)
@@ -2938,10 +2929,8 @@ state 80
     LOR             reduce using rule 105 (_19_repeat -> _19_items .)
     LBRACE          reduce using rule 105 (_19_repeat -> _19_items .)
     COMMA           reduce using rule 105 (_19_repeat -> _19_items .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
+    MINUS           shift and go to state 83
+    PLUS            shift and go to state 84
 
     _19_item                       shift and go to state 127
     sumop                          shift and go to state 82
@@ -2971,7 +2960,7 @@ state 81
 state 82
 
     (109) _19_item -> sumop . multerm
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -3028,153 +3017,115 @@ state 82
 
 state 83
 
-    (110) sumop -> TIMES .
-    LBRACE          reduce using rule 110 (sumop -> TIMES .)
-    NAME            reduce using rule 110 (sumop -> TIMES .)
-    LNOT            reduce using rule 110 (sumop -> TIMES .)
-    MINUS           reduce using rule 110 (sumop -> TIMES .)
-    PLUS            reduce using rule 110 (sumop -> TIMES .)
-    LPAREN          reduce using rule 110 (sumop -> TIMES .)
-    FALSE           reduce using rule 110 (sumop -> TIMES .)
-    TRUE            reduce using rule 110 (sumop -> TIMES .)
-    CHAR            reduce using rule 110 (sumop -> TIMES .)
-    FLOAT           reduce using rule 110 (sumop -> TIMES .)
-    INTEGER         reduce using rule 110 (sumop -> TIMES .)
-    MATCH           reduce using rule 110 (sumop -> TIMES .)
+    (110) sumop -> MINUS .
+    LBRACE          reduce using rule 110 (sumop -> MINUS .)
+    NAME            reduce using rule 110 (sumop -> MINUS .)
+    LNOT            reduce using rule 110 (sumop -> MINUS .)
+    MINUS           reduce using rule 110 (sumop -> MINUS .)
+    PLUS            reduce using rule 110 (sumop -> MINUS .)
+    LPAREN          reduce using rule 110 (sumop -> MINUS .)
+    FALSE           reduce using rule 110 (sumop -> MINUS .)
+    TRUE            reduce using rule 110 (sumop -> MINUS .)
+    CHAR            reduce using rule 110 (sumop -> MINUS .)
+    FLOAT           reduce using rule 110 (sumop -> MINUS .)
+    INTEGER         reduce using rule 110 (sumop -> MINUS .)
+    MATCH           reduce using rule 110 (sumop -> MINUS .)
 
 
 state 84
 
-    (111) sumop -> DIVIDE .
-    LBRACE          reduce using rule 111 (sumop -> DIVIDE .)
-    NAME            reduce using rule 111 (sumop -> DIVIDE .)
-    LNOT            reduce using rule 111 (sumop -> DIVIDE .)
-    MINUS           reduce using rule 111 (sumop -> DIVIDE .)
-    PLUS            reduce using rule 111 (sumop -> DIVIDE .)
-    LPAREN          reduce using rule 111 (sumop -> DIVIDE .)
-    FALSE           reduce using rule 111 (sumop -> DIVIDE .)
-    TRUE            reduce using rule 111 (sumop -> DIVIDE .)
-    CHAR            reduce using rule 111 (sumop -> DIVIDE .)
-    FLOAT           reduce using rule 111 (sumop -> DIVIDE .)
-    INTEGER         reduce using rule 111 (sumop -> DIVIDE .)
-    MATCH           reduce using rule 111 (sumop -> DIVIDE .)
+    (111) sumop -> PLUS .
+    LBRACE          reduce using rule 111 (sumop -> PLUS .)
+    NAME            reduce using rule 111 (sumop -> PLUS .)
+    LNOT            reduce using rule 111 (sumop -> PLUS .)
+    MINUS           reduce using rule 111 (sumop -> PLUS .)
+    PLUS            reduce using rule 111 (sumop -> PLUS .)
+    LPAREN          reduce using rule 111 (sumop -> PLUS .)
+    FALSE           reduce using rule 111 (sumop -> PLUS .)
+    TRUE            reduce using rule 111 (sumop -> PLUS .)
+    CHAR            reduce using rule 111 (sumop -> PLUS .)
+    FLOAT           reduce using rule 111 (sumop -> PLUS .)
+    INTEGER         reduce using rule 111 (sumop -> PLUS .)
+    MATCH           reduce using rule 111 (sumop -> PLUS .)
 
 
 state 85
 
-    (112) sumop -> MINUS .
-    LBRACE          reduce using rule 112 (sumop -> MINUS .)
-    NAME            reduce using rule 112 (sumop -> MINUS .)
-    LNOT            reduce using rule 112 (sumop -> MINUS .)
-    MINUS           reduce using rule 112 (sumop -> MINUS .)
-    PLUS            reduce using rule 112 (sumop -> MINUS .)
-    LPAREN          reduce using rule 112 (sumop -> MINUS .)
-    FALSE           reduce using rule 112 (sumop -> MINUS .)
-    TRUE            reduce using rule 112 (sumop -> MINUS .)
-    CHAR            reduce using rule 112 (sumop -> MINUS .)
-    FLOAT           reduce using rule 112 (sumop -> MINUS .)
-    INTEGER         reduce using rule 112 (sumop -> MINUS .)
-    MATCH           reduce using rule 112 (sumop -> MINUS .)
+    (112) multerm -> factor _20_repeat .
+    MINUS           reduce using rule 112 (multerm -> factor _20_repeat .)
+    PLUS            reduce using rule 112 (multerm -> factor _20_repeat .)
+    NE              reduce using rule 112 (multerm -> factor _20_repeat .)
+    EQ              reduce using rule 112 (multerm -> factor _20_repeat .)
+    GE              reduce using rule 112 (multerm -> factor _20_repeat .)
+    GT              reduce using rule 112 (multerm -> factor _20_repeat .)
+    LE              reduce using rule 112 (multerm -> factor _20_repeat .)
+    LT              reduce using rule 112 (multerm -> factor _20_repeat .)
+    LAND            reduce using rule 112 (multerm -> factor _20_repeat .)
+    LOR             reduce using rule 112 (multerm -> factor _20_repeat .)
+    SEMI            reduce using rule 112 (multerm -> factor _20_repeat .)
+    DOT             reduce using rule 112 (multerm -> factor _20_repeat .)
+    RPAREN          reduce using rule 112 (multerm -> factor _20_repeat .)
+    TIMES           reduce using rule 112 (multerm -> factor _20_repeat .)
+    DIVIDE          reduce using rule 112 (multerm -> factor _20_repeat .)
+    LBRACE          reduce using rule 112 (multerm -> factor _20_repeat .)
+    COMMA           reduce using rule 112 (multerm -> factor _20_repeat .)
 
 
 state 86
 
-    (113) sumop -> PLUS .
-    LBRACE          reduce using rule 113 (sumop -> PLUS .)
-    NAME            reduce using rule 113 (sumop -> PLUS .)
-    LNOT            reduce using rule 113 (sumop -> PLUS .)
-    MINUS           reduce using rule 113 (sumop -> PLUS .)
-    PLUS            reduce using rule 113 (sumop -> PLUS .)
-    LPAREN          reduce using rule 113 (sumop -> PLUS .)
-    FALSE           reduce using rule 113 (sumop -> PLUS .)
-    TRUE            reduce using rule 113 (sumop -> PLUS .)
-    CHAR            reduce using rule 113 (sumop -> PLUS .)
-    FLOAT           reduce using rule 113 (sumop -> PLUS .)
-    INTEGER         reduce using rule 113 (sumop -> PLUS .)
-    MATCH           reduce using rule 113 (sumop -> PLUS .)
+    (113) _20_repeat -> _20_items .
+    (115) _20_items -> _20_items . _20_item
+    (117) _20_item -> . mulop factor
+    (118) mulop -> . TIMES
+    (119) mulop -> . DIVIDE
+  ! shift/reduce conflict for TIMES resolved as shift
+  ! shift/reduce conflict for DIVIDE resolved as shift
+    SEMI            reduce using rule 113 (_20_repeat -> _20_items .)
+    DOT             reduce using rule 113 (_20_repeat -> _20_items .)
+    RPAREN          reduce using rule 113 (_20_repeat -> _20_items .)
+    MINUS           reduce using rule 113 (_20_repeat -> _20_items .)
+    PLUS            reduce using rule 113 (_20_repeat -> _20_items .)
+    NE              reduce using rule 113 (_20_repeat -> _20_items .)
+    EQ              reduce using rule 113 (_20_repeat -> _20_items .)
+    GE              reduce using rule 113 (_20_repeat -> _20_items .)
+    GT              reduce using rule 113 (_20_repeat -> _20_items .)
+    LE              reduce using rule 113 (_20_repeat -> _20_items .)
+    LT              reduce using rule 113 (_20_repeat -> _20_items .)
+    LAND            reduce using rule 113 (_20_repeat -> _20_items .)
+    LOR             reduce using rule 113 (_20_repeat -> _20_items .)
+    LBRACE          reduce using rule 113 (_20_repeat -> _20_items .)
+    COMMA           reduce using rule 113 (_20_repeat -> _20_items .)
+    TIMES           shift and go to state 89
+    DIVIDE          shift and go to state 90
 
+    _20_item                       shift and go to state 129
+    mulop                          shift and go to state 88
 
 state 87
 
-    (114) multerm -> factor _20_repeat .
-    TIMES           reduce using rule 114 (multerm -> factor _20_repeat .)
-    DIVIDE          reduce using rule 114 (multerm -> factor _20_repeat .)
-    MINUS           reduce using rule 114 (multerm -> factor _20_repeat .)
-    PLUS            reduce using rule 114 (multerm -> factor _20_repeat .)
-    NE              reduce using rule 114 (multerm -> factor _20_repeat .)
-    EQ              reduce using rule 114 (multerm -> factor _20_repeat .)
-    GE              reduce using rule 114 (multerm -> factor _20_repeat .)
-    GT              reduce using rule 114 (multerm -> factor _20_repeat .)
-    LE              reduce using rule 114 (multerm -> factor _20_repeat .)
-    LT              reduce using rule 114 (multerm -> factor _20_repeat .)
-    LAND            reduce using rule 114 (multerm -> factor _20_repeat .)
-    LOR             reduce using rule 114 (multerm -> factor _20_repeat .)
-    SEMI            reduce using rule 114 (multerm -> factor _20_repeat .)
-    DOT             reduce using rule 114 (multerm -> factor _20_repeat .)
-    RPAREN          reduce using rule 114 (multerm -> factor _20_repeat .)
-    LBRACE          reduce using rule 114 (multerm -> factor _20_repeat .)
-    COMMA           reduce using rule 114 (multerm -> factor _20_repeat .)
+    (116) _20_items -> _20_item .
+    SEMI            reduce using rule 116 (_20_items -> _20_item .)
+    DOT             reduce using rule 116 (_20_items -> _20_item .)
+    RPAREN          reduce using rule 116 (_20_items -> _20_item .)
+    TIMES           reduce using rule 116 (_20_items -> _20_item .)
+    DIVIDE          reduce using rule 116 (_20_items -> _20_item .)
+    MINUS           reduce using rule 116 (_20_items -> _20_item .)
+    PLUS            reduce using rule 116 (_20_items -> _20_item .)
+    NE              reduce using rule 116 (_20_items -> _20_item .)
+    EQ              reduce using rule 116 (_20_items -> _20_item .)
+    GE              reduce using rule 116 (_20_items -> _20_item .)
+    GT              reduce using rule 116 (_20_items -> _20_item .)
+    LE              reduce using rule 116 (_20_items -> _20_item .)
+    LT              reduce using rule 116 (_20_items -> _20_item .)
+    LAND            reduce using rule 116 (_20_items -> _20_item .)
+    LOR             reduce using rule 116 (_20_items -> _20_item .)
+    LBRACE          reduce using rule 116 (_20_items -> _20_item .)
+    COMMA           reduce using rule 116 (_20_items -> _20_item .)
 
 
 state 88
 
-    (115) _20_repeat -> _20_items .
-    (117) _20_items -> _20_items . _20_item
-    (119) _20_item -> . sumop factor
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
-  ! shift/reduce conflict for TIMES resolved as shift
-  ! shift/reduce conflict for DIVIDE resolved as shift
-  ! shift/reduce conflict for MINUS resolved as shift
-  ! shift/reduce conflict for PLUS resolved as shift
-    SEMI            reduce using rule 115 (_20_repeat -> _20_items .)
-    DOT             reduce using rule 115 (_20_repeat -> _20_items .)
-    RPAREN          reduce using rule 115 (_20_repeat -> _20_items .)
-    NE              reduce using rule 115 (_20_repeat -> _20_items .)
-    EQ              reduce using rule 115 (_20_repeat -> _20_items .)
-    GE              reduce using rule 115 (_20_repeat -> _20_items .)
-    GT              reduce using rule 115 (_20_repeat -> _20_items .)
-    LE              reduce using rule 115 (_20_repeat -> _20_items .)
-    LT              reduce using rule 115 (_20_repeat -> _20_items .)
-    LAND            reduce using rule 115 (_20_repeat -> _20_items .)
-    LOR             reduce using rule 115 (_20_repeat -> _20_items .)
-    LBRACE          reduce using rule 115 (_20_repeat -> _20_items .)
-    COMMA           reduce using rule 115 (_20_repeat -> _20_items .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
-
-    _20_item                       shift and go to state 129
-    sumop                          shift and go to state 90
-
-state 89
-
-    (118) _20_items -> _20_item .
-    SEMI            reduce using rule 118 (_20_items -> _20_item .)
-    DOT             reduce using rule 118 (_20_items -> _20_item .)
-    RPAREN          reduce using rule 118 (_20_items -> _20_item .)
-    TIMES           reduce using rule 118 (_20_items -> _20_item .)
-    DIVIDE          reduce using rule 118 (_20_items -> _20_item .)
-    MINUS           reduce using rule 118 (_20_items -> _20_item .)
-    PLUS            reduce using rule 118 (_20_items -> _20_item .)
-    NE              reduce using rule 118 (_20_items -> _20_item .)
-    EQ              reduce using rule 118 (_20_items -> _20_item .)
-    GE              reduce using rule 118 (_20_items -> _20_item .)
-    GT              reduce using rule 118 (_20_items -> _20_item .)
-    LE              reduce using rule 118 (_20_items -> _20_item .)
-    LT              reduce using rule 118 (_20_items -> _20_item .)
-    LAND            reduce using rule 118 (_20_items -> _20_item .)
-    LOR             reduce using rule 118 (_20_items -> _20_item .)
-    LBRACE          reduce using rule 118 (_20_items -> _20_item .)
-    COMMA           reduce using rule 118 (_20_items -> _20_item .)
-
-
-state 90
-
-    (119) _20_item -> sumop . factor
+    (117) _20_item -> mulop . factor
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -3205,7 +3156,7 @@ state 90
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     LBRACE          shift and go to state 22
     NAME            shift and go to state 49
     LNOT            shift and go to state 24
@@ -3229,6 +3180,40 @@ state 90
     andterm                        shift and go to state 18
     sumterm                        shift and go to state 19
     multerm                        shift and go to state 20
+
+state 89
+
+    (118) mulop -> TIMES .
+    LBRACE          reduce using rule 118 (mulop -> TIMES .)
+    NAME            reduce using rule 118 (mulop -> TIMES .)
+    LNOT            reduce using rule 118 (mulop -> TIMES .)
+    MINUS           reduce using rule 118 (mulop -> TIMES .)
+    PLUS            reduce using rule 118 (mulop -> TIMES .)
+    LPAREN          reduce using rule 118 (mulop -> TIMES .)
+    FALSE           reduce using rule 118 (mulop -> TIMES .)
+    TRUE            reduce using rule 118 (mulop -> TIMES .)
+    CHAR            reduce using rule 118 (mulop -> TIMES .)
+    FLOAT           reduce using rule 118 (mulop -> TIMES .)
+    INTEGER         reduce using rule 118 (mulop -> TIMES .)
+    MATCH           reduce using rule 118 (mulop -> TIMES .)
+
+
+state 90
+
+    (119) mulop -> DIVIDE .
+    LBRACE          reduce using rule 119 (mulop -> DIVIDE .)
+    NAME            reduce using rule 119 (mulop -> DIVIDE .)
+    LNOT            reduce using rule 119 (mulop -> DIVIDE .)
+    MINUS           reduce using rule 119 (mulop -> DIVIDE .)
+    PLUS            reduce using rule 119 (mulop -> DIVIDE .)
+    LPAREN          reduce using rule 119 (mulop -> DIVIDE .)
+    FALSE           reduce using rule 119 (mulop -> DIVIDE .)
+    TRUE            reduce using rule 119 (mulop -> DIVIDE .)
+    CHAR            reduce using rule 119 (mulop -> DIVIDE .)
+    FLOAT           reduce using rule 119 (mulop -> DIVIDE .)
+    INTEGER         reduce using rule 119 (mulop -> DIVIDE .)
+    MATCH           reduce using rule 119 (mulop -> DIVIDE .)
+
 
 state 91
 
@@ -4322,10 +4307,8 @@ state 128
     (107) _19_items -> . _19_items _19_item
     (108) _19_items -> . _19_item
     (109) _19_item -> . sumop multerm
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
+    (110) sumop -> . MINUS
+    (111) sumop -> . PLUS
   ! reduce/reduce conflict for NE resolved using rule 106 (_19_repeat -> .)
   ! reduce/reduce conflict for EQ resolved using rule 106 (_19_repeat -> .)
   ! reduce/reduce conflict for GE resolved using rule 106 (_19_repeat -> .)
@@ -4335,12 +4318,12 @@ state 128
   ! reduce/reduce conflict for LAND resolved using rule 106 (_19_repeat -> .)
   ! reduce/reduce conflict for LOR resolved using rule 106 (_19_repeat -> .)
   ! reduce/reduce conflict for DOT resolved using rule 106 (_19_repeat -> .)
-  ! shift/reduce conflict for TIMES resolved as shift
-  ! shift/reduce conflict for DIVIDE resolved as shift
   ! shift/reduce conflict for MINUS resolved as shift
   ! shift/reduce conflict for PLUS resolved as shift
     SEMI            reduce using rule 109 (_19_item -> sumop multerm .)
     RPAREN          reduce using rule 109 (_19_item -> sumop multerm .)
+    TIMES           reduce using rule 109 (_19_item -> sumop multerm .)
+    DIVIDE          reduce using rule 109 (_19_item -> sumop multerm .)
     LBRACE          reduce using rule 109 (_19_item -> sumop multerm .)
     COMMA           reduce using rule 109 (_19_item -> sumop multerm .)
     NE              reduce using rule 106 (_19_repeat -> .)
@@ -4352,10 +4335,8 @@ state 128
     LAND            reduce using rule 106 (_19_repeat -> .)
     LOR             reduce using rule 106 (_19_repeat -> .)
     DOT             reduce using rule 106 (_19_repeat -> .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
+    MINUS           shift and go to state 83
+    PLUS            shift and go to state 84
 
     sumop                          shift and go to state 82
     _19_repeat                     shift and go to state 79
@@ -4364,78 +4345,72 @@ state 128
 
 state 129
 
-    (117) _20_items -> _20_items _20_item .
-    SEMI            reduce using rule 117 (_20_items -> _20_items _20_item .)
-    DOT             reduce using rule 117 (_20_items -> _20_items _20_item .)
-    RPAREN          reduce using rule 117 (_20_items -> _20_items _20_item .)
-    TIMES           reduce using rule 117 (_20_items -> _20_items _20_item .)
-    DIVIDE          reduce using rule 117 (_20_items -> _20_items _20_item .)
-    MINUS           reduce using rule 117 (_20_items -> _20_items _20_item .)
-    PLUS            reduce using rule 117 (_20_items -> _20_items _20_item .)
-    NE              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    EQ              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    GE              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    GT              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    LE              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    LT              reduce using rule 117 (_20_items -> _20_items _20_item .)
-    LAND            reduce using rule 117 (_20_items -> _20_items _20_item .)
-    LOR             reduce using rule 117 (_20_items -> _20_items _20_item .)
-    LBRACE          reduce using rule 117 (_20_items -> _20_items _20_item .)
-    COMMA           reduce using rule 117 (_20_items -> _20_items _20_item .)
+    (115) _20_items -> _20_items _20_item .
+    SEMI            reduce using rule 115 (_20_items -> _20_items _20_item .)
+    DOT             reduce using rule 115 (_20_items -> _20_items _20_item .)
+    RPAREN          reduce using rule 115 (_20_items -> _20_items _20_item .)
+    TIMES           reduce using rule 115 (_20_items -> _20_items _20_item .)
+    DIVIDE          reduce using rule 115 (_20_items -> _20_items _20_item .)
+    MINUS           reduce using rule 115 (_20_items -> _20_items _20_item .)
+    PLUS            reduce using rule 115 (_20_items -> _20_items _20_item .)
+    NE              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    EQ              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    GE              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    GT              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    LE              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    LT              reduce using rule 115 (_20_items -> _20_items _20_item .)
+    LAND            reduce using rule 115 (_20_items -> _20_items _20_item .)
+    LOR             reduce using rule 115 (_20_items -> _20_items _20_item .)
+    LBRACE          reduce using rule 115 (_20_items -> _20_items _20_item .)
+    COMMA           reduce using rule 115 (_20_items -> _20_items _20_item .)
 
 
 state 130
 
-    (119) _20_item -> sumop factor .
-    (114) multerm -> factor . _20_repeat
-    (115) _20_repeat -> . _20_items
-    (116) _20_repeat -> .
-    (117) _20_items -> . _20_items _20_item
-    (118) _20_items -> . _20_item
-    (119) _20_item -> . sumop factor
-    (110) sumop -> . TIMES
-    (111) sumop -> . DIVIDE
-    (112) sumop -> . MINUS
-    (113) sumop -> . PLUS
-  ! reduce/reduce conflict for TIMES resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for DIVIDE resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for MINUS resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for PLUS resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for NE resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for EQ resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for GE resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for GT resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for LE resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for LT resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for LAND resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for LOR resolved using rule 116 (_20_repeat -> .)
-  ! reduce/reduce conflict for DOT resolved using rule 116 (_20_repeat -> .)
+    (117) _20_item -> mulop factor .
+    (112) multerm -> factor . _20_repeat
+    (113) _20_repeat -> . _20_items
+    (114) _20_repeat -> .
+    (115) _20_items -> . _20_items _20_item
+    (116) _20_items -> . _20_item
+    (117) _20_item -> . mulop factor
+    (118) mulop -> . TIMES
+    (119) mulop -> . DIVIDE
+  ! reduce/reduce conflict for MINUS resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for PLUS resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for NE resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for EQ resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for GE resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for GT resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for LE resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for LT resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for LAND resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for LOR resolved using rule 114 (_20_repeat -> .)
+  ! reduce/reduce conflict for DOT resolved using rule 114 (_20_repeat -> .)
   ! shift/reduce conflict for TIMES resolved as shift
   ! shift/reduce conflict for DIVIDE resolved as shift
-  ! shift/reduce conflict for MINUS resolved as shift
-  ! shift/reduce conflict for PLUS resolved as shift
-    SEMI            reduce using rule 119 (_20_item -> sumop factor .)
-    RPAREN          reduce using rule 119 (_20_item -> sumop factor .)
-    LBRACE          reduce using rule 119 (_20_item -> sumop factor .)
-    COMMA           reduce using rule 119 (_20_item -> sumop factor .)
-    NE              reduce using rule 116 (_20_repeat -> .)
-    EQ              reduce using rule 116 (_20_repeat -> .)
-    GE              reduce using rule 116 (_20_repeat -> .)
-    GT              reduce using rule 116 (_20_repeat -> .)
-    LE              reduce using rule 116 (_20_repeat -> .)
-    LT              reduce using rule 116 (_20_repeat -> .)
-    LAND            reduce using rule 116 (_20_repeat -> .)
-    LOR             reduce using rule 116 (_20_repeat -> .)
-    DOT             reduce using rule 116 (_20_repeat -> .)
-    TIMES           shift and go to state 83
-    DIVIDE          shift and go to state 84
-    MINUS           shift and go to state 85
-    PLUS            shift and go to state 86
+    SEMI            reduce using rule 117 (_20_item -> mulop factor .)
+    RPAREN          reduce using rule 117 (_20_item -> mulop factor .)
+    LBRACE          reduce using rule 117 (_20_item -> mulop factor .)
+    COMMA           reduce using rule 117 (_20_item -> mulop factor .)
+    MINUS           reduce using rule 114 (_20_repeat -> .)
+    PLUS            reduce using rule 114 (_20_repeat -> .)
+    NE              reduce using rule 114 (_20_repeat -> .)
+    EQ              reduce using rule 114 (_20_repeat -> .)
+    GE              reduce using rule 114 (_20_repeat -> .)
+    GT              reduce using rule 114 (_20_repeat -> .)
+    LE              reduce using rule 114 (_20_repeat -> .)
+    LT              reduce using rule 114 (_20_repeat -> .)
+    LAND            reduce using rule 114 (_20_repeat -> .)
+    LOR             reduce using rule 114 (_20_repeat -> .)
+    DOT             reduce using rule 114 (_20_repeat -> .)
+    TIMES           shift and go to state 89
+    DIVIDE          shift and go to state 90
 
-    sumop                          shift and go to state 90
-    _20_repeat                     shift and go to state 87
-    _20_items                      shift and go to state 88
-    _20_item                       shift and go to state 89
+    mulop                          shift and go to state 88
+    _20_repeat                     shift and go to state 85
+    _20_items                      shift and go to state 86
+    _20_item                       shift and go to state 87
 
 state 131
 
@@ -4513,7 +4488,7 @@ state 134
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -4593,7 +4568,7 @@ state 136
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -4651,7 +4626,7 @@ state 137
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -4715,7 +4690,7 @@ state 139
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -4773,7 +4748,7 @@ state 140
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -4993,7 +4968,7 @@ state 156
     (92) andterm -> . sumterm _17_repeat
     (98) andterm -> . sumterm _18_repeat
     (104) sumterm -> . multerm _19_repeat
-    (114) multerm -> . factor _20_repeat
+    (112) multerm -> . factor _20_repeat
     (122) factor -> . LBRACE statements RBRACE
     (123) factor -> . NAME LPAREN exprlist RPAREN
     (124) factor -> . LNOT expression
@@ -5148,14 +5123,10 @@ shift/reduce conflict for GE in state 19 resolved as shift
 shift/reduce conflict for GT in state 19 resolved as shift
 shift/reduce conflict for LE in state 19 resolved as shift
 shift/reduce conflict for LT in state 19 resolved as shift
-shift/reduce conflict for TIMES in state 20 resolved as shift
-shift/reduce conflict for DIVIDE in state 20 resolved as shift
 shift/reduce conflict for MINUS in state 20 resolved as shift
 shift/reduce conflict for PLUS in state 20 resolved as shift
 shift/reduce conflict for TIMES in state 21 resolved as shift
 shift/reduce conflict for DIVIDE in state 21 resolved as shift
-shift/reduce conflict for MINUS in state 21 resolved as shift
-shift/reduce conflict for PLUS in state 21 resolved as shift
 shift/reduce conflict for LOR in state 40 resolved as shift
 shift/reduce conflict for LAND in state 52 resolved as shift
 shift/reduce conflict for NE in state 61 resolved as shift
@@ -5164,24 +5135,16 @@ shift/reduce conflict for GE in state 63 resolved as shift
 shift/reduce conflict for GT in state 64 resolved as shift
 shift/reduce conflict for LE in state 65 resolved as shift
 shift/reduce conflict for LT in state 66 resolved as shift
-shift/reduce conflict for TIMES in state 80 resolved as shift
-shift/reduce conflict for DIVIDE in state 80 resolved as shift
 shift/reduce conflict for MINUS in state 80 resolved as shift
 shift/reduce conflict for PLUS in state 80 resolved as shift
-shift/reduce conflict for TIMES in state 88 resolved as shift
-shift/reduce conflict for DIVIDE in state 88 resolved as shift
-shift/reduce conflict for MINUS in state 88 resolved as shift
-shift/reduce conflict for PLUS in state 88 resolved as shift
+shift/reduce conflict for TIMES in state 86 resolved as shift
+shift/reduce conflict for DIVIDE in state 86 resolved as shift
 shift/reduce conflict for DOT in state 94 resolved as shift
 shift/reduce conflict for ASSIGN in state 109 resolved as shift
-shift/reduce conflict for TIMES in state 128 resolved as shift
-shift/reduce conflict for DIVIDE in state 128 resolved as shift
 shift/reduce conflict for MINUS in state 128 resolved as shift
 shift/reduce conflict for PLUS in state 128 resolved as shift
 shift/reduce conflict for TIMES in state 130 resolved as shift
 shift/reduce conflict for DIVIDE in state 130 resolved as shift
-shift/reduce conflict for MINUS in state 130 resolved as shift
-shift/reduce conflict for PLUS in state 130 resolved as shift
 reduce/reduce conflict in state 19 resolved using rule _13_repeat -> <empty>
 rejected rule (_14_repeat -> <empty>) in state 19
 reduce/reduce conflict in state 19 resolved using rule _13_repeat -> <empty>
@@ -5271,7 +5234,7 @@ rejected rule (_18_repeat -> <empty>) in state 126
 reduce/reduce conflict in state 128 resolved using rule _19_repeat -> <empty>
 rejected rule (_19_item -> sumop multerm) in state 128
 reduce/reduce conflict in state 130 resolved using rule _20_repeat -> <empty>
-rejected rule (_20_item -> sumop factor) in state 130
+rejected rule (_20_item -> mulop factor) in state 130
 Rule (_14_repeat -> <empty>) is never reduced
 Rule (_15_repeat -> <empty>) is never reduced
 Rule (_16_repeat -> <empty>) is never reduced
