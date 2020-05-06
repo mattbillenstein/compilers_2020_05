@@ -346,6 +346,13 @@ class Statements(Statement):
     def __repr__(self):
         return f"Statements({self.statements})"
 
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if type(self) != type(other):
+            return False
+        return self.statements == other.statements
+
 
 class If(Statement):
     """

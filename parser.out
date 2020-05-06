@@ -167,8 +167,8 @@ Rule 163   empty -> <empty>
 
 Unused terminals:
 
-    BREAK
     WHILE
+    BREAK
 
 Terminals, with rules where they appear:
 

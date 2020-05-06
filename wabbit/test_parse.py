@@ -6,11 +6,11 @@ from tests.Script.test_helpers import assert_expectations
 
 
 def test_parser_name():
+    parser = WabbitParser()
     source = "2;"
     tokens = tokenize(source)
-    parser = WabbitParser()
 
-    assert parser.parse(tokens) == ""
+    assert parser.parse(tokens) == Statements([Integer(2)])
 
 
 # def test_parser_basics():
