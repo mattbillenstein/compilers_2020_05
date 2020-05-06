@@ -271,7 +271,7 @@ class WabbitParser(Parser):
 
     @_("LPAREN expression RPAREN",)
     def factor(self, p):
-        return Grouping(p.expression)
+        return p.expression
 
     @_(
         "PLUS expression", "MINUS expression", "LNOT expression",

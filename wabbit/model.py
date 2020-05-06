@@ -440,7 +440,7 @@ class Float(Expression):
         return f"Float({self.value})"
 
     def __eq__(self, other):
-        if not type(self) == type(other):
+        if other is None or type(self) != type(other):
             return False
         return self.value == other.value
 
