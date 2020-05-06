@@ -51,6 +51,9 @@ NoneType = type(None)
 class Node:
     is_statement = False
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
 class Name(Node):
     def __init__(self, value):
         assert isinstance(value, str)
@@ -109,7 +112,7 @@ class UnaOp(Node):
     Example: left + right
     '''
     def __init__(self, op, arg):
-        assert op in ('-',)
+        assert op in ('-', '+', '!')
         assert isinstance(arg, Node)
         self.op = op
         self.arg = arg
@@ -132,8 +135,11 @@ class Block(Node):
         self.indent = indent
 
     def __repr__(self):
-        indent = ", indent='{self.indent}'" if self.indent else ''
+        indent = f", indent='{self.indent}'" if self.indent else ''
         return f'Block({[_ for _ in self.statements]}{indent})'
+
+    def __eq__(self, other):
+        return dict(self.__dict__, **{'indent': ''}) == dict(other.__dict__, **{'indent': ''})
 
 class Print(Node):
     '''
@@ -248,8 +254,8 @@ class Return(Node):
     def __repr__(self):
         return f'Return({self.value})'
 
-class Arg(Node):
-    '''arg of a function call'''
+class ArgDef(Node):
+    '''arg definition in a function definition'''
     def __init__(self, name, type):
         assert isinstance(name, Name)
         assert isinstance(type, Type)
@@ -257,7 +263,7 @@ class Arg(Node):
         self.type = type
 
     def __repr__(self):
-        return f'Arg({self.name}, {self.type})'
+        return f'ArgDef({self.name}, {self.type})'
 
 class Field(Node):
     '''field of a function struct'''
@@ -268,7 +274,7 @@ class Field(Node):
         self.type = type
 
     def __repr__(self):
-        return f'Arg({self.name}, {self.type})'
+        return f'Field({self.name}, {self.type})'
 
 class Call(Node):
     def __init__(self, name, args):
@@ -286,13 +292,13 @@ class Call(Node):
 class Struct(Node):
     is_statement = True
 
-    def __init__(self, name, args):
+    def __init__(self, name, fields):
         assert isinstance(name, Name)
-        assert isinstance(args, list)
-        assert all(isinstance(_, Node) for _ in args)
-        assert len(args) > 0
+        assert isinstance(fields, list)
+        assert all(isinstance(_, Field) for _ in fields)
+        assert len(fields) > 0
         self.name = name
-        self.args = args
+        self.fields = fields
 
     def __repr__(self):
         return f'Struct({self.name}, {self.args})'
@@ -332,4 +338,11 @@ class Attribute(Node):
 
     def __repr__(self):
         return f'Attribute({self.name}, {self.attr})'
-    
+
+
+def compare_model(m1, m2):
+    if m1 != m2:
+        print(m1)
+        print()
+        print(m2)
+        raise ValueError('Mismatched Models')

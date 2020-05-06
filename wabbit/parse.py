@@ -116,26 +116,146 @@
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
-from .model import *
-from .tokenize import tokenize
+import os.path
 
-# Top-level function that runs everything    
-def parse_source(text):
+from .model import *
+from .tokenize import tokenize, WabbitLexer
+
+import sly
+
+class WabbitParser(sly.Parser):
+    debugfile = 'parser.txt'
+
+    tokens = WabbitLexer.tokens
+
+    precedence = [
+        ('left', LOR),
+        ('left', LAND),
+        ('left', LT, LE, GT, GE, EQ, NE),
+        ('left', PLUS, MINUS),
+        ('left', TIMES, DIVIDE),
+        ('right', UNARY),   # +, -, !
+    ]
+
+    @_('{ node }')
+    def block(self, p):
+        return Block(p.node)
+
+    @_('node SEMI')
+    def node(self, p):
+        return p.node
+
+    @_(*[f'{op} node %prec UNARY' for op in WabbitLexer._unaop])
+    def node(self, p):
+        return UnaOp(p[0], p.node)
+
+    @_(*[f'node {op} node' for op in WabbitLexer._binop])
+    def node(self, p):
+        op = p[1]
+        left = p.node0
+        right = p.node1
+        return BinOp(op, left, right)
+
+    @_('PRINT node SEMI')
+    def node(self, p):
+        return Print(p.node)
+
+    @_('VAR name [ type ] ASSIGN node SEMI')
+    def node(self, p):
+        return Var(p.name, p.node, p.type)
+
+    @_('VAR name type SEMI')
+    def node(self, p):
+        return Var(p.name, type=p.type)
+
+    @_('CONST name [ type ] ASSIGN node SEMI')
+    def node(self, p):
+        return Const(p.name, p.node, type=p.type)
+
+    @_('IF node LBRACE block RBRACE [ ELSE LBRACE block RBRACE ]')
+    def node(self, p):
+        return If(p.node, p.block0, p.block1)
+
+    @_('WHILE node LBRACE block RBRACE')
+    def node(self, p):
+        return While(p.node, p.block)
+
+    @_('LBRACE block RBRACE')
+    def node(self, p):
+        return Compound(p.block.statements)
+
+    @_('FUNC name LPAREN [ argdefs ] RPAREN [ type ] LBRACE block RBRACE')
+    def node(self, p):
+        return Func(p.name, p.block, p.argdefs, p.type)
+
+    @_('argdef { COMMA argdef }')
+    def argdefs(self, p):
+        return [p.argdef0] + p.argdef1
+
+    @_('name type')
+    def argdef(self, p):
+        return ArgDef(p.name, p.type)
+
+    # call
+    @_('name LPAREN [ callargs ] RPAREN')
+    def node(self, p):
+        return Call(p.name, p.callargs)
+
+    @_('callarg { COMMA callarg }')
+    def callargs(self, p):
+        return [p.callarg0] + p.callarg1
+
+    @_('node')
+    def callarg(self, p):
+        return p.node
+
+    @_('RETURN node SEMI')
+    def node(self, p):
+        return Return(p.node)
+
+    @_('name ASSIGN node SEMI')
+    def node(self, p):
+        return Assign(p.name, p.node)
+
+    @_('INTEGER')
+    def node(self, p):
+        return Integer(int(p.INTEGER))
+
+    @_('FLOAT')
+    def node(self, p):
+        return Float(float(p.FLOAT))
+
+    @_('name')
+    def node(self, p):
+        return p.name
+
+    @_('NAME')
+    def name(self, p):
+        return Name(p.NAME)
+
+    @_('NAME')
+    def type(self, p):
+        return Type(p.NAME)
+
+
+def parse(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)     # You need to implement this part
+    parser = WabbitParser()
+    model = parser.parse(tokens)
     return model
 
-# Example of a main program
-def parse_file(filename):
-    with open(filename) as file:
-        text = file.read()
-    return parse_source(text)
+def main(args):
+    if args:
+        if os.path.isfile(args[0]):
+            with open(args[0]) as file:
+                text = file.read()
+        else:
+            text = args[0]
+    else:
+        text = sys.stdin.read()
+
+    print(parse(text))
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
-    print(model)
-
-
+    main(sys.argv[1:])

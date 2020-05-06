@@ -24,6 +24,7 @@
 
 from wabbit.interp import interpret
 from wabbit.model import *
+from wabbit.parse import parse
 from wabbit.source_visitor import compare_source
 
 # ----------------------------------------------------------------------
@@ -44,6 +45,7 @@ model0  = Block([
 compare_source(model0, source0)
 x, env, stdout = interpret(model0)
 assert x == 14, x
+compare_model(parse(source0), model0)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
@@ -60,15 +62,16 @@ source1 = """
 """
 
 model1 = Block([
-    Print(BinOp('+', Integer(2), BinOp('*', Integer(3), Integer(-4)))),
-    Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), Float(-4.0)))),
-    Print(BinOp('+', Integer(-2), Integer(3))),
-    Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), Integer(-4))),
+    Print(BinOp('+', Integer(2), BinOp('*', Integer(3), UnaOp('-', Integer(4))))),
+    Print(BinOp('-', Float(2.0), BinOp('/', Float(3.0), UnaOp('-', Float(4.0))))),
+    Print(BinOp('+', UnaOp('-', Integer(2)), Integer(3))),
+    Print(BinOp('+', BinOp('*', Integer(2), Integer(3)), UnaOp('-', Integer(4)))),
 ], indent=' '*4)
 
 compare_source(model1, source1)
 x, env, stdout = interpret(model1)
 assert stdout == [-10, 2.75, 1, 2]
+compare_model(parse(source1), model1)
 
 # ----------------------------------------------------------------------
 # Program 2: Variable and constant declarations. 
@@ -93,6 +96,7 @@ model2 = Block([
 compare_source(model2, source2)
 x, env, stdout = interpret(model2)
 assert env == {'pi': 3.14159, 'tau': 6.28318}, (x, env, stdout)
+compare_model(parse(source2), model2)
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -121,6 +125,7 @@ model3 = Block([
 compare_source(model3, source3)
 x, env, stdout = interpret(model3)
 assert stdout == [2], (x, env, stdout)
+compare_model(parse(source3), model3)
 
 # ----------------------------------------------------------------------
 # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -154,6 +159,7 @@ model4 = Block([
 compare_source(model4, source4)
 x, env, stdout = interpret(model4)
 assert stdout == [1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
+compare_model(parse(source4), model4)
 
 # ----------------------------------------------------------------------
 # Program 5: Compound Expressions.  This program swaps the values of
@@ -184,6 +190,7 @@ model5 = Block([
 compare_source(model5, source5)
 x, env, stdout = interpret(model5)
 assert stdout == [42, 37], (x, env, stdout)
+compare_model(parse(source5), model5)
 
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,

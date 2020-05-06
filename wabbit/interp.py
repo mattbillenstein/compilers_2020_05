@@ -66,6 +66,11 @@ d = DeepChainMap()
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
 
+# TODO
+# - Program node, so Block doesn't need to return
+# - Scope only if var/const in a block?
+# - look at scoping more - make sure we set things in the proper scope
+
 def interpret(node):
     return Interpreter().interpret(node)
 
@@ -125,8 +130,8 @@ class Interpreter:
         x =  {
             '+': lambda a, b: a+b,
             '-': lambda a, b: a-b,
-            '/': lambda a, b: a/b,
             '*': lambda a, b: a*b,
+            '/': lambda a, b: a/b,
             '<': lambda a, b: a<b,
             '>': lambda a, b: a>b,
             '<=': lambda a, b: a<=b,
@@ -139,7 +144,9 @@ class Interpreter:
     def visit_UnaOp(self, node):
         return {
             '-': lambda a: -a,
-        }(self.visit(node.arg))
+            '+': lambda a: a,
+            '!': lambda a: not a,
+        }[node.op](self.visit(node.arg))
 
     def visit_Block(self, node):
         self._new_scope()
@@ -165,7 +172,8 @@ class Interpreter:
 
     def visit_Const(self, node):
         name = node.name.value
-        self.env[name] = v = self.visit(node.arg)
+        # set in the current scope
+        self.env.maps[0][name] = v = self.visit(node.arg)
         if node.type is not None:
             t = self.visit(node.type)
             assert isinstance(v, t), (v, t)
@@ -181,11 +189,13 @@ class Interpreter:
         if arg is None and typ is not None:
             arg = typ()
 
-        self.env[name] = arg
+        # set in the current scope
+        self.env.maps[0][name] = arg
 
     def visit_Assign(self, node):
         name = node.name.value
         arg = self.visit(node.arg)
+        # FIXME, protect const?
         self.env[name] = arg
 
     def visit_If(self, node):
@@ -209,15 +219,21 @@ class Interpreter:
         return f'{self.visit(node.name)} {self.visit(node.type)}'
 
     def visit_Field(self, node):
-        # field of a struct
-        duh
-        return f'{self.visit(node.name)} {self.visit(node.type)}'
+        return node.name.value, self.visit(node.type)
 
     def visit_Return(self, node):
         return self.visit(node.value)
 
     def visit_Call(self, node):
         func = self.env[node.name.value]
+
+        if isinstance(func, Struct):
+            # just return a dict with the fields and the default of the type
+            d = {}
+            for n in func.fields:
+                name, typ = self.visit(n)
+                d[name] = typ()
+            return d
 
         self._new_scope()
 
@@ -232,9 +248,9 @@ class Interpreter:
         return x
 
     def visit_Struct(self, node):
-        duh
-        args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'
-        return f'struct {self.visit(node.name)} {{\n{args}}}\n'
+        # just store this model in the env, we'll use it later to create
+        # instances...
+        self.env[node.name.value] = node
 
     def visit_Enum(self, node):
         duh

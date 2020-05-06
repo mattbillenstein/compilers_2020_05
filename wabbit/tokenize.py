@@ -80,15 +80,25 @@ import sly
 
 
 class WabbitLexer(sly.Lexer):
-    # few things stolen from dabeaz in the interest of time...
+    # few regexs stolen from dabeaz in the interest of time...
     # CHAR, comments
 
-    tokens = {
-        NAME, INTEGER, FLOAT, CHAR, LE, GE, EQ, NE, LAND, LOR,
-        LT, GT, LNOT, PLUS, MINUS, TIMES, DIVIDE, ASSIGN, LPAREN,
-        RPAREN, SEMI, LBRACE, RBRACE, CONST, VAR, PRINT, BREAK,
-        CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, DOT, COMMA, COLONCOLON,
+    _binop = {
+        LE, GE, EQ, NE, LAND, LOR, LT, GT, PLUS, MINUS, TIMES, DIVIDE,
     }
+
+    _unaop = { PLUS, MINUS, LNOT }
+
+    _kw = {
+        CONST, VAR, PRINT, BREAK,
+        CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
+        FUNC, RETURN,
+    }
+
+    tokens = {
+        NAME, FLOAT, INTEGER, CHAR,
+        ASSIGN, LPAREN, RPAREN, SEMI, LBRACE, RBRACE, DOT, COMMA, COLONCOLON,
+    } | _unaop | _binop | _kw
 
     ignore = ' \t'
 
@@ -104,8 +114,8 @@ class WabbitLexer(sly.Lexer):
 
     # Tokens
     NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    FLOAT = r'(?:[-]?\d+\.\d*)|(?:[-]?\d*\.\d+)'
-    INTEGER = r'[-]?\d+'
+    FLOAT = r'(?:\d+\.\d*)|(?:\d*\.\d+)'
+    INTEGER = r'\d+'
     CHAR = r"'(\\'|.)*?'"
 
     # keywords
@@ -119,6 +129,8 @@ class WabbitLexer(sly.Lexer):
     NAME['while'] = WHILE
     NAME['true'] = TRUE
     NAME['false'] = FALSE
+    NAME['func'] = FUNC
+    NAME['return'] = RETURN
 
     # Special symbols - multiple characters first!
     LE = r'<='

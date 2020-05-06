@@ -12,6 +12,7 @@
 # DO NOT WORK ON THIS UNLESS YOU HAVE EVERYTHING ELSE WORKING!
 #
 
+from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.source_visitor import compare_source
 
@@ -56,7 +57,7 @@ model7 = Block([
                 ]),
             ),
         ], indent=' '*4),
-        [Arg(Name('a'), Type('Fraction')), Arg(Name('b'), Type('Fraction'))],
+        [ArgDef(Name('a'), Type('Fraction')), ArgDef(Name('b'), Type('Fraction'))],
         ret_type=Type('Fraction'),
     ),
     Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
@@ -71,6 +72,8 @@ model7 = Block([
 ])
 
 compare_source(model7, source7)
+#x, env, stdout = interpret(model7)
+#assert False, (x, env, stdout)
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.
@@ -133,9 +136,11 @@ model8 = Block([
 #                ]),
 #            ),
         ]),
-        [Arg(Name('a'), Type('Number')), Arg(Name('b'), Type('Number'))],
+        [ArgDef(Name('a'), Type('Number')), ArgDef(Name('b'), Type('Number'))],
         ret_type=Type('Number'),
     ),
 ])
 
-compare_source(model8, source8)
+#compare_source(model8, source8)
+#x, env, stdout = interpret(model8)
+#assert stdout == [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)

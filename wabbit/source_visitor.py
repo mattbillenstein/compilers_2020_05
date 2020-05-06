@@ -74,7 +74,7 @@ class SourceVisitor:
         type = self.visit(node.ret_type, ' %s')
         return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
 
-    def visit_Arg(self, node):
+    def visit_ArgDef(self, node):
         # arg of a function call
         return f'{self.visit(node.name)} {self.visit(node.type)}'
 
@@ -90,8 +90,8 @@ class SourceVisitor:
         return f'{self.visit(node.name)}({args})'
 
     def visit_Struct(self, node):
-        args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'
-        return f'struct {self.visit(node.name)} {{\n{args}}}\n'
+        fields = '    ' + ';\n    '.join(self.visit(_) for _ in node.fields) + ';\n'
+        return f'struct {self.visit(node.name)} {{\n{fields}}}\n'
 
     def visit_Enum(self, node):
         args = '    ' + ';\n    '.join(self.visit(_) for _ in node.args) + ';\n'

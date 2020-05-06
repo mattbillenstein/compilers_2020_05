@@ -17,6 +17,7 @@
 
 from wabbit.interp import interpret
 from wabbit.model import *
+from wabbit.parse import parse
 from wabbit.source_visitor import compare_source
 
 # ----------------------------------------------------------------------
@@ -60,14 +61,14 @@ model6 = Block([
         Block([
             Return(BinOp('+', Name('x'), Name('y'))),
         ], indent=' '*4),
-        [Arg(Name('x'), Type('int')), Arg(Name('y'), Type('int'))],
+        [ArgDef(Name('x'), Type('int')), ArgDef(Name('y'), Type('int'))],
         Type('int'),
     ),
     Func(Name('mul'),
         Block([
             Return(BinOp('*', Name('x'), Name('y'))),
         ], indent=' '*4),
-        [Arg(Name('x'), Type('int')), Arg(Name('y'), Type('int'))],
+        [ArgDef(Name('x'), Type('int')), ArgDef(Name('y'), Type('int'))],
         Type('int'),
     ),
     Func(Name('factorial'),
@@ -82,7 +83,7 @@ model6 = Block([
                             Name('n'),
                             Call(Name('factorial'), [
                                 Call(Name('add'), [
-                                    Name('n'), Integer(-1),
+                                    Name('n'), UnaOp('-', Integer(1)),
                                 ]),
                             ]),
                         ]),
@@ -90,7 +91,7 @@ model6 = Block([
                 ], indent=' '*4),
             ),
         ], indent=' '*4),
-        [Arg(Name('n'), Type('int'))],
+        [ArgDef(Name('n'), Type('int'))],
         Type('int'),
     ),
     Func(Name('print_factorials'),
@@ -104,7 +105,7 @@ model6 = Block([
             ),
         ], indent=' '*4),
 
-        [Arg(Name('last'), Type('int'))],
+        [ArgDef(Name('last'), Type('int'))],
     ),
     Func(Name('main'),
         Block([
@@ -118,6 +119,7 @@ model6 = Block([
 compare_source(model6, source6)
 x, env, stdout = interpret(model6)
 assert stdout == [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
+compare_model(parse(source6), model6)
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 
