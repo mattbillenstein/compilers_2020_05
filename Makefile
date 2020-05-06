@@ -1,19 +1,21 @@
 BIN = ~/tmp/virtualenvs/compilers/bin
 PYTHON = $(BIN)/python
 BLACK = $(BIN)/black
+FLAKE8 = $(BIN)/flake8
+MYPY = $(BIN)/mypy
 PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py script_models.py
 
 all: lint type-check test
 
 format:
-	@black --quiet --line-length 99 $(PYTHON_FILES)
+	@$(BIN) --quiet --line-length 99 $(PYTHON_FILES)
 
 lint:
-	@flake8 $(PYTHON_FILES)
+	@$(FLAKE8) $(PYTHON_FILES)
 
 type-check:
-	@mypy --check-untyped-defs --config-file=tox.ini --no-color-output $(PYTHON_FILES)
+	@$(MYPY) --check-untyped-defs --config-file=tox.ini --no-color-output $(PYTHON_FILES)
 
 test:
 	$(PYTEST) --quiet wabbit/tokenize.py
