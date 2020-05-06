@@ -72,7 +72,7 @@ class Environment:
 				return self.consts[i][name]
 		
 		# if you get down here, you didnt find the variable
-		raise RuntimeException(f"{name} not defined before use")
+		raise RuntimeError(f"{name} not defined before use")
 		
 	def setValue(self, name, value):
 		constLevel = -1		# if this stays at -1, then we dont have a const defined with the name
@@ -96,7 +96,7 @@ class Environment:
 	def addValue(self, name, value):
 		# see if we have already defined a const with the same name in the current scope
 		if name in self.consts[self.scopeLevel]:
-			raise RuntimeException(f"{name} is a const at scope level {self.scopeLevel} and cannot be modified")
+			raise RuntimeError(f"{name} is a const at scope level {self.scopeLevel} and cannot be modified")
 			
 		# add the new name/value to the current variables scope
 		self.variables[self.scopeLevel][name] = value		
@@ -104,7 +104,7 @@ class Environment:
 	def addConst(self, name, value):
 		# see if we have already defined a const with the same name in the current scope
 		if name in self.consts[self.scopeLevel]:
-			raise RuntimeException(f"{name} is a const and cannot be modified")
+			raise RuntimeError(f"{name} is a const and cannot be modified")
 			
 		# add the new name/value to the current consts scope
 		self.consts[self.scopeLevel][name] = value		

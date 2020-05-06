@@ -114,16 +114,15 @@ class WabbitLexer(Lexer):
 	MINUS = r'-'
 	TIMES = r'\*'
 	DIVIDE = r'/'
-	INTEGER = r'\d+'
-
-	@_(r'\d+')
-	def INTEGER(self, t):
-		t.value = int(t.value)   # Convert to a numeric value
-		return t
 
 	@_(r'(\d+\.\d*)|(\d*\.\d+)')
 	def FLOAT(self, t):
 		t.value = float(t.value)
+		return t
+
+	@_(r'\d+')
+	def INTEGER(self, t):
+		t.value = int(t.value)   # Convert to a numeric value
 		return t
 
 

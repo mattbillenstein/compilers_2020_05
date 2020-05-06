@@ -182,7 +182,7 @@ class WabbitParser(Parser):
 	# assignment_statement : location ASSIGN expr SEMI
 	#
 	@_("location ASSIGN expr SEMI")
-	def assignment_statement(tokens):
+	def assignment_statement(self, p):
 		return Assignment(p.location, p.expr)
 
 
@@ -200,13 +200,13 @@ class WabbitParser(Parser):
 	#
 	@_("CONST NAME [ type ] ASSIGN expr SEMI")
 	def const_definition(self,p):
-		return ConstDef(p.Name, p.Type, p.expr)
+		return ConstDef(p.NAME, p.type, p.expr)
 
 	# if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
 	#
 	@_("IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]")
 	def if_statement(self, p):
-		return IfConditional(expr, statements0, statements1)
+		return IfConditional(p.expr, p.statements0, p.statements1)
 		
 
 	# while_statement : WHILE expr LBRACE statements RBRACE
