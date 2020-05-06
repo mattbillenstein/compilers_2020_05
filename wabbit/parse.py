@@ -1,4 +1,4 @@
-# parse.py
+# wabbit/parse.py
 #
 # Wabbit parser.  The parser needs to construct the data model or an
 # abstract syntax tree from text input.  The grammar shown here represents
@@ -8,7 +8,7 @@
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
 # The following conventions are used:
-# 
+#
 #       ALLCAPS       --> A token
 #       { symbols }   --> Zero or more repetitions of symbols
 #       [ symbols ]   --> Zero or one occurences of symbols (optional)
@@ -59,18 +59,18 @@
 #      | PLUS expr
 #      | MINUS expr
 #      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
+#      | LPAREN expr RPAREN
 #      | location
 #      | literal
-#      | LBRACE statements RBRACE 
-#       
+#      | LBRACE statements RBRACE
+#
 # literal : INTEGER
 #         | FLOAT
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
-# 
+#         | LPAREN RPAREN
+#
 # location : NAME
 #
 # type      : NAME
@@ -78,7 +78,7 @@
 # empty     :
 # ======================================================================
 
-# How to proceed:  
+# How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
 # take it in tiny pieces.  Focus on one specific part of the language.
@@ -108,20 +108,165 @@
 #
 # If you are highly motivated and want to know how a parser works at a
 # low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
+# It is also fine to use high-level tools such as
 #
-#    - SLY (https://github.com/dabeaz/sly), 
+#    - SLY (https://github.com/dabeaz/sly),
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
 from .model import *
-from .tokenize import tokenize
+from .tokenize import tokenize, WabbitLexer
+from sly import Parser
 
-# Top-level function that runs everything    
+
+# Grammar for Wabbit  (Specificiation of syntax)
+#
+
+class WabbitParser(Parser):
+    tokens = WabbitLexer.tokens  # Token names
+
+
+    precedence = [
+        ('left', LOR),       # a || b
+        ('left', LAND),      # a && b
+        ('left', LT, LE, GT, GE, EQ, NE),     #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
+        ('left', PLUS, MINUS),       # Lower precedence      2 + 3 + 4 --> (2+3) + 4
+        ('left', TIMES, DIVIDE),     # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
+
+        # Unary -x.   -> Super high precedence    2 * -x.
+        #('right', UNARY),    # 'UNARY' is a fake token (does not exist in tokenizer)
+        ]
+
+    # program : statements
+    @_('statements')
+    def program(self, p):
+        return p[0]
+
+    #
+    # statements : { statement }      # zero or more statements { }
+    #
+    @_('{ statement }')
+    def statements(self, p):
+        # p.statement   --- it's already a list of statement (by SLY)
+        return Program(*p.statement)
+
+    # statement : print_statement
+    #           | assignment_statement
+    #           | if_statement
+    #           | const_definition
+    #           ...
+    #
+    @_('print_statement',
+       'assignment_statement',
+       #       'if_statement',
+       'const_definition',
+       )
+    def statement(self, p):
+        return p[0]  # Just return whatever the thing is
+
+    # print_statement : PRINT expression SEMI
+    #
+    @_('PRINT expression SEMI')
+    def print_statement(self, p):  # p contains all information from the parse
+        # Create a node from your model
+        return PrintStatement(expression=p.expression)
+
+    # assignment_statement : location ASSIGN expression SEMI
+    #
+    @_('location ASSIGN expression SEMI')
+    def assignment_statement(self, p):
+        return Assignment(location=p.location,
+                          value=p.expression)
+
+    @_('IF expression clause [ ELSE clause ]')
+    def if_statement(self, p):
+        return IfStatement(condition=p.expression,
+                           consequent=p.clause0,
+                           alternative=p.clause1)
+
+
+
+    @_('LPAREN RPAREN')
+    def unit(self, p):
+        return Unit()
+
+    @_('LBRACE statements RBRACE')
+    def clause(self, p):
+        return Clause(*p.statements)
+
+    @_('PLUS expression',
+       'MINUS expression',
+       'LNOT expression')
+    def expression(self, p):
+        return UnaryOp(op=p[0], operand=p.expression)
+
+    @_('CONST NAME [ type ] ASSIGN expression SEMI')
+    def const_definition(self, p):
+        return ConstDefinition(name=p.NAME0,
+                               type=p.NAME1,
+                               value=p.expression)
+
+
+    @_('VAR NAME [ type ] ASSIGN expression SEMI')
+    def var_definition(self, p):
+        return VariableDefinition(name=p.NAME,
+                                  type=p.type,
+                                  value=p.expression)
+
+    @_('VAR NAME type [ ASSIGN expression ] SEMI')
+    def var_definition(self, p):
+        return VariableDefinition(name=p.NAME,
+                             type=p.type,
+                             value=p.expression)
+    @_('expression SEMI')
+    def expression_statement(self, p):
+        return ExpressionStatement(expression=p.expression)
+
+    @_('expression PLUS expression',
+       'expression MINUS expression',
+       'expression TIMES expression',
+       'expression DIVIDE expression')
+    def expression(self, p):
+        op = p[1]
+        left = p.expression0
+        right = p.expression1
+        return BinOp(op=op, left=left, right=right)
+
+    @_('INTEGER')
+    def expression(self, p):
+        return Integer(int(p.INTEGER))
+
+    @_('FLOAT')
+    def expression(self, p):
+        return Float(float(p.FLOAT))
+
+    @_('NAME')
+    def location(self, p):
+        return Identifier(name=p.NAME)
+
+    @_('NAME')
+    def type(self, p):
+        return p[0]
+
+    @_('CHAR')
+    def expression(self, p):
+        return p[0]
+
+
+
+
+
+def parse_tokens(raw_tokens):
+    parser = WabbitParser()
+    return parser.parse(raw_tokens)
+
+
+# Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)     # You need to implement this part
+    model = parse_tokens(tokens)  # You need to implement this part
     return model
+
 
 # Example of a main program
 def parse_file(filename):
@@ -129,11 +274,13 @@ def parse_file(filename):
         text = file.read()
     return parse_source(text)
 
+
 if __name__ == '__main__':
     import sys
+
     if len(sys.argv) != 2:
         raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
+    model = parse_file(sys.argv[1])
+    print(repr(model))
     print(model)
-
 
