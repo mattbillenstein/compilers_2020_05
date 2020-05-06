@@ -117,6 +117,11 @@
 from .model import *
 from .tokenize import tokenize
 
+# Magic token to signal end-of-file
+class EOF:
+    type = 'EOF'
+    value = 'EOF'
+
 class Tokens:
     def __init__(self, tokens):
         self.tokens = tokens        # <<< raw stream of tokens from the tokenizer (iterator/generator)
@@ -125,7 +130,7 @@ class Tokens:
     def peek(self):
         # Returns the current token, but without consuming it
         if self.lookahead is None:
-            self.lookahead = next(self.tokens)    # Get the next token
+            self.lookahead = next(self.tokens, EOF)    # Get the next token (or EOF)
         return self.lookahead
 
     def expect(self, toktype):
@@ -169,14 +174,22 @@ def parse_statements(tokens):
 #           | assignment_statement
 #           | if_statement
 #           | const_definition
-#           ...
+#           | var_definition
+#           | while_statement
 #
+
 def parse_statement(tokens):
     tok = tokens.peek()     # Look at the next token (does not consume)
     if tok.type == 'PRINT':
         return parse_print_statement(tokens)
     elif tok.type == 'CONST':
         return parse_const_definition(tokens)
+    elif tok.type == 'VAR':
+        return parse_var_definition(tokens)
+    elif tok.type == 'IF':
+        return parse_if_statement(tokens)
+    elif tok.type == 'WHILE':
+        return parse_while_statement(tokens)
     elif tok.type == 'NAME':                              #  x = 2;    Assignment Statement
         return parse_assignment_statement(tokens)         #  x + 2;    Expression/Statement   (Which path???)
     else:
@@ -209,6 +222,17 @@ def parse_const_definition(tokens):
     expr = parse_expression(tokens)
     tokens.expect('SEMI')
     return ConstDefinition(nametok.value, typetok.value if typetok else None, expr)
+
+def parse_var_definition(tokens):
+    tokens.expect('VAR')
+    nametok = tokens.expect('NAME')
+    typetok = tokens.accept('NAME')     # Optional type token.
+    if tokens.accept('ASSIGN'):
+        expr = parse_expression(tokens)
+    else:
+        expr = None
+    tokens.expect('SEMI')
+    return VarDefinition(nametok.value, typetok.value if typetok else None, expr)
 
 # expression : term { PLUS|MINUS term }       [ term ]  +  [ term ] - [ term ]
 #                                                2            3*4       2*3*4

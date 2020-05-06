@@ -122,8 +122,19 @@ from sly import Parser
 #
 
 class WabbitParser(Parser):
+    debugfile = 'parser.out'
     tokens = WabbitLexer.tokens      # Token names
 
+    precedence = [
+        ('left', LOR),       # a || b
+        ('left', LAND),      # a && b
+        ('left', LT, LE, GT, GE, EQ, NE),     #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
+        ('left', PLUS, MINUS),       # Lower precedence      2 + 3 + 4 --> (2+3) + 4
+        ('left', TIMES, DIVIDE),     # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
+
+        # Unary -x.   -> Super high precedence    2 * -x.
+        ('right', UNARY),    # 'UNARY' is a fake token (does not exist in tokenizer)
+        ]
     # program : statements
     @_('statements')
     def program(self, p):
@@ -214,9 +225,9 @@ class WabbitParser(Parser):
         right = p.expression1
         return BinOp(op, left, right)
 
-    @_('PLUS expression',
-       'MINUS expression',
-       'LNOT expression')
+    @_('PLUS expression %prec UNARY',      # Use the high precedence of the fake "UNARY" token
+       'MINUS expression %prec UNARY',     # based on "yacc"  (yet another compiler compiler)
+       'LNOT expression %prec UNARY')      # Rewrite the grammar to not have ambiguity.
     def expression(self, p):
         return UnaryOp(p[0], p.expression)
 
@@ -228,7 +239,7 @@ class WabbitParser(Parser):
     def expression(self, p):
         return LoadLocation(p.location)
 
-    @_('INTEGER')
+    @_('INTEGER')           # triggers
     def expression(self, p):
         return Integer(int(p.INTEGER))
     
