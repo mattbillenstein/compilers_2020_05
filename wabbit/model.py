@@ -174,10 +174,8 @@ class Bool(Expression):
 class CharacterLiteral(Expression):
     def __init__(self, value):
         assert isinstance(value, str)
-        assert len(ast.literal_eval(value)) == 1
-        #  "'H'" -> 'H'
-        #  "'\\n'" -> '\\n'
-        super().__init__(value=ast.literal_eval(value))
+
+        super().__init__(value=value)
 
     def to_source(self):
         return f"{repr(self.value)}"

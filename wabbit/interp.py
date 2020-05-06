@@ -43,7 +43,7 @@ from functools import singledispatch
 from .model import *
 import operator
 import logging
-import copy
+import ast
 from collections import UserDict
 from collections import deque
 from contextlib import contextmanager
@@ -322,10 +322,17 @@ def interpret_expression_statement_node(expression_statement_node, env):
 def interpret_unary_op_node(unary_op_node, env):
     op = unary_op_node.op
     expr = unary_op_node.operand
-    value = interpret(expr)
+    value = interpret(expr, env)
     if op == '+':
         return value
     elif op == '-':
         return value * -1
     else:
         raise RuntimeError(f'Unexpected unary operator: "{op}"')
+
+@interpret.register(CharacterLiteral)
+def interpret_character_literal(character_literal_node, env):
+    s = ast.literal_eval(character_literal_node.value)
+    if len(s) != 1:
+        raise RuntimeError(f'Character literal of unexpected length > 1: {repr(s)}')
+    return s
