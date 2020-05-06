@@ -15,11 +15,38 @@ def harness(name, s):
     print()
 
 harness('0', '1+1;')
+harness('0 0.5', '1.+1.;')
 harness('0 1', '1+1.;')
 harness('0 2', '1+1.;')
+harness('0 2.5', '1.+1.+2.;')
 harness('0 3', '1.+1.+2;')
-# harness('0 4', '1 && 2;') TODO Oh huh expr && expr doesn't parse...
+harness('0 4', '1 && 2;')
+harness('0 5', 'true && false;')
+harness('0 5', 'true && false || 3;')
+# TODO rest of BinOp
 # TODO UnaryOp
+# TODO Statements
+# TODO PrintStatement
+harness('Const 0', 'const woo = 1;')
+harness('Const 1', '''
+    const woo = 1;
+    woo = 2;
+        ''')
+# TODO rest of Const (what?)
+# TODO Var
+# TODO Assign
+# TODO Variable
+# TODO If
+# TODO IfElse
+# TODO While
+# TODO CompoundExpression
+# TODO Function
+# TODO Arguments
+# TODO Argument
+# TODO Return
+# TODO FunctionInvocation
+# TODO InvokingArguments
+# TODO InvokingArgument
 
 
 

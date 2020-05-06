@@ -36,7 +36,7 @@ class FranError(Exception):
 # Internal function used to check nodes with an environment
 @singledispatch
 def check(node, env):
-    raise RuntimeError(f"Can't interpret {node}")
+    raise RuntimeError(f"Can't check {node}")
 
 @check.register(Statements)
 def _(node, env):
@@ -44,11 +44,18 @@ def _(node, env):
 
 @check.register(BinOp)
 def _(node, env):
+    allowed = {
+            ('+', 'Integer', 'Integer'): 'Integer',
+            ('+', 'Float', 'Float'): 'Float',
+            ('&&', 'Boolean', 'Boolean'): 'Boolean',
+            }
     left = check(node.left, env)
     right = check(node.right, env)
-    if left != right:
+    try:
+        result = allowed[(node.op, left, right)]
+    except KeyError:
         raise FranError(f'Type inconsistency: {left} and {right} for {node.op}')
-    return left # TODO assumes BinOp returns the left type but sometimes (eg compare) it changes
+    return result
 
 @check.register(Integer)
 def _(node, env):
@@ -58,9 +65,22 @@ def _(node, env):
 def _(node, env):
     return 'Float'
 
-@check.register(PrintStatement)
+@check.register(Boolean)
 def _(node, env):
-    return
+    return 'Boolean'
+
+@check.register(Const)
+def _(node, env):
+    env[node.name] = node
+    return node
+
+@check.register(Assign)
+def _(node, env):
+    # can't reassign a const
+    existing = env[node.name.name] # TODO eek another location thing, name.name
+    if isinstance(existing, Const):
+        raise FranError(f"Can't reassign const: {node.name.name}")
+    return node
 
 
 
