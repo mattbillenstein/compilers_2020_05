@@ -137,14 +137,14 @@ class Tokens:
         # Requires the next token to have toktype or SyntaxError
         tok = self.peek()
         if tok.type != toktype:
-            raise SyntaxError()
+            raise SyntaxError(f'Expected {toktype}. Got {tok.type})')
         self.lookahead = None       # Consume the token and return it
         return tok
 
-    def accept(self, toktype):
+    def accept(self, *toktypes):
         # Accept the next token if it has toktype, otherwise return None  (not an error)
         tok = self.peek()
-        if tok.type != toktype:
+        if tok.type not in toktypes:
             return None
         self.lookahead = None      # Consume the token
         return tok
@@ -156,6 +156,7 @@ class Tokens:
 def parse_program(tokens):
     statements = parse_statements(tokens)
     tokens.expect('EOF')
+    return statements
 
 # 
 # statements : { statement }      # zero or more statements { }
@@ -168,7 +169,7 @@ def parse_statements(tokens):
         if statement is None:
             break
         statements.append(statement)
-    return Statement(statements)        # From the model
+    return Statements(statements)        # From the model
 
 # statement : print_statement
 #           | assignment_statement
@@ -236,26 +237,30 @@ def parse_var_definition(tokens):
 
 # expression : term { PLUS|MINUS term }       [ term ]  +  [ term ] - [ term ]
 #                                                2            3*4       2*3*4
-def parse_expression():
-    return parse_factor()
+def parse_expression(tokens):
+    leftterm = parse_term(tokens)
+    while True:
+        tok = tokens.accept('PLUS','MINUS')
+        if tok:
+            op = tok.value
+            leftterm = BinOp(op, leftterm, parse_term(tokens))
+        else:
+            break
+    return leftterm
 
 # term : factor { TIME|DIVIDE factor }        
 #
 def parse_term(tokens):
     leftfactor = parse_factor(tokens)
     while True:
-        tok = tokens.peek()
-        if tok.type in { 'TIMES', 'DIVIDE'}:
-            op = tokens.accept(tok.type)
-            rightfactor = parse_factor(tokens)
-            leftfactor = BinOp(op.value, leftfactor, rightfactor)
+        tok = tokens.accept('TIMES', 'DIVIDE')
+        if tok:
+            leftfactor = BinOp(tok.value, leftfactor, parse_factor(tokens))
         else:
             break
     return leftfactor
 
-# factor : INTEGER
-#        | FLOAT
-#
+# factor : INTEGER | FLOAT | CHAR | LPAREN expression RPAREN | +/- expression
 def parse_factor(tokens):
     tok = tokens.accept('INTEGER')
     if tok:
@@ -263,11 +268,26 @@ def parse_factor(tokens):
     tok = tokens.accept('FLOAT')
     if tok:
         return Float(float(tok.value))
-    raise SyntaxError()
+    tok = tokens.accept('TRUE', 'FALSE')
+    if tok:
+        return Bool(tok.value == 'true')
+    if tokens.accept('LPAREN'):
+        expr = parse_expression(tokens)
+        tokens.expect('RPAREN')
+        return Grouping(expr)
+    tok = tokens.accept('PLUS','MINUS','LNOT')
+    if tok:
+        expr = parse_factor(tokens)
+        return UnaryOp(tok.value, expr)
+        
+    # Only other option at this point is a location
+    loc = parse_location(tokens)
+    return LoadLocation(loc)
 
 # location : NAME
-def parse_location():
-    ...
+def parse_location(tokens):
+    tok = tokens.expect('NAME')
+    return NamedLocation(tok.value)
 
 def parse_tokens(raw_tokens):  
     tokens = Tokens(raw_tokens)
@@ -289,7 +309,7 @@ if __name__ == '__main__':
     import sys
     if len(sys.argv) != 2:
         raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
+    model = parse_file(sys.argv[1])
     print(model)
 
 

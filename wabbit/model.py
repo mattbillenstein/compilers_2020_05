@@ -365,7 +365,7 @@ from functools import singledispatch
 
 @singledispatch
 def to_source(node):
-    raise RuntimeError("Can't generate source for {node}")
+    raise RuntimeError(f"Can't generate source for {node}")
 
 rule = to_source.register     # Decorator shortcut
 
