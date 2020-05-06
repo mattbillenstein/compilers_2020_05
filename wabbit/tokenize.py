@@ -1,14 +1,15 @@
-from typing import NamedTuple
 import re
 
 import utils
 
-TOKENS = [
+KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
+TYPES = {"bool", "char", "int", "float"}
+TOKEN_TYPES = [
     ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
-    ("SEMICOLON", r";"),  # Statement terminator
-    ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),  # Identifiers
-    ("OP", r"[+\-*/]"),  # Arithmetic operators
-    ("NEWLINE", r"\n"),  # Line endings
+    ("SEMICOLON", r";"),
+    ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),
+    ("OP", r"[+\-*/]"),
+    ("NEWLINE", r"\n"),
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
     ("LBRACE", "{"),
@@ -26,10 +27,6 @@ TOKENS = [
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
 ]
 
-KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
-TYPES = {"bool", "char", "int", "float"}
-
-
 IGNORE = " "
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
@@ -42,6 +39,7 @@ IGNORE = " "
 
 def _tokenize(text):
     while text:
+        # Ignore white space
         if match := re.match(IGNORE, text):
             text = text[match.end() :]
             continue
@@ -51,7 +49,7 @@ def _tokenize(text):
         if text[:2] == "/*":
             text = text[text.find("*/") :]
 
-        for type_, *regexp in TOKENS:
+        for type_, *regexp in TOKEN_TYPES:
             # The tuple may specify the capture group as an optional third element.
             if len(regexp) == 2:
                 regexp, group = regexp  # type: ignore

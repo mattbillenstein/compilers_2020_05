@@ -35,4 +35,4 @@ test-elisp:
 		emacs -batch -l $$f -f ert-run-tests-batch-and-exit; \
 	done
 
-.PHONY: format lint type-check test-python test-elisp test
+.PHONY: all format lint type-check test test-python-exercises test-elisp
