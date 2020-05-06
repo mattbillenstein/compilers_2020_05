@@ -28,7 +28,7 @@
 # The directory tests/Errors has Wabbit programs with various errors.
 
 from .model import *
-
+from collections import ChainMap
 
 # Code almost identical to interpreter
 
@@ -45,10 +45,10 @@ rule = check.register     # Decorator shortcut
 
 @rule(Statements)
 def check_statements(node, env):
-    result = None
+    resulttype = None
     for stmt in node.statements:
-        result = check(stmt, env)
-    return result
+        resulttype = check(stmt, env)
+    return resulttype if resulttype else "unit"
 
 @rule(Integer)
 def check_integer(node, env):
@@ -63,10 +63,49 @@ def check_float(node, env):
 def check_bool(node, env):
     return "bool"
 
+@rule(Char)
+def check_char(node, env):
+    return "char"
+
 # Capability/type table
 _bin_ops = {
+    # Integer operations
     ('+', 'int', 'int') : 'int',
     ('-', 'int', 'int') : 'int',
+    ('*', 'int', 'int') : 'int',
+    ('/', 'int', 'int') : 'int',
+    ('<', 'int', 'int') : 'bool',
+    ('<=', 'int', 'int') : 'bool',
+    ('>', 'int', 'int') : 'bool',
+    ('>=', 'int', 'int') : 'bool',
+    ('==', 'int', 'int') : 'bool',
+    ('!=', 'int', 'int') : 'bool',
+
+    # Float operations
+    ('+', 'float', 'float') : 'float',
+    ('-', 'float', 'float') : 'float',
+    ('*', 'float', 'float') : 'float',
+    ('/', 'float', 'float') : 'float',
+    ('<', 'float', 'float') : 'bool',
+    ('<=', 'float', 'float') : 'bool',
+    ('>', 'float', 'float') : 'bool',
+    ('>=', 'float', 'float') : 'bool',
+    ('==', 'float', 'float') : 'bool',
+    ('!=', 'float', 'float') : 'bool',
+
+    # Char operations
+    ('<', 'char', 'char') : 'bool',
+    ('<=', 'char', 'char') : 'bool',
+    ('>', 'char', 'char') : 'bool',
+    ('>=', 'char', 'char') : 'bool',
+    ('==', 'char', 'char') : 'bool',
+    ('!=', 'char', 'char') : 'bool',
+
+    # Bool operations
+    ('==', 'bool', 'bool') : 'bool',
+    ('!=', 'bool', 'bool') : 'bool',
+    ('&&', 'bool', 'bool') : 'bool',
+    ('||', 'bool', 'bool') : 'bool',
 }
 
 @rule(BinOp)
@@ -79,15 +118,21 @@ def check_binop(node, env):
         print(f"type error. Can't do {lefttype} {node.op} {righttype}")
     return result_type
 
+_unary_ops = {
+    ('+', 'int') : 'int',
+    ('-', 'int') : 'int',
+    ('+', 'float') : 'float',
+    ('-', 'float') : 'float',
+    ('!', 'bool') : 'bool',
+    }
+
 @rule(UnaryOp)
 def check_unary_op(node, env):
-    opval = check(node.operand, env)
-    if node.op == '+':
-        return opval
-    elif node.op == '-':
-        return -opval
-    else:
-        raise RuntimeError(f'Unsupported operator {node.op}')
+    optype = check(node.operand, env)
+    resulttype = _unary_ops.get((node.op, optype))
+    if not resulttype:
+        print(f"type error. Can't do {node.op}{optype}")
+    return resulttype
 
 @rule(Grouping)
 def check_group(node, env):
@@ -100,27 +145,27 @@ def check_compound(node, env):
 @rule(LoadLocation)
 def check_load_location(node, env):
     # Feels wrong. Having to look inside location to get a name.
-    # Think about.
-    return env[node.location.name]
+    loc = check(node.location, env)
+    if loc:
+        return loc.type
 
 @rule(PrintStatement)
 def check_print_statement(node, env):
-    value = check(node.expression, env)
-    print(value)
+    check(node.expression, env)
 
 @rule(ConstDefinition)
 def check_const_definition(node, env):
-    # const pi int = 3.14159;      // Allowed in the grammar/parser
-    value_type = check(node.value, env)   // --> float
+    value_type = check(node.value, env)
     if node.type and node.type != value_type:
         print(f"Error: {node.name} is not declared as {value_type}")
-    env[node.name] = node     # Put the ConstDefinition node in the environment
+    env[node.name] = node     # Put the ConstDefinition itself node in the environment
 
 @rule(VarDefinition)
 def check_var_definition(node, env):
-    # var x int;
     if node.value:
         value_type = check(node.value, env)
+        if node.type and node.type != value_type:
+            print(f"Error: {node.name} not declared as {value_type}")
     env[node.name] = node    # Put the VarDefinition node in environment
 
 @rule(AssignmentStatement)
@@ -129,7 +174,7 @@ def check_assignment(node, env):
     location = expression;
     '''
     expr_type = check(node.expression, env)     # Right side
-    defn = env.get(node.location.name)    # What is it????
+    defn = check(node.location, env)
     if defn is None:
         print("Error: undefined location!")
 
@@ -158,6 +203,13 @@ def check_while_statement(node, env):
 @rule(ExpressionStatement)
 def check_expr_statement(node, env):
     return check(node.expression, env)
+
+@rule(NamedLocation)
+def check_location(node, env):
+    defn = env.get(node.name)
+    if not defn:
+        print(f"{node.name} not defined!")
+    return defn
 
 # Sample main program
 def main(filename):
