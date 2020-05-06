@@ -5,6 +5,7 @@ FLAKE8 = $(BIN)/flake8
 MYPY = $(BIN)/mypy
 PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py script_models.py
+WABBITSCRIPT_FILES = tests/Script/*.wb
 
 all: lint type-check test wabbitscript-examples
 
@@ -28,6 +29,9 @@ test-python-exercises:
 
 wabbitscript-examples:
 	$(PYTHON) script_models.py
+	@for f in $(WABBITSCRIPT_FILES); do \
+		$(PYTHON) -m wabbit.tokenize $$f > /dev/null; \
+	done
 
 ELISP_FILES = $(shell fd .el$$ exercises)
 test-elisp:
@@ -35,4 +39,4 @@ test-elisp:
 		emacs -batch -l $$f -f ert-run-tests-batch-and-exit; \
 	done
 
-.PHONY: all format lint type-check test test-python-exercises test-elisp
+.PHONY: all format lint type-check test test-python-exercises wabbitscript-examples test-elisp
