@@ -86,22 +86,6 @@ class WabbitLexer(Lexer):
     ignore_eol_comments = r'//.*'
     ignore_comments = r'/\*(.|\n)*?\*/'
 
-    # The following is adopted from Spencer
-    _escape_sequences = "|".join([
-        r'\\\\',
-        r"\\'",
-        r'\\\"',
-        r'\\a',
-        r'\\b',
-        r'\\f',
-        r'\\n',
-        r'\\r',
-        r'\\t',
-        r'\\v',
-        r'\\ooo',
-        r'\\xhh',
-    ])
-
 # Reserved Keywords:
     CONST   = r'const'
     VAR     = r'var'
@@ -119,6 +103,17 @@ class WabbitLexer(Lexer):
     # Literals
     FLOAT = r'(\d+\.\d*|\.\d+)'
     INTEGER = r'\d+'
+
+    # The following is adopted from Spencer
+    _escape_sequences = "|".join([
+        r'\\\\',
+        r"\\'",
+        r'\\\"',
+        r'\\[abfnrtv]',
+        r'\\\d{1,3}',
+        r'\\x[a-fA-F0-9]{1,2}',
+    ])
+
     CHAR = r"'([\s\S]|%s)'" % _escape_sequences
 
     @_(CHAR)
@@ -153,7 +148,6 @@ class WabbitLexer(Lexer):
     RBRACE   = r'}'
     DOT      = r'\.'
 
-#     ignore = ' \t'
 
 # High level function that takes input source text and turns it into tokens.
 # This is a natural place to use some kind of generator function.

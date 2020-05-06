@@ -309,7 +309,6 @@ class Var(Definition):
                 f"{self.name}, {self.type})")
 
     def is_valid(self):
-        print("self.type = ", self.type)
         assert isinstance(self.type, Type)
         assert isinstance(self.name, str)
         assert isinstance(self.expression, (str, Expression))
