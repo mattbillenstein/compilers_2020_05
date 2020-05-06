@@ -7,78 +7,113 @@
 #
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
-# The following conventions are used:
-# 
-#       ALLCAPS       --> A token
-#       { symbols }   --> Zero or more repetitions of symbols
-#       [ symbols ]   --> Zero or one occurences of symbols (optional)
-#       s | t         --> Either s or t (a choice)
-#
-#
+# program : statements EOF
+
 # statements : { statement }
-#
+
 # statement : print_statement
 #           | assignment_statement
 #           | variable_definition
 #           | const_definition
+#           | func_definition
+#           | struct_definition
+#           | enum_definition
 #           | if_statement
+#           | if_let_statement
 #           | while_statement
+#           | while_let_statement
 #           | break_statement
 #           | continue_statement
-#           | expr
-#
-# print_statement : PRINT expr SEMI
-#
-# assignment_statement : location ASSIGN expr SEMI
-#
-# variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
-#                     | VAR NAME type [ ASSIGN expr ] SEMI
-#
-# const_definition : CONST NAME [ type ] ASSIGN expr SEMI
-#
+#           | return_statement
+#           | expression SEMI
+
+# print_statement : PRINT expression SEMI
+
+# assignment_statement : location ASSIGN expression SEMI
+
+# variable_definition : VAR NAME [ type ] ASSIGN expression SEMI
+#                     | VAR NAME type [ ASSIGN expression ] SEMI
+
+# const_definition : CONST NAME [ type ] ASSIGN expression SEMI
+
+# func_definition : FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE
+
+# parameters : parameter { COMMA parameter }
+#            | empty
+
+# parameter  : NAME type
+
+# struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
+
+# struct_field : NAME type SEMI
+
+# enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
+
+# enum_choice : NAME SEMI
+#             | NAME LPAREN type RPAREN
+
 # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
-#
+
+# if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+
 # while_statement : WHILE expr LBRACE statements RBRACE
-#
+
+# while_let_statement : WHILE LET pattern ASSIGN expression LBRACE statements RBRACE
+
 # break_statement : BREAK SEMI
-#
+
 # continue_statement : CONTINUE SEMI
-#
-# expr : expr PLUS expr        (+)
-#      | expr MINUS expr       (-)
-#      | expr TIMES expr       (*)
-#      | expr DIVIDE expr      (/)
-#      | expr LT expr          (<)
-#      | expr LE expr          (<=)
-#      | expr GT expr          (>)
-#      | expr GE expr          (>=)
-#      | expr EQ expr          (==)
-#      | expr NE expr          (!=)
-#      | expr LAND expr        (&&)
-#      | expr LOR expr         (||)
-#      | PLUS expr
-#      | MINUS expr
-#      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
-#      | location
-#      | literal
-#      | LBRACE statements RBRACE 
-#       
+
+# return_statement : RETURN expression SEMI
+
+# expression : orterm { LOR ortem }
+
+# orterm : andterm { LAND andterm }
+
+# andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
+
+# sumterm : multerm { PLUS|MINUS multerm }
+
+# multerm : factor { TIMES|DIVIDE factor }
+
+# factor : literal
+#        | location
+#        | enum_value
+#        | match
+#        | LPAREN expression RPAREN
+#        | PLUS expression
+#        | MINUS expression
+#        | LNOT expression
+#        | NAME LPAREN exprlist RPAREN
+#        | LBRACE statements RBRACE
+
 # literal : INTEGER
 #         | FLOAT
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
-# 
-# location : NAME
-#
-# type      : NAME
-#
-# empty     :
-# ======================================================================
+#         | LPAREN RPAREN
 
-# How to proceed:  
+# exprlist : expression { COMMA expression }
+#          | empty
+
+# location : NAME
+#          | expression DOT NAME
+
+# enum_value : NAME DCOLON NAME
+#            | NAME DCOLON NAME LPAREN expression RPAREN
+
+# match : MATCH expression LBRACE { matchcase } RBRACE
+
+# matchcase : pattern ARROW expression SEMI
+
+# pattern   : NAME
+#           | NAME LPAREN NAME RPAREN
+
+# type      : NAME
+
+# empty     :
+# How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
 # take it in tiny pieces.  Focus on one specific part of the language.
@@ -108,20 +143,47 @@
 #
 # If you are highly motivated and want to know how a parser works at a
 # low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
+# It is also fine to use high-level tools such as
 #
-#    - SLY (https://github.com/dabeaz/sly), 
+#    - SLY (https://github.com/dabeaz/sly),
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
+from sly import Parser
 from .model import *
-from .tokenize import tokenize
+from .tokenize import tokenize, WabbitLexer
 
-# Top-level function that runs everything    
+
+class WabbitParser(Parser):
+    tokens = WabbitLexer.tokens
+
+    @_("factor TIMES factor")
+    def multerm(self, p):
+        return BinOp("*", p.factor0, p.factor1)
+
+    @_("factor DIVIDE factor")
+    def multerm(self, p):
+        return BinOp("/", p.factor0, p.factor1)
+
+    @_("literal")
+    def factor(self, p):
+        return p.literal
+
+    @_("INTEGER")
+    def literal(self, p):
+        return Integer(int(p.INTEGER))
+
+    @_("FLOAT")
+    def literal(self, p):
+        return Float(float(p.FLOAT))
+
+
+# Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)     # You need to implement this part
+    model = parse_tokens(tokens)  # You need to implement this part
     return model
+
 
 # Example of a main program
 def parse_file(filename):
@@ -129,11 +191,12 @@ def parse_file(filename):
         text = file.read()
     return parse_source(text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
+        raise SystemExit("Usage: wabbit.parse filename")
     model = parse(sys.argv[1])
     print(model)
-
 

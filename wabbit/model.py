@@ -354,6 +354,14 @@ class Float(Expression):
     def __repr__(self):
         return f"Float({self.value})"
 
+    def __eq__(self, other):
+        if not type(self) == type(other):
+            return False
+        return self.value == other.value
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 class Const(Definition):
     """
@@ -430,6 +438,14 @@ class Integer(Expression):
     def __repr__(self):
         return f"Integer({self.value})"
 
+    def __eq__(self, other):
+        if not type(self) == type(other):
+            return False
+        return self.value == other.value
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 class UnaryOp(Expression):
     """
@@ -461,6 +477,18 @@ class BinOp(Expression):
 
     def __repr__(self):
         return f"BinOp({self.op}, {self.left}, {self.right})"
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return (
+            self.op == other.op
+            and self.left == other.left
+            and self.right == other.right
+        )
+
+    def __hash__(self):
+        return hash(self.op) ^ hash(self.left) ^ hash(self.right)
 
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
