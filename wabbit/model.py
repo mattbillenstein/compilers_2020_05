@@ -108,9 +108,9 @@ class ExpressionStatement(Expression, Statement):
         return f"{src};"
 
 
-class Struct(Definition):
-    def __init__(self, *fields):
-        super().__init__(fields=tuple(fields))
+class StructDefinition(Definition):
+    def __init__(self, name, *fields):
+        super().__init__(name=name, fields=tuple(fields))
         assert all(isinstance(field, StructField) for field in self.fields)
         c = Counter(field.name for field in self.fields)
         for name, count in c.items():
@@ -132,12 +132,14 @@ class FieldLookup(Location):
     """
 
     def __init__(self, struct, fieldname):
-        assert isinstance(struct, Struct)
+        assert isinstance(struct, StructDefinition)
         assert isinstance(fieldname, str)
         assert any(
             field.name == fieldname for field in struct.fields
         ), f"Struct {struct} has no field {fieldname}"  # Maybe this isn't the right place for this
 
+    def to_source(self):
+        return f"self."
 
 class Integer(Expression):
     """
@@ -452,6 +454,17 @@ class FunctionCall(Expression):
 
     def to_source(self):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
+
+class StructInstantiate(Expression):
+    def __init__(self, struct_name, arguments):
+        assert isinstance(struct_name, str)
+        assert arguments is None or isinstance(arguments, Iterable)
+        arguments = tuple(arguments) if arguments else tuple()
+        assert all(isinstance(arg, Expression) for arg in arguments)
+        super().__init__(struct_name=struct_name, arguments=arguments)
+
+    def to_source(self):
+        return f"{self.struct_name}({', '.join(str(arg) for arg in self.arguments)})"
 
 
 class BreakStatement(Statement):

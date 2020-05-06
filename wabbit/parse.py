@@ -301,7 +301,7 @@ class WabbitParser(Parser):
 
     @_("STRUCT NAME LBRACE { struct_field } RBRACE")
     def struct_definition(self, p):
-        return Struct(*p.struct_field)
+        return StructDefinition(name=p.NAME, *p.struct_field)
 
     @_("NAME type")
     def parameter(self, p):

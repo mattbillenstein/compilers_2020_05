@@ -47,12 +47,15 @@ import ast
 from collections import UserDict
 from collections import deque
 from contextlib import contextmanager
+from typing import NamedTuple
+from collections import namedtuple
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 def wabbit_divide(a, b):
@@ -62,6 +65,7 @@ def wabbit_divide(a, b):
         return operator.truediv(a, b)
     else:
         raise RuntimeError(f'Cannot divide objects of type "{type(a)}" and "{type(b)}"')
+
 
 OPERATIONS = {
     "+": operator.add,
@@ -289,6 +293,12 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
 def interpret_clause_node(clause_node, env: Environment):
     with env.child_env():
         for statement in clause_node.statements:
+            if isinstance(statement, BreakStatement):
+                break
+            if isinstance(statement, ContinueStatement):
+                continue
+            if isinstance(statement, ReturnStatement):
+                return interpret(statement, env)  # not sure about this
             interpret(statement, env)
 
 
@@ -323,16 +333,82 @@ def interpret_unary_op_node(unary_op_node, env):
     op = unary_op_node.op
     expr = unary_op_node.operand
     value = interpret(expr, env)
-    if op == '+':
+    if op == "+":
         return value
-    elif op == '-':
+    elif op == "-":
         return value * -1
     else:
         raise RuntimeError(f'Unexpected unary operator: "{op}"')
+
 
 @interpret.register(CharacterLiteral)
 def interpret_character_literal(character_literal_node, env):
     s = ast.literal_eval(character_literal_node.value)
     if len(s) != 1:
-        raise RuntimeError(f'Character literal of unexpected length > 1: {repr(s)}')
+        raise RuntimeError(f"Character literal of unexpected length > 1: {repr(s)}")
     return s
+
+
+@interpret.register(BreakStatement)
+def interpret_break_statement(break_statement_node, env):
+    raise RuntimeError(
+        "break statement should not have been actually interpreted. Did you use break outside a while loop?"
+    )
+
+
+@interpret.register(ContinueStatement)
+def interpret_continue_statement(_, __):
+    raise RuntimeError(
+        "continue statement should not have been actually interpreted. Did you use continue outside a while loop?"
+    )
+
+
+@interpret.register(ReturnStatement)
+def interpret_return_statement(return_statement_node, env):
+    return interpret(return_statement_node.expression, env)
+
+
+@interpret.register(FunctionCall)
+def interpret_function_call_node(function_call_node, env):
+    func_name = function_call_node.name
+    arguments = function_call_node.arguments
+    func = env[func_name]
+    func_clause = func.body
+    arg_values = []
+    # first evaluate the argument expressions
+    for arg_expr in arguments:
+        arg_values.append(interpret(arg_expr, env))
+    # inject argument values into the environment and then run the function clause
+    with env.child_env():
+        for param, arg_val in zip(func.parameters, arguments):
+            env[param.name] = arg_val
+        return interpret(func_clause, env)
+
+
+@interpret.register(StructField)
+def interpret_struct_field_node(struct_field_node, env):
+    Field = namedtuple("Field", ["name", "type"])
+    return Field(struct_field_node.name, struct_field_node.type)
+
+
+@interpret.register(StructDefinition)
+def interpret_struct_definition_node(struct_def_node, env):
+    fields = []
+    for field in struct_def_node.fields:
+        field = interpret(field, env)
+        type_ = field.type
+        t = TypeVar(f"{type_}")
+        # Maybe do some better type conversions later instead for bool/int/float/str/etc
+        fields.append((field.name, t))
+    struct = NamedTuple(struct_def_node.name, fields)
+    env[struct_def_node.name] = struct
+
+
+@interpret.register(StructInstantiate)
+def interpret_struct_instantiation_node(struct_inst_node, env):
+    struct = env[struct_inst_node.struct_name]
+    arguments = struct_inst_node.arguments
+    arg_values = []
+    # first evaluate the argument expressions
+    for arg_expr in arguments:
+        arg_values.append(interpret(arg_expr, env))
