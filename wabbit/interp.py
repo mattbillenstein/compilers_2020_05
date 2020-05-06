@@ -35,9 +35,11 @@ class Interpreter(ModelVisitor):
     def visit_Statements(self, node):
         for stmt in node.statements:
             stmt.visit(self)
+        return None
     
     def visit_Program(self, node):
-        return node.statements.visit(self)
+        node.statements.visit(self)
+        return None
     
     def visit_BlockNode(self, node):
         raise NotImplementedError
@@ -79,19 +81,15 @@ class Interpreter(ModelVisitor):
         self.stdout.append(str(node.expr.visit(self)))
 
     def visit_ConditionalStatement(self, node):
-        block = None
         if node.cond.visit(self):
-            block = self.blockT
+            node.blockT.visit(self)
         else:
-            block = self.blockF
-        for stmt in block:
-            stmt.visit(self)
+            node.blockF.visit(self)
         return None
 
     def visit_ConditionalLoopStatement(self, node):
         while node.cond.visit(self):
-            for stmt in node.block:
-                stmt.visit(self)
+            node.block.visit(self)
         return None
 
     def visit_ContinueLoopStatement(self, node):
@@ -149,7 +147,7 @@ class Interpreter(ModelVisitor):
     
     def visit_BlockExpression(self, node):
         ret = None
-        for stmt in node.block:
+        for stmt in node.block.statements:
             ret = stmt.visit(self)
         return ret
     

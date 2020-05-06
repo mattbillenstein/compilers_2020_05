@@ -21,8 +21,8 @@
 
 
 from wabbit.model import *
-from wabbit.decompile import WabbitDecompiler
-from wabbit.parse import parse_tokens
+from wabbit.decompile import to_wabbit
+from wabbit.parse import to_model
 from wabbit.tokenize import to_tokens, Token
 from wabbit.check import check_program
 from wabbit.interp import interpret_program
@@ -36,17 +36,21 @@ if 'unittest.util' in __import__('sys').modules:
 
 class ScriptModels(unittest.TestCase):
     def setUp(self):
-        self.decompiler = WabbitDecompiler()
         self.maxDiff = None
+
+    def programs_match(self, wabbit, tokens, model, stdout):
+        self.assertEqual(list(to_tokens(wabbit)), tokens)
+        self.assertEqual(to_model(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program(model), stdout)
+        self.assertEqual('\n'.join(to_wabbit(model)), wabbit)
 
     def test_simple(self):
         # ----------------------------------------------------------------------
         # Simple Expression
         #
-        # This one is given to you as an example. You might need to adapt it
-        # according to the names/classes you defined in wabbit.model
         
-        source = "2 + 3 * 4;"
+        wabbit = "2 + 3 * 4;"
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
             Token(type='PLUS', value='+', lineno=1, index=2),
@@ -57,11 +61,7 @@ class ScriptModels(unittest.TestCase):
         ]
         model = Statements([ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))])
         stdout = []
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), stdout)
+        self.programs_match(wabbit, tokens, model, stdout)
 
     def test_print(self):
         
@@ -72,7 +72,7 @@ class ScriptModels(unittest.TestCase):
         # simple expressions.
         #
         
-        source = dedent("""\
+        wabbit = dedent("""\
         print 2 + 3 * -4;
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
@@ -119,11 +119,7 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
             ])
         
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), stdout)
+        self.programs_match(wabbit, tokens, model, stdout)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -132,12 +128,12 @@ class ScriptModels(unittest.TestCase):
         #
         # Encode the following statements.
         
-        source = dedent("""\
+        wabbit = dedent("""\
         const pi = 3.14159;
         var tau float;
         tau = 2.0 * pi;
         print tau;""")
-        output = ['6.28318']
+        stdout = ['6.28318']
         
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
@@ -165,20 +161,15 @@ class ScriptModels(unittest.TestCase):
             AssignStatement(StorageIdentifier('tau'), BinOp('*', Float(2.0),
                 StorageLocation(StorageIdentifier('pi')))),
             PrintStatement(StorageLocation(StorageIdentifier('tau')))
-            ])
-
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        ])
+        self.programs_match(wabbit, tokens, model, stdout)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
         # Program 3: Conditionals.  This program prints out the minimum of
         # two values.
         #
-        source = dedent('''\
+        wabbit = dedent('''\
         var a int = 2;
         var b int = 3;
         if a < b {
@@ -186,7 +177,7 @@ class ScriptModels(unittest.TestCase):
         } else {
         \tprint b;
         }''')
-        output = '14'
+        stdout = ['2']
        
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -222,25 +213,21 @@ class ScriptModels(unittest.TestCase):
             AssignStatement(DeclStorageLocation(StorageIdentifier('a'), 'int', False), Int(2)),
             AssignStatement(DeclStorageLocation(StorageIdentifier('b'), 'int', False), Int(3)),
             ConditionalStatement(BinOp('<', StorageLocation(StorageIdentifier('a')),
-                StorageLocation(StorageIdentifier('b'))), [
+                StorageLocation(StorageIdentifier('b'))), Statements([
                     PrintStatement(StorageLocation(StorageIdentifier('a')))
-                ], [
+                ]), Statements([
                     PrintStatement(StorageLocation(StorageIdentifier('b')))
-                ]
+                ])
             ),
             ])
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.programs_match(wabbit, tokens, model, stdout)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
         # Program 4: Loops.  This program prints out the first 10 factorials.
         #
         
-        source = dedent('''\
+        wabbit = dedent('''\
         const n = 10;
         var x int = 1;
         var fact int = 1;
@@ -249,8 +236,7 @@ class ScriptModels(unittest.TestCase):
         \tprint fact;
         \tx = x + 1;
         }''')
-        output = '14'
-
+        stdout = ['1', '2', '6', '24', '120', '720', '5040', '40320', '362880']
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
             Token(type='NAME', value='n', lineno=1, index=6),
@@ -296,21 +282,16 @@ class ScriptModels(unittest.TestCase):
                 AssignStatement(DeclStorageLocation(StorageIdentifier('n'), None, True), Int(10)),
                 AssignStatement(DeclStorageLocation(StorageIdentifier('x'), 'int', False), Int(1)),
                 AssignStatement(DeclStorageLocation(StorageIdentifier('fact'), 'int', False), Int(1)),
-                ConditionalLoopStatement(BinOp('<', StorageLocation(StorageIdentifier('x')),
-                    StorageLocation(StorageIdentifier('n'))), [
-                    AssignStatement(StorageIdentifier('fact'), BinOp('*',
-                        StorageLocation(StorageIdentifier('fact')),
-                        StorageLocation(StorageIdentifier('x')))),
-                    PrintStatement(StorageLocation(StorageIdentifier('fact'))),
-                    AssignStatement(StorageIdentifier('x'), BinOp('+',
-                        StorageLocation(StorageIdentifier('x')), Int(1)))
-                ]),
-                ])
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+                ConditionalLoopStatement(
+                    BinOp('<', StorageLocation(StorageIdentifier('x')), StorageLocation(StorageIdentifier('n'))),
+                    Statements([
+                        AssignStatement(StorageIdentifier('fact'), BinOp('*', StorageLocation(StorageIdentifier('fact')), StorageLocation(StorageIdentifier('x')))),
+                        PrintStatement(StorageLocation(StorageIdentifier('fact'))),
+                        AssignStatement(StorageIdentifier('x'), BinOp('+', StorageLocation(StorageIdentifier('x')), Int(1)))
+                    ])
+                ),
+            ])
+        self.programs_match(wabbit, tokens, model, stdout)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -318,13 +299,13 @@ class ScriptModels(unittest.TestCase):
         # two variables using a single expression.
         #
         
-        source = dedent('''\
+        wabbit = dedent('''\
         var x = 37;
         var y = 42;
         x = { var t = y; y = x; t; };
         print x;
         print y;''')
-        output = '14'
+        stdout = ['42', '42']
 
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -364,19 +345,15 @@ class ScriptModels(unittest.TestCase):
         model = Statements([
             AssignStatement(DeclStorageLocation(StorageIdentifier('x')), Int(37)),
             AssignStatement(DeclStorageLocation(StorageIdentifier('y')), Int(42)),
-            AssignStatement(StorageIdentifier('x'), BlockExpression([
+            AssignStatement(StorageIdentifier('x'), BlockExpression(Statements([
                 AssignStatement(DeclStorageLocation(StorageIdentifier('t')), StorageLocation(StorageIdentifier('y'))),
                 AssignStatement(StorageIdentifier('y'), StorageLocation(StorageIdentifier('x'))),
                 ExpressionStatement(StorageLocation(StorageIdentifier('t'))),
-                ])),
+                ]))),
             PrintStatement(StorageLocation(StorageIdentifier('x'))),
             PrintStatement(StorageLocation(StorageIdentifier('y'))),
             ])
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.programs_match(wabbit, tokens, model, stdout)
 
 
 class FuncModels(unittest.TestCase):

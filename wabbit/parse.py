@@ -1,7 +1,11 @@
 from .model import *
 from .tokenize import to_tokens, WabbitLexer
-
 from sly import Parser
+
+
+def to_model(tokens):
+    parser = WabbitParser()
+    return parser.parse(tokens)
 
 class WabbitParser(Parser):
     debugfile = 'parser.out'
@@ -147,29 +151,3 @@ class WabbitParser(Parser):
 #    @_('')
 #    def empty(self, p):
 #        pass
-
-
-# Top-level function that runs everything
-def to_model(text):
-    tokens = to_tokens(text)
-    model = parse_tokens(tokens)     # You need to implement this part
-    return model
-
-
-# Example of a main program
-def parse_file(filename):
-    with open(filename) as file:
-        text = file.read()
-    return to_model(text)
-
-
-def parse_tokens(tokens):
-    parser = WabbitParser()
-    return parser.parse(tokens)
-
-
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) != 2:
-        raise SystemExit('Usage: wabbit.parse filename')
-    print(parse_file(sys.argv[1]))

@@ -2,6 +2,11 @@ from wabbit.model import ModelVisitor, ConditionalStatement, FuncDeclStatement, 
 from typing import List
 
 
+def to_wabbit(node):
+    decompiler = WabbitDecompiler()
+    return node.visit(decompiler)
+
+
 class WabbitDecompiler(ModelVisitor):
     def __init__(self):
         return
@@ -34,10 +39,10 @@ class WabbitDecompiler(ModelVisitor):
     def visit_ConditionalStatement(self, node):
         ret = []
         ret.append('if ' + node.cond.visit(self) + ' {')
-        for line in self.to_source(node.blockT, inner=True):
+        for line in node.blockT.visit(self):
             ret.append("\t" + line)
         ret.append('} else {')
-        for line in self.to_source(node.blockF, inner=True):
+        for line in node.blockF.visit(self):
             ret.append("\t" + line)
         ret.append('}')
         return ret
@@ -45,13 +50,13 @@ class WabbitDecompiler(ModelVisitor):
     def visit_ConditionalLoopStatement(self, node):
         ret = []
         ret.append('while ' + node.cond.visit(self) + ' {')
-        for line in self.to_source(node.block, inner=True):
+        for line in node.block.visit(self):
             ret.append("\t" + line)
         ret.append('}')
         return ret
 
     def visit_BlockExpression(self, node):
-        return '{ ' + ' '.join(self.to_source(node.block, inner=True)) + ' }'
+        return '{ ' + ' '.join(node.block.visit(self)) + ' }'
 
     def visit_ExpressionStatement(self, node):
         return node.statement.visit(self) + ';'
@@ -74,30 +79,21 @@ class WabbitDecompiler(ModelVisitor):
     def visit_ReturnStatement(self, node):
         return 'return ' + node.retval.visit(self) + ';'
 
-    def visit_Statements(self, node):
-        return self.to_source(node.statements)
+    def visit_Statements(self, node, inner=False):
         ret = []
         for stmt in node.statements:
-            ret.append(stmt.visit(self))
+            code = stmt.visit(self)
+            if isinstance(code, list):
+                ret.extend(code)
+            else:
+                ret.append(code)
         return ret
+
+    def visit_Program(self, node): 
+        return '\n'.join(node.statements.visit(self))
 
     def visit_Grouping(self, node):
         return '(' + node.expr.visit(self) + ')'
 
     def visit_StorageIdentifier(self, node):
         return str(node.name)
-
-    def to_source(self, block, inner=False):
-        if not isinstance(block, list):
-            return block.visit(self)
-        ret = []
-        for node in block:
-            code = node.visit(self)
-            if isinstance(code, list):
-                ret.extend(code)
-            else:
-                ret.append(code)
-        if not inner:
-            return '\n'.join(ret)
-        else:
-            return ret
