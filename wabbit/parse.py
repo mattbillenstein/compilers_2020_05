@@ -55,6 +55,7 @@ class BaseParser:
             print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
+        print(blue(f"    -> reject"))
         return None
 
 
@@ -91,7 +92,7 @@ class Parser(BaseParser):
 
     def statement(self) -> Statement:
 
-        node = self.print() or self.assign() or self.vardef()
+        node = self.print() or self.assign() or self.vardef() or self.constdef()
 
         assert node
 
@@ -162,6 +163,33 @@ class Parser(BaseParser):
 
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
+
+        print(green(f"    Parsed {node}"))
+        return node
+
+    # const_definition : CONST NAME [ type ] ASSIGN expr SEMI
+    def constdef(self):
+        print(blue(f"constdef(): next = {self.peek()}"))
+
+        if self.accept("CONST"):
+            self.lookahead = None
+        else:
+            return None
+
+        name = Name(self.expect("NAME").token)
+
+        if tok := self.accept("TYPE"):
+            type_ = tok.token
+            self.lookahead = None
+        else:
+            type_ = None
+
+        self.expect("ASSIGN")
+
+        value = self.expression()
+
+        self.expect("SEMICOLON")
+        node = ConstDef(name, type_, value)
 
         print(green(f"    Parsed {node}"))
         return node

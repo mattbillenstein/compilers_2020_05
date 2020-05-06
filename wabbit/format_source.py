@@ -66,7 +66,7 @@ class SourceFormatter:
         tokens = (
             ["const", node.name.value, "="]
             + ([node.type] if node.type else [])
-            + [str(node.value)]
+            + [self.visit(node.value)]
         )
         return " ".join(tokens)
 
