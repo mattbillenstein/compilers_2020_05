@@ -26,7 +26,7 @@ def check(source, model):
     check_syntax(model)
     transpiled_source = format_source(model)
     if transpiled_source.strip() != source.strip():
-        utils.delta(source, transpiled_source)
+        utils.print_diff(source, transpiled_source)
 
 
 def dump_json(model, label):
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     for i, (source, model) in enumerate(zip(sources, models)):
         print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
-        utils.bat(source)
+        utils.print_source(source)
         tokens = list(tokenize(source))
         check(source, model)
         dump_json(model, i)

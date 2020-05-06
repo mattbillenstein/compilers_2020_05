@@ -118,7 +118,7 @@ def test_tokenizer():
     for source, expected_tokens in test_cases:
         actual_tokens = list(tokenize(source))
         if actual_tokens != expected_tokens:
-            utils.delta(expected_tokens, actual_tokens)
+            utils.print_diff(expected_tokens, actual_tokens)
         assert actual_tokens == expected_tokens
 
 

@@ -4,7 +4,7 @@ from difflib import unified_diff
 from subprocess import Popen, PIPE
 
 
-def bat(source, language="go"):
+def print_source(source, language="go"):
     """
     https://github.com/sharkdp/bat/
     """
@@ -13,7 +13,7 @@ def bat(source, language="go"):
     proc.communicate()
 
 
-def delta(a, b):
+def print_diff(a, b):
     """
     https://github.com/dandavison/delta
     """
