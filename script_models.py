@@ -81,7 +81,7 @@ print tau;
 models.append(
     Statements(
         [
-            ConstDef(Name("pi"), None, 3.14159),
+            ConstDef(Name("pi"), None, Float(3.14159)),
             VarDef(Name("tau"), "float", None),
             Assign(Location("tau"), BinOp("*", Float(2.0), Name("pi"))),
             Print(Name("tau")),
@@ -141,7 +141,7 @@ while x < n {
 models.append(
     Statements(
         [
-            ConstDef(Name("n"), None, 10),
+            ConstDef(Name("n"), None, Integer(10)),
             VarDef(Name("x"), "int", Integer(1)),
             VarDef(Name("fact"), "int", Integer(1)),
             While(

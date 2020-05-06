@@ -73,7 +73,7 @@ class BinOp(Expression):
 class ConstDef(Statement):
     name: Name
     type: Optional[str]
-    value: Union[int, float]
+    value: Union[Bool, Char, Float, Integer]
 
 
 @dataclass

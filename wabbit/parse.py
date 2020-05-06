@@ -55,7 +55,7 @@ class BaseParser:
             print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
-        print(blue(f"    -> reject"))
+        print(blue("    -> reject"))
         return None
 
 
@@ -178,6 +178,7 @@ class Parser(BaseParser):
 
         name = Name(self.expect("NAME").token)
 
+        type_: Optional[str]
         if tok := self.accept("TYPE"):
             type_ = tok.token
             self.lookahead = None
@@ -185,10 +186,9 @@ class Parser(BaseParser):
             type_ = None
 
         self.expect("ASSIGN")
-
-        value = self.expression()
-
+        value = self._literal()
         self.expect("SEMICOLON")
+
         node = ConstDef(name, type_, value)
 
         print(green(f"    Parsed {node}"))
@@ -199,20 +199,44 @@ class Parser(BaseParser):
 
         tok = self.peek()
         node: Expression  # TODO: why?
-        if tok.type_ == "INTEGER":
-            node = Integer(int(tok.token))
-        elif tok.type_ == "FLOAT":
-            node = Float(float(tok.token))
-        elif tok.type_ == "BOOL":
-            node = Bool(bool(tok.token))
-        elif tok.type_ == "CHAR":
-            node = Char(tok.token)
-        else:
+
+        node = self._literal()
+        if not node:
             raise RuntimeError(f"Error parsing expression: {tok}")
 
         print(green(f"    Parsed {node}"))
-        self.lookahead = None
         return node
+
+    def _literal(self):
+        return self.bool() or self.char() or self.integer() or self.float()
+
+    def integer(self):
+        if tok := self.accept("INTEGER"):
+            self.lookahead = None
+            return Integer(int(tok.token))
+        else:
+            return None
+
+    def float(self):
+        if tok := self.accept("FLOAT"):
+            self.lookahead = None
+            return Float(float(tok.token))
+        else:
+            return None
+
+    def bool(self):
+        if tok := self.accept("BOOL"):
+            self.lookahead = None
+            return Bool({"true": True, "false": False}[tok.token])
+        else:
+            return None
+
+    def char(self):
+        if tok := self.accept("CHAR"):
+            self.lookahead = None
+            return Char(tok.token)
+        else:
+            return None
 
 
 # Top-level function that runs everything

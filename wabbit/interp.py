@@ -70,7 +70,7 @@ class Interpreter:
 
     @typechecked
     def interpret_ConstDef(self, node: ConstDef, env):
-        env[node.name.value] = node.value
+        env[node.name.value] = self.interpret(node.value, env)
 
     @typechecked
     def interpret_VarDef(self, node: VarDef, env):
