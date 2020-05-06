@@ -6,7 +6,7 @@ MYPY = $(BIN)/mypy
 PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py script_models.py
 
-all: lint type-check test
+all: lint type-check test wabbitscript-examples
 
 format:
 	@$(BIN) --quiet --line-length 99 $(PYTHON_FILES)
@@ -25,6 +25,9 @@ test-python-exercises:
 	@for f in exercises/python/warmup/*.py; do \
 		$(PYTHON) $$f; \
 	done
+
+wabbitscript-examples:
+	$(PYTHON) script_models.py
 
 ELISP_FILES = $(shell fd .el$$ exercises)
 test-elisp:

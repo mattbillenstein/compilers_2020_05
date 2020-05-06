@@ -190,15 +190,15 @@ models.append(
     )
 )
 
-
-for i, (source, model) in enumerate(zip(sources, models)):
-    print(
-        "\n\n------------------------------------------------------------------------------------"
-    )
-    print(i, "\n")
-    utils.bat(source)
-    tokenize(source)
-    check(source, model)
-    dump_json(model, i)
-    print("Interpreter output:\n")
-    interpret_program(model)
+if __name__ == '__main__':
+    for i, (source, model) in enumerate(zip(sources, models)):
+        print(
+            "\n\n--------------------------------------------------------------------------"
+        )
+        print(i, "\n")
+        utils.bat(source)
+        tokenize(source)
+        check(source, model)
+        dump_json(model, i)
+        print("Interpreter output:\n")
+        interpret_program(model)
