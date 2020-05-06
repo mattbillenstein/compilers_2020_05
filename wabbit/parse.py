@@ -8,37 +8,6 @@
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
 
-# continue_statement : CONTINUE SEMI
-
-# return_statement : RETURN expression SEMI
-
-
-# literal : INTEGER
-#         | FLOAT
-#         | CHAR
-#         | TRUE
-#         | FALSE
-#         | LPAREN RPAREN
-
-# exprlist : expression { COMMA expression }
-#          | empty
-
-# location : NAME
-#          | expression DOT NAME
-
-# enum_value : NAME DCOLON NAME
-#            | NAME DCOLON NAME LPAREN expression RPAREN
-
-# match : MATCH expression LBRACE { matchcase } RBRACE
-
-# matchcase : pattern ARROW expression SEMI
-
-# pattern   : NAME
-#           | NAME LPAREN NAME RPAREN
-
-# type      : NAME
-
-# empty     :
 # How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
@@ -83,6 +52,10 @@ from .tokenize import tokenize, WabbitLexer
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens
 
+    debugfile = "parser.out"
+
+    precedence = (("left", PLUS), ("left", MINUS), ("left", DIVIDE), ("left", TIMES))
+
     # program : statements EOF
     @_("statements")
     def program(self, p):
@@ -110,28 +83,31 @@ class WabbitParser(Parser):
     #           | expression SEMI
     @_(
         "print_statement",
-        "assignment_statement",
-        "variable_definition",
-        "const_definition",
-        "func_definition",
-        "struct_definition",
-        "enum_definition",
-        "if_statement",
-        "if_let_statement",
-        "while_statement",
-        "while_let_statement",
-        "break_statement",
-        "continue_statement",
-        "return_statement",
-        "expression SEMI",
+        # "assignment_statement",
+        # "variable_definition",
+        # "const_definition",
+        # "func_definition",
+        # "struct_definition",
+        # "enum_definition",
+        # "if_statement",
+        # "if_let_statement",
+        # "while_statement",
+        # "while_let_statement",
+        # "break_statement",
+        # "continue_statement",
+        # "return_statement",
     )
     def statement(self, p):
         return p[0]
 
+    @_("expression SEMI",)
+    def statement(self, p):
+        return p.expression
+
     # print_statement : PRINT expression SEMI
     @_("PRINT expression SEMI")
     def print_statement(self, p):
-        return Print(expression)
+        return Print(p.expression)
 
     # assignment_statement : location ASSIGN expression SEMI
     @_("location ASSIGN expression SEMI")
@@ -183,14 +159,26 @@ class WabbitParser(Parser):
     # enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
     @_("ENUM NAME LBRACE { enum_choice } RBRACE")
     def enum_definition(self, p):
-        pass
+        return Enum(p.NAME, *p.enum_choice)
 
     # enum_choice : NAME SEMI
-    #             | NAME LPAREN type RPAREN
+    #             | NAME LPAREN NAME RPAREN
+    @_("NAME SEMI", "NAME LPAREN NAME RPAREN")
+    def enum_choice(self, p):
+        type = getattr(p, "NAME1", None)
+        return Enum(p.NAME0, type)
 
-    # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+    # if_statement : IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+    @_("IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]")
+    def if_statement(self, p):
+        return If(p.expr, p.statements0, p.statements1)
 
     # if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+    @_(
+        "IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]"
+    )
+    def if_let_statement(self, p):
+        pass
 
     # while_statement : WHILE expr LBRACE statements RBRACE
 
@@ -201,43 +189,97 @@ class WabbitParser(Parser):
     # expression : orterm { LOR ortem }
     @_("orterm { LOR orterm }")
     def expression(self, p):
-        return BinOp("||", p.orterm0, p.orterm1)
+        if p.LOR:
+            return BinOp("||", p.orterm0, p.orterm1)
+        return p.orterm0
 
     # orterm : andterm { LAND andterm }
     @_("andterm { LAND andterm }")
     def orterm(self, p):
-        return BinOp("&&", p.andterm0, p.andterm1)
+        if p.LAND:
+            return BinOp("&&", p.andterm0, p.andterm1)
+        return p.andterm0
 
     # andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
-    @_("sumterm { LT|LE|GT|GE|EQ|NE sumterm }")
+    @_(
+        "sumterm { LT sumterm }",
+        "sumterm { LE sumterm }",
+        "sumterm { GT sumterm }",
+        "sumterm { GE sumterm }",
+        "sumterm { EQ sumterm }",
+        "sumterm { NE sumterm }",
+    )
     def andterm(self, p):
-        return BinOp(p[1], p.sumterm0, p.sumterm1)
+        if p[1]:
+            return BinOp(p[1], p.sumterm0, p.sumterm1)
+        return p.sumterm0
 
     # sumterm : multerm { PLUS|MINUS multerm }
-    @_("multerm { PLUS|MINUS } multerm")
+    @_("multerm { PLUS  multerm }")
     def sumterm(self, p):
-        return BinOp(p[1], p.multerm0, p.multerm1)
+        if p.PLUS:
+            return BinOp("+", p.multerm0, p.multerm1)
+        return p.multerm0
+
+    @_("multerm { MINUS multerm }")
+    def sumterm(self, p):
+        if p.MINUS:
+            return BinOp("+", p.multerm0, p.multerm1)
+        return p.multerm0
 
     # multerm : factor { TIMES|DIVIDE factor }
-    @_("factor { TIMES|DIVIDE factor }")
+    @_("factor { DIVIDE factor }")
     def multerm(self, p):
-        return BinOp(p[1], p.factor0, p.factor1)
+        if p.DIVIDE:
+            return BinOp("/", p.factor0, p.factor1)
+        return p.factor0
+
+    @_("factor { TIMES factor }")
+    def multerm(self, p):
+        if p.TIMES:
+            return BinOp("*", p.factor0, p.factor1)
+        return p.factor0
+
+    # continue_statement : CONTINUE SEMI
+    @_("CONTINUE SEMI")
+    def continue_statement(self, p):
+        return Continue()
+
+    # return_statement : RETURN expression SEMI
+    @_("RETURN expression SEMI")
+    def return_statement(self, p):
+        return Return(p.expression)
 
     # factor : literal
+    #        | ....
+    @_("location", "enum_value", "match", "literal")
+    def factor(self, p):
+        return p[0]
+
+    @_("LPAREN expression RPAREN",)
+    def factor(self, p):
+        return Grouping(p.expression)
+
     @_(
-        "location",
-        "enum_value",
-        "match",
-        "LPAREN expression RPAREN",
-        "PLUS expression",
-        "MINUS expression",
-        "LNOT expression",
-        "NAME LPAREN exprlist RPAREN",
-        "LBRACE statements RBRACE",
+        "PLUS expression", "MINUS expression", "LNOT expression",
     )
     def factor(self, p):
-        print(p)
-        pass
+        return UnaryOp(p[1], p.expression)
+
+    @_("NAME LPAREN exprlist RPAREN",)
+    def factor(self, p):
+        return FunctionCall(p.NAME, p.exprlist)
+
+    @_("LBRACE statements RBRACE",)
+    def factor(self, p):
+        return p.statements
+
+    # literal : INTEGER
+    #         | FLOAT
+    #         | CHAR
+    #         | TRUE
+    #         | FALSE
+    #         | LPAREN RPAREN ? what to do here?
 
     @_("INTEGER")
     def literal(self, p):
@@ -247,6 +289,58 @@ class WabbitParser(Parser):
     def literal(self, p):
         return Float(float(p.FLOAT))
 
+    @_("CHAR")
+    def literal(self, p):
+        return Char(p.CHAR)
+
+    @_("TRUE")
+    def literal(self, p):
+        return Truthy()
+
+    @_("FALSE")
+    def literal(self, p):
+        return Falsey()
+
+    # exprlist : expression { COMMA expression }
+    #          | empty
+    @_("expression { COMMA expression }")
+    def exprlist(self, p):
+        if p.expression1:
+            return ExpressionList(*[p.expression0, p.expression1])
+        return ExpressionList(p.expression0)
+
+    @_("empty")
+    def exprlist(self, p):
+        return p.empty
+
+    # location : NAME
+    #          | expression DOT NAME
+    @_("NAME")
+    def location(self, p):
+        return p.NAME
+
+    @_("expression DOT NAME")
+    def location(self, p):
+        return DottedLocation(p.expression, p.NAME)
+
+    # enum_value : NAME DCOLON NAME
+    #            | NAME DCOLON NAME LPAREN expression RPAREN
+    @_("NAME DCOLON NAME", "NAME DCOLON NAME LPAREN expression RPAREN")
+    def enum_value(self, p):
+        return EnumLocation(p.NAME0, p.NAME1, p.expression)
+
+    # match : MATCH expression LBRACE { matchcase } RBRACE
+    @_("MATCH expression LBRACE { matchcase } RBRACE")
+    def match(self, p):
+        return Match(p.expression, *p.matchcase)
+
+    # matchcase : pattern ARROW expression SEMI
+    @_("pattern ARROW expression SEMI")
+    def matchcase(self, p):
+        return MatchCondition(p.pattern, p.expression)
+
+    # pattern   : NAME
+    #           | NAME LPAREN NAME RPAREN
     @_("NAME LPAREN NAME RPAREN")
     def pattern(self, p):
         return Arguments(Argument(p.name0), Argument(p.name1))
@@ -255,10 +349,12 @@ class WabbitParser(Parser):
     def pattern(self, p):
         return p.NAME
 
+    # type      : NAME
     @_("NAME")
     def type(self, p):
         return p.NAME
 
+    # empty     :
     @_("")
     def empty(self, p):
         pass

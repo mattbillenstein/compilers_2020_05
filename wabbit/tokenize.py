@@ -127,6 +127,13 @@ class WabbitLexer(Lexer):
         STRUCT,
         FUNC,
         ENUM,
+        LET,
+        DCOLON,
+        MATCH,
+        RETURN,
+        ARROW,
+        DOT,
+        COMMA,
     }
     ignore = " \t\n"  # Ignore these (between tokens)
     ignore_line_comment = r"//.*"
@@ -156,6 +163,8 @@ class WabbitLexer(Lexer):
     LAND = r"&&"
     LOR = r"\|\|"
     LNOT = r"!"
+    DCOLON = r"::"
+    ARROW = r"=>"
 
     # Names/Identifies
     # Text starting with a letter or '_', followed by any number number of
@@ -177,8 +186,13 @@ class WabbitLexer(Lexer):
     NAME["struct"] = STRUCT
     NAME["func"] = FUNC
     NAME["enum"] = ENUM
+    NAME["let"] = LET
+    NAME["match"] = MATCH
+    NAME["return"] = RETURN
 
     CHAR = r"\'.{1,4}\'"
+    DOT = r"\."
+    COMMA = r","
 
     @_(CHAR)
     def CHAR(self, token):

@@ -78,6 +78,68 @@ class Location(Expression):
     pass
 
 
+class DottedLocation(Location):
+    """
+    Example: obj.a
+    """
+
+    def __init__(self, location, name):
+        assert isinstance(location, Expression)
+        assert isinstance(name, str)
+        self.location = location
+        self.name = name
+
+    def __repr__(self):
+        return f"DottedLocation({self.location}, {self.name})"
+
+
+class Truthy(Expression):
+    pass
+
+
+class Continue(Statement):
+    """
+    Example: continue
+    """
+
+    pass
+
+
+class ExpressionList(Expression):
+    """
+    Example: expr, expr
+    """
+
+    def __init__(self, *args):
+        for arg in args:
+            assert isinstance(arg, Expression)
+        self.args = args
+
+    def __repr__(self):
+        return f"ExpressionList({','.join(self.args)})"
+
+
+class Falsey(Expression):
+    pass
+
+
+class Empty(Expression):
+    pass
+
+
+class Char(Expression):
+    """
+    Example: 'x'
+    """
+
+    def __init__(self, char):
+        assert isinstance(char, str)
+        self.char = char
+
+    def __repr__(self):
+        return f"Char({self.char})"
+
+
 class Enum(Definition):
     """
     Example:
@@ -109,6 +171,8 @@ class EnumChoice(Definition):
     """
 
     def __init__(self, name, type=None):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
         self.name = name
         self.type = type
 
@@ -127,8 +191,6 @@ class EnumLocation(Location):
     """
 
     def __init__(self, enum, location, args=None):
-        if args is not None:
-            assert isinstance(args, Arguments)
         self.enum = enum
         self.location = location
         self.args = args
@@ -148,7 +210,6 @@ class MatchCondition(Expression):
    """
 
     def __init__(self, choice, expression):
-        assert isinstance(choice, EnumChoice)
         self.choice = choice
         self.expression = expression
 
@@ -236,7 +297,7 @@ class FunctionDefinition(Definition):
     }
     """
 
-    def __init__(self, name, args=None, return_type, body=None):
+    def __init__(self, name, args=None, return_type=None, body=None):
         assert isinstance(name, str)
         self.name = name
         self.args = args
@@ -245,6 +306,19 @@ class FunctionDefinition(Definition):
 
     def __repr__(self):
         return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
+
+
+class Grouping(Expression):
+    """
+    Example: ( expr )
+    """
+
+    def __init__(self, expression):
+        assert isinstance(expression, Expression)
+        self.expression = expression
+
+    def __repr__(self):
+        return f"Grouping({self.expression})"
 
 
 class Block(Expression):
