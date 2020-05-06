@@ -27,7 +27,56 @@
 #
 # The directory tests/Errors has Wabbit programs with various errors.
 
+from functools import singledispatch
 from .model import *
+
+class FranError(Exception):
+    ...
+
+# Internal function used to check nodes with an environment
+@singledispatch
+def check(node, env):
+    raise RuntimeError(f"Can't interpret {node}")
+
+@check.register(Statements)
+def _(node, env):
+    [check(n, env) for n in node.children]
+
+@check.register(BinOp)
+def _(node, env):
+    left = check(node.left, env)
+    right = check(node.right, env)
+    if left != right:
+        raise FranError(f'Type inconsistency: {left} and {right} for {node.op}')
+    return left # TODO assumes BinOp returns the left type but sometimes (eg compare) it changes
+
+@check.register(Integer)
+def _(node, env):
+    return 'Integer'
+
+@check.register(Float)
+def _(node, env):
+    return 'Float'
+
+@check.register(PrintStatement)
+def _(node, env):
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Top-level function used to check programs
 def check_program(model):
@@ -35,9 +84,6 @@ def check_program(model):
     check(model, env)
     # Maybe return True/False if there are errors
 
-# Internal function used to check nodes with an environment
-def check(node, env):
-    pass
 
 # Sample main program
 def main(filename):
@@ -51,7 +97,7 @@ if __name__ == '__main__':
 
 
 
-        
 
 
-        
+
+

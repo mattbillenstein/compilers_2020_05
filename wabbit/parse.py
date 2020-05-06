@@ -223,7 +223,6 @@ def parse_tokens(tokens):
 # Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    tokens = tokenize(text)
     model = parse_tokens(tokens)     # You need to implement this part
     return model
 
