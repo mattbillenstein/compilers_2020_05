@@ -78,7 +78,7 @@ class FuncDeclStatement(StatementNode):
 
 @dataclass
 class AssignStatement(StatementNode):
-    location: StorageLocation
+    location: StorageIdentifier
     value: ExpressionNode
 
 

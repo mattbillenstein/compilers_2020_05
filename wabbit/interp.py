@@ -1,5 +1,6 @@
 from .model import *
 
+
 def interpret_program(statements):
     # Make the initial environment (a dict)
     env = {}
@@ -8,14 +9,22 @@ def interpret_program(statements):
     statements.visit(interpreter)
     return stdout
 
+UNDEF = object()
 
 class Storage():
     def __init__(self, _type, const):
         self._type = _type
         self.const = const
+        self.value = UNDEF
 
-    def assign(self, value):
+    def set(self, value):
         self.value = value
+        return None
+
+    def get(self):
+        if self.value is UNDEF:
+            raise RuntimeError()
+        return self.value
 
 
 class Interpreter(ModelVisitor):
@@ -34,18 +43,22 @@ class Interpreter(ModelVisitor):
         raise NotImplementedError
     
     def visit_StorageIdentifier(self, node):
+        # gimme the key for this name in this env
         return str(node.name)
     
     def visit_StorageLocation(self, node):
+        # gimme the value for this key
         name = node.identifier.visit(self)
-        return self.env[name]
+        storage = self.env[name]
+        return storage.get()
     
     def visit_DeclStorageLocation(self, node):
+        # I'll store values in this name in this env with this key and type
         name = node.identifier.visit(self)
         if name in self.env.keys():
             raise
         self.env[name] = Storage(node._type, node.const)
-        return self.visit_StorageLocation(node)
+        return node.identifier.visit(self)
     
     def visit_FuncCall(self, node):
         raise NotImplementedError
@@ -54,9 +67,13 @@ class Interpreter(ModelVisitor):
         raise NotImplementedError
     
     def visit_AssignStatement(self, node):
-        storage = node.location.visit(self)
-        storage.assign(node.value)
-        return node.value
+        # Store a value in the locaiton with this name
+        name = node.location.visit(self)
+        if node.value is not None:
+            value = node.value.visit(self)
+            storage = self.env[name]
+            storage.set(value)
+        return None
 
     def visit_PrintStatement(self, node):
         self.stdout.append(str(node.expr.visit(self)))

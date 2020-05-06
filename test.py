@@ -137,7 +137,7 @@ class ScriptModels(unittest.TestCase):
         var tau float;
         tau = 2.0 * pi;
         print tau;""")
-        output = '14'
+        output = ['6.28318']
         
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
