@@ -25,11 +25,7 @@ TOKENS = [
     ("LAND", "&&"),
     ("LOR", r"\|\|"),
     # Literals:
-    #     CHAR    : 'a'     (a single character - byte)
-    #               '\xhh'  (byte value)
-    #               '\n'    (newline)
-    #               '\''    (literal single quote)
-    #
+    ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
     # Comments:  To be ignored
     #      //             Skips the rest of the line
     #      /* ... */      Skips a block (no nesting allowed)
@@ -100,6 +96,10 @@ def test_tokenizer():
         ),
         ("frog", [("NAME", "frog")]),
         ("const CONST", [("KEYWORD", "const"), ("NAME", "CONST")]),
+        ("'a'", [("CHAR", "a")]),
+        (r"'\xhh'", [("CHAR", r"\xhh")]),
+        (r"'\n'", [("CHAR", r"\n")]),
+        # (r"'\''", [("CHAR", "'")]),  # TODO
     ]
     for source, expected_tokens in test_cases:
         actual_tokens = list(tokenize(source))
