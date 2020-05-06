@@ -112,6 +112,10 @@ Video recordings of live sessions will be posted here.
 * [Project 3, Tokenizing, Checkin](https://vimeo.com/415330823/8be50c609f) (11 min)
 * [Project 4, Parsing Introduction](https://vimeo.com/415331200/7bee239ef9) (95 min)
 
+**Day 3**
 
+* [Project 4, Parsing in Practice](https://vimeo.com/415631778/b3b3d1c157) (67 min)
+* [Project 4, Parsing, errors, precedence](https://vimeo.com/415636966/f82ce24e02) (38 min)
+* [Project 5, Type Checking](https://vimeo.com/415678414/d87a14cb3f) (32 min)
 
 
