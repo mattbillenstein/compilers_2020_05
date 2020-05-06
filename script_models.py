@@ -22,7 +22,7 @@
 import sys
 from wabbit.model import *
 from wabbit.interp import Interpreter
-
+from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -35,10 +35,13 @@ expr_source = "2 + 3 * 4;"
 expr_model  = BinOp('+', Integer(2),
                          BinOp('*', Integer(3), Integer(4)))
 
+
+expr_model = parse_source(expr_source)
+
 # Can you turn it back into source code?
 print(to_source(expr_model))
 print(Interpreter().interpret(expr_model))
-
+sys.exit(0)
 # ----------------------------------------------------------------------
 # Program 1: Printing
 #

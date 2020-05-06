@@ -153,6 +153,21 @@ class Bool(Literal):
 
 	def to_source(self):
 		return str(self.value)
+		
+		
+class Unit(Literal):
+	'''
+	Example: ()
+	'''
+	
+	def __init__(self):
+		self.value = None
+		
+	def __repr__(self):
+		return f'Unit()'
+		
+	def to_source(self):
+		return '()'
 	
 	
 ###
@@ -238,8 +253,24 @@ class Var(Location):
 ###
 ### Statements
 ###
-
 		
+class Statements(Statement):
+	'''
+	Container for statements
+	'''
+	
+	def __init__(self, *args):
+		stmts = [x for x in args]
+		assert all(isinstance(x, Statement) for x in stmts)
+		self.stmts = stmts
+		
+	def __repr__(self):
+		return "Statements(" + ",".join([repr(x) for x in self.stmts]) + ")"
+		
+	def to_source(self):
+		return "\n".join([x.to_source() for x in self.stmts])
+
+
 class Assignment(Statement):
 	'''
 	Example: a = 1 + 2
@@ -268,22 +299,6 @@ class PrintStatement(Statement):
 	def to_source(self):
 		return f"print {self.literal.to_source()};"
 
-		
-class Statements(Statement):
-	'''
-	Container for statements
-	'''
-	
-	def __init__(self, *args):
-		stmts = [x for x in args]
-		assert all(isinstance(x, Statement) for x in stmts)
-		self.stmts = stmts
-		
-	def __repr__(self):
-		return "Statements(" + ",".join([repr(x) for x in self.stmts]) + ")"
-		
-	def to_source(self):
-		return "\n".join([x.to_source() for x in self.stmts])
 
 class Block(Statement):	
 	'''

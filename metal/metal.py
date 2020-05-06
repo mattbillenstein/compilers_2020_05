@@ -314,7 +314,7 @@ if __name__ == '__main__':
 		('STORE', 'R1', 'R7', 1),	# x
 		('STORE', 'R2', 'R7', 2),	# y
 		
-		('BZ', 'R1', 5),
+		('BZ', 'R1', 5),			# if !(x > 0) ... 
 
 		('DEC', 'R1'),				# x--
 		('STORE', 'PC', 'R7', 0),	#	save retaddr
@@ -322,7 +322,7 @@ if __name__ == '__main__':
 		('ADD', 'R6', 'R2', 'R6'),	# y + mul(x-1, y)
 		('JMP', 'PC', 1),
 		
-		('CONST', 0, 'R6'),			# return 0
+		('CONST', 0, 'R6'),			# x == 0: return 0
 		
 		('LOAD', 'R7', 'R1', 1), 	# restore x
 		('LOAD', 'R7', 'R2', 2),	# restore y
