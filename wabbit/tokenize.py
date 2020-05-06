@@ -82,7 +82,7 @@ class WabbitLexer(Lexer):
     tokens = {
         PLUS, MINUS, TIMES, DIVIDE, NUMBER, LT, LE, EQ, DECIMAL,
         GT, GE, EQ, NE, ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI,
-        PRINT, CONST, VAR, VAR_NAME, FLOAT, IF, ELSE, INT, WHILE, BREAK,
+        PRINT, CONST, VAR, NAME, FLOAT, IF, ELSE, INT, WHILE, BREAK,
         CONTINUE, TRUE, FALSE, LOR, LNOT, LAND, CHAR, DOT
         }
     ignore = ' \t\n'
@@ -90,19 +90,19 @@ class WabbitLexer(Lexer):
     ignore_multi_line_comments = r'/\*(.|\n)*\*/'
 
     #TODO fun with characters, single quotes, double quotes, only 1, everything else is an error
-    VAR_NAME = r'[a-zA-Z_]+'
-    VAR_NAME['print'] = PRINT
-    VAR_NAME['const'] = CONST
-    VAR_NAME['float'] = FLOAT
-    VAR_NAME['int'] = INT
-    VAR_NAME['if'] = IF
-    VAR_NAME['else'] = ELSE
-    VAR_NAME['while'] = WHILE
-    VAR_NAME['var'] = VAR
-    VAR_NAME['break'] = BREAK
-    VAR_NAME['continue'] = CONTINUE
-    VAR_NAME['true'] = TRUE
-    VAR_NAME['false'] = FALSE
+    NAME = r'[a-zA-Z_]+'
+    NAME['print'] = PRINT
+    NAME['const'] = CONST
+    NAME['float'] = FLOAT
+    NAME['int'] = INT
+    NAME['if'] = IF
+    NAME['else'] = ELSE
+    NAME['while'] = WHILE
+    NAME['var'] = VAR
+    NAME['break'] = BREAK
+    NAME['continue'] = CONTINUE
+    NAME['true'] = TRUE
+    NAME['false'] = FALSE
 
     PLUS = r'\+'
     MINUS = r'-'

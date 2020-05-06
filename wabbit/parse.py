@@ -8,7 +8,7 @@
 # Reference: https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript
 #
 # The following conventions are used:
-# 
+#
 #       ALLCAPS       --> A token
 #       { symbols }   --> Zero or more repetitions of symbols
 #       [ symbols ]   --> Zero or one occurences of symbols (optional)
@@ -59,18 +59,18 @@
 #      | PLUS expr
 #      | MINUS expr
 #      | LNOT expr              (!)
-#      | LPAREN expr RPAREN 
+#      | LPAREN expr RPAREN
 #      | location
 #      | literal
-#      | LBRACE statements RBRACE 
-#       
+#      | LBRACE statements RBRACE
+#
 # literal : INTEGER
 #         | FLOAT
 #         | CHAR
 #         | TRUE
 #         | FALSE
-#         | LPAREN RPAREN   
-# 
+#         | LPAREN RPAREN
+#
 # location : NAME
 #
 # type      : NAME
@@ -78,7 +78,7 @@
 # empty     :
 # ======================================================================
 
-# How to proceed:  
+# How to proceed:
 #
 # At first glance, writing a parser might look daunting. The key is to
 # take it in tiny pieces.  Focus on one specific part of the language.
@@ -108,17 +108,66 @@
 #
 # If you are highly motivated and want to know how a parser works at a
 # low-level, you can write a hand-written recursive descent parser.
-# It is also fine to use high-level tools such as 
+# It is also fine to use high-level tools such as
 #
-#    - SLY (https://github.com/dabeaz/sly), 
+#    - SLY (https://github.com/dabeaz/sly),
 #    - PLY (https://github.com/dabeaz/ply),
 #    - ANTLR (https://www.antlr.org).
 
 from .model import *
-from .tokenize import tokenize
+from .tokenize import tokenize, WabbitLexer
+from sly import Parser
 
-# Top-level function that runs everything    
+class WabbitParser(Parser):
+    tokens = WabbitLexer.tokens
+    precedence = (
+        ('left', PLUS, MINUS),
+        ('left', TIMES, DIVIDE),
+        )
+
+    # STATEMENTS===============================
+    @_('expr SEMI')
+    def statement(self, p):
+        return p[0]
+
+    @_('PRINT expr SEMI')
+    def statement(self, p):
+        return PrintStatement(p[1])
+
+    @_('VAR NAME [ NAME ] ASSIGN expr SEMI')
+    def statement(self, p):
+        var = Var(p.NAME0, p.NAME1)
+        assign = Assign(var, p.expr)
+        return assign
+
+    # EXPRESSIONS==============================
+    @_('NUMBER')
+    def expr(self, p):
+        return Integer(int(p[0]))
+
+    @_('DECIMAL')
+    def expr(self, p):
+        return Float(float(p.DECIMAL))
+
+    @_('expr PLUS expr',
+        'expr MINUS expr',
+        'expr TIMES expr',
+        'expr DIVIDE expr',
+            )
+    def expr(self, p):
+        return BinOp(p[1], p[0], p[2])
+
+    @_('NAME')
+    def expr(self, p):
+        return Variable(p.NAME)
+
+def parse_tokens(tokens):
+    parser = WabbitParser()
+    return parser.parse(tokens)
+
+# Top-level function that runs everything
 def parse_source(text):
+    tokens = tokenize(text)
     tokens = tokenize(text)
     model = parse_tokens(tokens)     # You need to implement this part
     return model
