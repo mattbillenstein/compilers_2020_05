@@ -24,6 +24,8 @@ from wabbit.model import *
 from wabbit.decompile import WabbitDecompiler
 from wabbit.parse import parse_tokens
 from wabbit.tokenize import to_tokens, Token
+from wabbit.typecheck import check_program
+from wabbit.interp import interpret_program
 from textwrap import dedent
 import unittest
 
@@ -45,6 +47,7 @@ class ScriptModels(unittest.TestCase):
         # according to the names/classes you defined in wabbit.model
         
         source = "2 + 3 * 4;"
+        output = '14'
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
             Token(type='PLUS', value='+', lineno=1, index=2),
@@ -54,9 +57,12 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=9),
         ]
         model = [ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))]
+        output = '14'
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
     def test_print(self):
         
@@ -72,6 +78,7 @@ class ScriptModels(unittest.TestCase):
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
         print 2 * 3 + -4;""")
+        output = '14'
 
         tokens = [
             Token(type='PRINT', value='print', lineno=1, index=0),
@@ -116,6 +123,8 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -129,6 +138,7 @@ class ScriptModels(unittest.TestCase):
         var tau float;
         tau = 2.0 * pi;
         print tau;""")
+        output = '14'
         
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
@@ -161,6 +171,8 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -175,6 +187,7 @@ class ScriptModels(unittest.TestCase):
         } else {
         \tprint b;
         }''')
+        output = '14'
        
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -220,6 +233,8 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -235,6 +250,7 @@ class ScriptModels(unittest.TestCase):
         \tprint fact;
         \tx = x + 1;
         }''')
+        output = '14'
 
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
@@ -294,6 +310,8 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -307,6 +325,7 @@ class ScriptModels(unittest.TestCase):
         x = { var t = y; y = x; t; };
         print x;
         print y;''')
+        output = '14'
 
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -357,6 +376,8 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(self.decompiler.to_source(model), source)
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program, output)
 
 
 if __name__ == '__main__':
