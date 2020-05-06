@@ -1,3 +1,4 @@
+from collections import ChainMap
 from dataclasses import dataclass
 import operator
 import sys
@@ -39,7 +40,7 @@ UNARY_OPERATORS = {
 
 @dataclass
 class Interpreter:
-    env: dict
+    env: ChainMap
 
     @typechecked
     def visit(self, node: Node, **kwargs):
@@ -113,4 +114,5 @@ class Interpreter:
 
 @typechecked
 def interpret_program(node: Statements):
-    return Interpreter({}).visit(node)
+    env: ChainMap = ChainMap()
+    return Interpreter(env).visit(node)
