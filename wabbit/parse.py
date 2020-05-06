@@ -1,4 +1,4 @@
-# parse.py
+# wabbit/parse.py
 #
 # Wabbit parser.  The parser needs to construct the data model or an
 # abstract syntax tree from text input.  The grammar shown here represents
@@ -115,7 +115,88 @@
 #    - ANTLR (https://www.antlr.org).
 
 from .model import *
-from .tokenize import tokenize
+from .tokenize import tokenize, WabbitLexer
+from sly import Parser
+        
+# Grammar for Wabbit  (Specificiation of syntax)
+#
+
+class WabbitParser(Parser):
+    tokens = WabbitLexer.tokens      # Token names
+
+    # program : statements
+    @_('statements')
+    def program(self, p):
+        return p.statements
+    # 
+    # statements : { statement }      # zero or more statements { }
+    #
+    @_('{ statement }')
+    def statements(self, p):
+        # p.statement   --- it's already a list of statement (by SLY)
+        return Statements(p.statement)
+
+    # statement : print_statement
+    #           | assignment_statement
+    #           | if_statement
+    #           | const_definition
+    #           ...
+    #
+    @_('print_statement',
+       'assignment_statement',
+#       'if_statement',
+       'const_definition',
+       )
+    def statement(self, p):
+        return p[0]               # Just return whatever the thing is
+
+    # print_statement : PRINT expression SEMI
+    #
+    @_('PRINT expression SEMI')
+    def print_statement(self, p):      # p contains all information from the parse
+        # Create a node from your model
+        return PrintStatement(p.expression)
+
+    # assignment_statement : location ASSIGN expression SEMI
+    #
+    @_('location ASSIGN expression SEMI')
+    def assignment_statement(self, p):
+        return AssignmentStatement(p.location,
+                                   p.expression)
+
+    # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
+    #
+    @_('CONST NAME [ NAME ] ASSIGN expression SEMI')
+    def const_definition(self, p):
+        return ConstDefinition(p.NAME0,
+                               p.NAME1,
+                               p.expression)
+
+    @_('expression PLUS expression',
+       'expression MINUS expression',
+       'expression TIMES expression',
+       'expression DIVIDE expression')
+    def expression(self, p):
+        op = p[1]           
+        left = p.expression0
+        right = p.expression1
+        return BinOp(op, left, right)
+
+    @_('INTEGER')
+    def expression(self, p):
+        return Integer(int(p.INTEGER))
+
+    @_('FLOAT')
+    def expression(self, p):
+        return Float(float(p.FLOAT))
+
+    @_('NAME')
+    def location(self, p):
+        return NamedLocation(p.NAME)
+
+def parse_tokens(raw_tokens):  
+    parser = WabbitParser()
+    return parser.parse(raw_tokens)
 
 # Top-level function that runs everything    
 def parse_source(text):
@@ -133,7 +214,7 @@ if __name__ == '__main__':
     import sys
     if len(sys.argv) != 2:
         raise SystemExit('Usage: wabbit.parse filename')
-    model = parse(sys.argv[1])
+    model = parse_file(sys.argv[1])
     print(model)
 
 
