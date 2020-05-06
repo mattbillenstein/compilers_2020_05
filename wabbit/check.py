@@ -32,12 +32,12 @@ from .model import *
 # Top-level function used to check programs
 def check_program(model):
     env = { }
-    check(model, env)
+    return check(model, env)
     # Maybe return True/False if there are errors
 
 # Internal function used to check nodes with an environment
 def check(node, env):
-    pass
+    return True
 
 # Sample main program
 def main(filename):

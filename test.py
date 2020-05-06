@@ -24,7 +24,7 @@ from wabbit.model import *
 from wabbit.decompile import WabbitDecompiler
 from wabbit.parse import parse_tokens
 from wabbit.tokenize import to_tokens, Token
-from wabbit.typecheck import check_program
+from wabbit.check import check_program
 from wabbit.interp import interpret_program
 from textwrap import dedent
 import unittest
@@ -62,7 +62,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
     def test_print(self):
         
@@ -124,7 +124,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -172,7 +172,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -234,7 +234,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -311,7 +311,7 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -377,8 +377,172 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
         self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program, output)
+        self.assertEqual(interpret_program(model), output)
 
 
-if __name__ == '__main__':
-    unittest.main()
+class FuncModels(unittest.TestCase):
+    def setUp(self):
+        self.decompiler = WabbitDecompiler()
+        self.maxDiff = None
+
+    @unittest.skip
+    def test_func(self):
+        # ----------------------------------------------------------------------
+        # Program 6: Functions.  The program prints out the first factorials
+        # with various function definitions.
+        #
+        
+        source = dedent('''\
+        func add(x int, y int) int {
+        \treturn x + y;
+        }
+        func mul(x int, y int) int {
+        \treturn x * y;
+        }
+        func factorial(n int) int {
+        \tif n == 0 {
+        \t\treturn 1;
+        \t} else {
+        \t\treturn mul(n, factorial(add(n, -1)));
+        \t}
+        }
+        func print_factorials(last int) int {
+        \tvar x = 0;
+        \twhile x < last {
+        \t\tprint factorial(x);
+        \t\tx = add(x, 1);
+        \t}
+        }
+        func main() int {
+        \tvar result = print_factorials(10);
+        \treturn 0;
+        }''')
+        output = ''
+        tokens = []
+        model = [
+                FuncDeclStatement('add', [['x', 'int'], ['y', 'int']], 'int', [
+                    ReturnStatement(BinOp('+', StorageLocation('x'), StorageLocation('y'))),
+                ]),
+                FuncDeclStatement('mul', [['x', 'int'], ['y', 'int']], 'int', [
+                    ReturnStatement(BinOp('*', StorageLocation('x'), StorageLocation('y'))),
+                ]),
+                FuncDeclStatement('factorial', [['n', 'int']], 'int', [
+                    ConditionalStatement(BinOp('==', StorageLocation('n'), Int(0)), [
+                        ReturnStatement(Int(1)),
+                    ], [
+                        ReturnStatement(FuncCall('mul', [StorageLocation('n'), FuncCall('factorial', [FuncCall('add', [StorageLocation('n'), UnOp('-', Int(1))])])]))
+                    ]),
+                ]),
+                FuncDeclStatement('print_factorials', [['last', 'int']], 'int', [
+                    AssignStatement(DeclStorageLocation('x', False), Int(0)),
+                    ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('last')), [
+                        PrintStatement(FuncCall('factorial', [StorageLocation('x')])),
+                        AssignStatement(StorageLocation('x'), FuncCall('add', [StorageLocation('x'), Int(1)]))
+                    ])
+                ]),
+                FuncDeclStatement('main', [], 'int', [
+                    AssignStatement(DeclStorageLocation('result', False), FuncCall('print_factorials', [Int(10)])),
+                    ReturnStatement(Int(0))
+                ]),
+        ]
+        self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program(model), output)
+
+
+    @unittest.skip
+    def test_struct(self):
+        # -----------------------------------------------------------------------------
+        # Program 7: Structures.  The following program defines and uses a structure.
+        #
+        # You'll need to support structure definition, creation, and usage with other
+        # parts of your language such as functions.
+        
+        source = '''
+        struct Fraction {
+           numerator int;
+           denominator int;
+        }
+        
+        func frac_mul(a Fraction, b Fraction) Fraction {
+            return Fraction(a.numerator * b.numerator, a.denominator * b.denominator);
+        }
+        
+        var x = Fraction(1, 4);
+        var y = Fraction(3, 8);
+        var c = frac_mul(x, y);
+        print c.numerator;
+        print c.denominator;
+        c.numerator = c.numerator / 4;
+        c.denominator = c.denominator / 4;
+        print c.numerator;
+        print c.denominator;
+        '''
+        output = ''
+        tokens = []
+        model = []
+        self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program(model), output)
+        
+    @unittest.skip
+    def test_enums(self):
+        # -----------------------------------------------------------------------------
+        # Program 8: Enums.  The following program defines and uses an enum.
+        #
+        # To this, you'll need to support the enum definition, enum values,
+        # and various forms of pattern matching including match, if let, and
+        # while let.
+        
+        source = '''
+        enum MaybeNumber {
+            No;
+            Integer(int);
+            Float(float);
+        }
+        
+        func add(a Number, b Number) Number {
+           return match(a) {
+                     No => Number::No;
+                     Integer(x) => match(b) {
+                           Integer(y) => Number::Integer(x + y);
+                           Float(y) => Number::Float(float(x) + y);
+                     };
+                     Float(x) => match(b) {
+                           Integer(y) => Number::Float(x + float(x));
+                           Float(y) => Number::Float(x + y);
+                     };
+           };
+        }
+        
+        var a = Number::Integer(42);
+        var b = Number::Float(3.7);
+        var c = add(a, b);
+        
+        if let Float(x) = c {
+            print x;
+        } else {
+            print 0.0;
+        }
+        
+        while let Integer(x) = a {
+            print x;
+            if x > 0 {
+                a = Number::Integer(x-1);
+            } else {
+                a = Number::No;
+            }
+        }
+        '''
+        output = ''
+        tokens = []
+        model = []
+        self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
+        self.assertTrue(check_program(model))
+        self.assertEqual(interpret_program(model), output)
