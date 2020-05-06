@@ -69,7 +69,7 @@ class ScriptModels(unittest.TestCase):
         print 2 * 3 + -4;""")
 
         tokens = [
-            Token(type='NAME', value='print', lineno=1, index=0),
+            Token(type='PRINT', value='print', lineno=1, index=0),
             Token(type='INTEGER', value='2', lineno=1, index=6),
             Token(type='PLUS', value='+', lineno=1, index=8),
             Token(type='INTEGER', value='3', lineno=1, index=10),
@@ -77,24 +77,21 @@ class ScriptModels(unittest.TestCase):
             Token(type='MINUS', value='-', lineno=1, index=14),
             Token(type='INTEGER', value='4', lineno=1, index=15),
             Token(type='SEMI', value=';', lineno=1, index=16),
-            Token(type='NAME', value='print', lineno=1, index=18),
-            Token(type='INTEGER', value='2', lineno=1, index=24),
-            Token(type='FLOAT', value='.0', lineno=1, index=25),
+            Token(type='PRINT', value='print', lineno=1, index=18),
+            Token(type='FLOAT', value='2.0', lineno=1, index=24),
             Token(type='MINUS', value='-', lineno=1, index=28),
-            Token(type='INTEGER', value='3', lineno=1, index=30),
-            Token(type='FLOAT', value='.0', lineno=1, index=31),
+            Token(type='FLOAT', value='3.0', lineno=1, index=30),
             Token(type='DIVIDE', value='/', lineno=1, index=34),
             Token(type='MINUS', value='-', lineno=1, index=36),
-            Token(type='INTEGER', value='4', lineno=1, index=37),
-            Token(type='FLOAT', value='.0', lineno=1, index=38),
+            Token(type='FLOAT', value='4.0', lineno=1, index=37),
             Token(type='SEMI', value=';', lineno=1, index=40),
-            Token(type='NAME', value='print', lineno=1, index=42),
+            Token(type='PRINT', value='print', lineno=1, index=42),
             Token(type='MINUS', value='-', lineno=1, index=48),
             Token(type='INTEGER', value='2', lineno=1, index=49),
             Token(type='PLUS', value='+', lineno=1, index=51),
             Token(type='INTEGER', value='3', lineno=1, index=53),
             Token(type='SEMI', value=';', lineno=1, index=54),
-            Token(type='NAME', value='print', lineno=1, index=56),
+            Token(type='PRINT', value='print', lineno=1, index=56),
             Token(type='INTEGER', value='2', lineno=1, index=62),
             Token(type='TIMES', value='*', lineno=1, index=64),
             Token(type='INTEGER', value='3', lineno=1, index=66),
@@ -115,7 +112,6 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
-    @unittest.skip
     def test_var(self):
         # ----------------------------------------------------------------------
         # Program 2: Variable and constant declarations. 
@@ -130,24 +126,22 @@ class ScriptModels(unittest.TestCase):
         print tau;""")
         
         tokens = [
-            Token(type='NAME', value='const', lineno=1, index=0),
+            Token(type='CONST', value='const', lineno=1, index=0),
             Token(type='NAME', value='pi', lineno=1, index=6),
             Token(type='ASSIGN', value='=', lineno=1, index=9),
-            Token(type='INTEGER', value='3', lineno=1, index=11),
-            Token(type='FLOAT', value='.14159', lineno=1, index=12),
+            Token(type='FLOAT', value='3.14159', lineno=1, index=11),
             Token(type='SEMI', value=';', lineno=1, index=18),
-            Token(type='NAME', value='var', lineno=1, index=20),
+            Token(type='VAR', value='var', lineno=1, index=20),
             Token(type='NAME', value='tau', lineno=1, index=24),
             Token(type='NAME', value='float', lineno=1, index=28),
             Token(type='SEMI', value=';', lineno=1, index=33),
             Token(type='NAME', value='tau', lineno=1, index=35),
             Token(type='ASSIGN', value='=', lineno=1, index=39),
-            Token(type='INTEGER', value='2', lineno=1, index=41),
-            Token(type='FLOAT', value='.0', lineno=1, index=42),
+            Token(type='FLOAT', value='2.0', lineno=1, index=41),
             Token(type='TIMES', value='*', lineno=1, index=45),
             Token(type='NAME', value='pi', lineno=1, index=47),
             Token(type='SEMI', value=';', lineno=1, index=49),
-            Token(type='NAME', value='print', lineno=1, index=51),
+            Token(type='PRINT', value='print', lineno=1, index=51),
             Token(type='NAME', value='tau', lineno=1, index=57),
             Token(type='SEMI', value=';', lineno=1, index=60)
         ]
@@ -161,7 +155,6 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
-    @unittest.skip
     def test_conditional(self):
         # ----------------------------------------------------------------------
         # Program 3: Conditionals.  This program prints out the minimum of
@@ -177,30 +170,30 @@ class ScriptModels(unittest.TestCase):
         }''')
        
         tokens = [
-            Token(type='NAME', value='var', lineno=1, index=0),
+            Token(type='VAR', value='var', lineno=1, index=0),
             Token(type='NAME', value='a', lineno=1, index=4),
             Token(type='NAME', value='int', lineno=1, index=6),
             Token(type='ASSIGN', value='=', lineno=1, index=10),
             Token(type='INTEGER', value='2', lineno=1, index=12),
             Token(type='SEMI', value=';', lineno=1, index=13),
-            Token(type='NAME', value='var', lineno=1, index=15),
+            Token(type='VAR', value='var', lineno=1, index=15),
             Token(type='NAME', value='b', lineno=1, index=19),
             Token(type='NAME', value='int', lineno=1, index=21),
             Token(type='ASSIGN', value='=', lineno=1, index=25),
             Token(type='INTEGER', value='3', lineno=1, index=27),
             Token(type='SEMI', value=';', lineno=1, index=28),
-            Token(type='NAME', value='if', lineno=1, index=30),
+            Token(type='IF', value='if', lineno=1, index=30),
             Token(type='NAME', value='a', lineno=1, index=33),
             Token(type='LT', value='<', lineno=1, index=35),
             Token(type='NAME', value='b', lineno=1, index=37),
             Token(type='LBRACE', value='{', lineno=1, index=39),
-            Token(type='NAME', value='print', lineno=1, index=42),
+            Token(type='PRINT', value='print', lineno=1, index=42),
             Token(type='NAME', value='a', lineno=1, index=48),
             Token(type='SEMI', value=';', lineno=1, index=49),
             Token(type='RBRACE', value='}', lineno=1, index=51),
-            Token(type='NAME', value='else', lineno=1, index=53),
+            Token(type='ELSE', value='else', lineno=1, index=53),
             Token(type='LBRACE', value='{', lineno=1, index=58),
-            Token(type='NAME', value='print', lineno=1, index=61),
+            Token(type='PRINT', value='print', lineno=1, index=61),
             Token(type='NAME', value='b', lineno=1, index=67),
             Token(type='SEMI', value=';', lineno=1, index=68),
             Token(type='RBRACE', value='}', lineno=1, index=70),
@@ -220,7 +213,6 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
-    @unittest.skip
     def test_loop(self):
         # ----------------------------------------------------------------------
         # Program 4: Loops.  This program prints out the first 10 factorials.
@@ -237,24 +229,24 @@ class ScriptModels(unittest.TestCase):
         }''')
 
         tokens = [
-            Token(type='NAME', value='const', lineno=1, index=0),
+            Token(type='CONST', value='const', lineno=1, index=0),
             Token(type='NAME', value='n', lineno=1, index=6),
             Token(type='ASSIGN', value='=', lineno=1, index=8),
             Token(type='INTEGER', value='10', lineno=1, index=10),
             Token(type='SEMI', value=';', lineno=1, index=12),
-            Token(type='NAME', value='var', lineno=1, index=14),
+            Token(type='VAR', value='var', lineno=1, index=14),
             Token(type='NAME', value='x', lineno=1, index=18),
             Token(type='NAME', value='int', lineno=1, index=20),
             Token(type='ASSIGN', value='=', lineno=1, index=24),
             Token(type='INTEGER', value='1', lineno=1, index=26),
             Token(type='SEMI', value=';', lineno=1, index=27),
-            Token(type='NAME', value='var', lineno=1, index=29),
+            Token(type='VAR', value='var', lineno=1, index=29),
             Token(type='NAME', value='fact', lineno=1, index=33),
             Token(type='NAME', value='int', lineno=1, index=38),
             Token(type='ASSIGN', value='=', lineno=1, index=42),
             Token(type='INTEGER', value='1', lineno=1, index=44),
             Token(type='SEMI', value=';', lineno=1, index=45),
-            Token(type='NAME', value='while', lineno=1, index=47),
+            Token(type='WHILE', value='while', lineno=1, index=47),
             Token(type='NAME', value='x', lineno=1, index=53),
             Token(type='LT', value='<', lineno=1, index=55),
             Token(type='NAME', value='n', lineno=1, index=57),
@@ -265,7 +257,7 @@ class ScriptModels(unittest.TestCase):
             Token(type='TIMES', value='*', lineno=1, index=74),
             Token(type='NAME', value='x', lineno=1, index=76),
             Token(type='SEMI', value=';', lineno=1, index=77),
-            Token(type='NAME', value='print', lineno=1, index=80),
+            Token(type='PRINT', value='print', lineno=1, index=80),
             Token(type='NAME', value='fact', lineno=1, index=86),
             Token(type='SEMI', value=';', lineno=1, index=90),
             Token(type='NAME', value='x', lineno=1, index=93),
@@ -291,7 +283,6 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(list(to_tokens(source)), tokens)
         self.assertEqual(parse_tokens(iter(tokens)), model)
 
-    @unittest.skip
     def test_compexpr(self):
         # ----------------------------------------------------------------------
         # Program 5: Compound Expressions.  This program swaps the values of
@@ -306,12 +297,12 @@ class ScriptModels(unittest.TestCase):
         print y;''')
 
         tokens = [
-            Token(type='NAME', value='var', lineno=1, index=0),
+            Token(type='VAR', value='var', lineno=1, index=0),
             Token(type='NAME', value='x', lineno=1, index=4),
             Token(type='ASSIGN', value='=', lineno=1, index=6),
             Token(type='INTEGER', value='37', lineno=1, index=8),
             Token(type='SEMI', value=';', lineno=1, index=10),
-            Token(type='NAME', value='var', lineno=1, index=12),
+            Token(type='VAR', value='var', lineno=1, index=12),
             Token(type='NAME', value='y', lineno=1, index=16),
             Token(type='ASSIGN', value='=', lineno=1, index=18),
             Token(type='INTEGER', value='42', lineno=1, index=20),
@@ -319,7 +310,7 @@ class ScriptModels(unittest.TestCase):
             Token(type='NAME', value='x', lineno=1, index=24),
             Token(type='ASSIGN', value='=', lineno=1, index=26),
             Token(type='LBRACE', value='{', lineno=1, index=28),
-            Token(type='NAME', value='var', lineno=1, index=30),
+            Token(type='VAR', value='var', lineno=1, index=30),
             Token(type='NAME', value='t', lineno=1, index=34),
             Token(type='ASSIGN', value='=', lineno=1, index=36),
             Token(type='NAME', value='y', lineno=1, index=38),
@@ -332,10 +323,10 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=49),
             Token(type='RBRACE', value='}', lineno=1, index=51),
             Token(type='SEMI', value=';', lineno=1, index=52),
-            Token(type='NAME', value='print', lineno=1, index=54),
+            Token(type='PRINT', value='print', lineno=1, index=54),
             Token(type='NAME', value='x', lineno=1, index=60),
             Token(type='SEMI', value=';', lineno=1, index=61),
-            Token(type='NAME', value='print', lineno=1, index=63),
+            Token(type='PRINT', value='print', lineno=1, index=63),
             Token(type='NAME', value='y', lineno=1, index=69),
             Token(type='SEMI', value=';', lineno=1, index=70),
         ]

@@ -29,7 +29,6 @@ class WabbitLexer(Lexer):
     ignore_multilinecomments = r'\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/'
     ignore_midlinecomments = r'\/\/.*'
 
-    NAME = r'[A-Za-z_][A-Za-z0-9_]*'
     CONST = r'const'
     VAR = r'var'
     PRINT = r'print'
@@ -40,9 +39,10 @@ class WabbitLexer(Lexer):
     WHILE = r'while'
     TRUE = r'true'
     FALSE = r'false'
+    NAME = r'[A-Za-z_][A-Za-z0-9_]*'
 
-    INTEGER = r'[0-9]+'
     FLOAT = r'[0-9]*\.[0-9]*'
+    INTEGER = r'[0-9]+'
     CHAR = r"'(\'|\n|[a-z][A-Z][0-9]|\\x[0-9]{2})'"
 
     PLUS = r'\+'

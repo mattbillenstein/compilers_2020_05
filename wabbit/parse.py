@@ -92,7 +92,7 @@ class WabbitParser(Parser):
        'MINUS expr',
        'LNOT expr')
     def expr(self, p):
-        return UnOp(p[1], p.expr)
+        return UnOp(p[0], p.expr)
 
     @_('location')
     def expr(self, p):
