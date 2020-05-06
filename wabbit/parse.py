@@ -1,14 +1,14 @@
 from .model import *
-from .tokenize import tokenize, WabbitLexer
+from .tokenize import to_tokens, WabbitLexer
 
 from sly import Parser
 
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens
     precedence = (
-        ('left', PLUS, MINUS)
-        ('left', TIMES, DIVIDE)
-        ('left', LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT)
+        ('left', PLUS, MINUS),
+        ('left', TIMES, DIVIDE),
+        ('left', LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT),
     )
     
     def __init__(self):
@@ -44,6 +44,8 @@ class WabbitParser(Parser):
 
     @_('VAR NAME [ type ] [ ASSIGN expr ] SEMI')
     def variable_definition(self, p):
+        if not p.type and not p.expr:
+            raise SyntaxError()
         return AssignStatement(DeclStorageLocation(p.NAME, p.type, False), p.expr)
 
     @_('CONST NAME [ type ] [ ASSIGN expr ] SEMI')
@@ -51,8 +53,12 @@ class WabbitParser(Parser):
         return AssignStatement(DeclStorageLocation(p.NAME, p.type, True), p.expr)
 
     @_('IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
+    def if_statement(self, p):
+        return ConditionalStatement(p.expr, p.statements0, p.statements1)
+
+    @_('WHILE expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def while_statement(self, p):
-        return ConditionalLoopStatement(p.expr, p.statements, p.statements)
+        return ConditionalLoopStatement(p.expr, p.statements0, p.statements1)
 
     @_('CONTINUE SEMI')
     def continue_statement(self, p):
@@ -90,11 +96,11 @@ class WabbitParser(Parser):
 
     @_('location')
     def expr(self, p):
-        return NotImplementedError
+        return p.location
 
     @_('literal')
     def expr(self, p):
-        return NotImplementedError
+        return p.literal
 
     @_('LBRACE statements RBRACE')
     def expr(self, p):
@@ -102,11 +108,11 @@ class WabbitParser(Parser):
 
     @_('INTEGER')
     def literal(self, p):
-        return Integer(p.INTEGER)
+        return Int(int(p.INTEGER))
 
     @_('FLOAT')
     def literal(self, p):
-        return Float(p.FLOAT)
+        return Float(float(p.FLOAT))
 
     @_('CHAR')
     def literal(self, p):
@@ -132,14 +138,14 @@ class WabbitParser(Parser):
     def type(self, p):
         return p.NAME
 
-    @_('')
-    def empty(self, p):
-        pass
+#    @_('')
+#    def empty(self, p):
+#        pass
 
 
 # Top-level function that runs everything
-def parse_source(text):
-    tokens = tokenize(text)
+def to_model(text):
+    tokens = to_tokens(text)
     model = parse_tokens(tokens)     # You need to implement this part
     return model
 
@@ -148,7 +154,7 @@ def parse_source(text):
 def parse_file(filename):
     with open(filename) as file:
         text = file.read()
-    return parse_source(text)
+    return to_model(text)
 
 
 def parse_tokens(tokens):

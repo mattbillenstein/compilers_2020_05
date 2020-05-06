@@ -1,20 +1,35 @@
-# tokenizer.py
-#
-# The role of a tokenizer is to turn raw text into recognized symbols 
-# known as tokens. 
-
 from sly import Lexer
+from sly.lex import Token
+
+
+class Token(Token):
+    '''
+    Representation of a single token.
+    '''
+    __slots__ = ('type', 'value', 'lineno', 'index')
+    def __init__(self, type, value, lineno, index):
+        self.type = type
+        self.value = value
+        self.lineno = lineno
+        self.index = index
+
+    def __eq__(self, other):
+        return other.__class__.__name__ == 'Token' and \
+               self.type == other.type and \
+               self.value == other.value and \
+               self.lineno == other.lineno and \
+               self.index == other.index
 
 
 class WabbitLexer(Lexer):
-    tokens = { IDENTIFIER, CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, INTEGER, FLOAT, CHAR,
-            PLUS, MINUS, TIMES, DIVIDE, LTE, LT, GTE, GT, EQ, NE, LAND, LOR, LNOT, ASSIGN, SEMI, LPAREN, RPAREN,
+    tokens = { NAME, CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, INTEGER, FLOAT, CHAR,
+            PLUS, MINUS, TIMES, DIVIDE, LE, LT, GE, GT, EQ, NE, LAND, LOR, LNOT, ASSIGN, SEMI, LPAREN, RPAREN,
             LBRACE, RBRACE}
     ignore = ' \t\n'
     ignore_multilinecomments = r'\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/'
     ignore_midlinecomments = r'\/\/.*'
 
-    IDENTIFIER = r'[A-Za-z_][A-Za-z0-9_]*'
+    NAME = r'[A-Za-z_][A-Za-z0-9_]*'
     CONST = r'const'
     VAR = r'var'
     PRINT = r'print'
@@ -34,9 +49,9 @@ class WabbitLexer(Lexer):
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    LTE = r'<='
+    LE = r'<='
     LT = r'<'
-    GTE = r'>='
+    GE = r'>='
     GT = r'>'
     EQ = r'=='
     NE = r'!='
@@ -52,7 +67,7 @@ class WabbitLexer(Lexer):
     RBRACE = r'}'
 
 
-def tokenize(text):
+def to_tokens(text):
     lexer = WabbitLexer()
     return lexer.tokenize(text)
 
@@ -71,7 +86,7 @@ class TokenVisitor():
     def __init__(self):
         raise NotImplementedError
 
-    def visit_IDENTIFIER(self, node):
+    def visit_NAME(self, node):
         raise NotImplementedError
 
     def visit_CONST(self, node):

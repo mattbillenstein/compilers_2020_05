@@ -22,14 +22,15 @@
 
 from wabbit.model import *
 from wabbit.decompile import WabbitDecompiler
-from wabbit.parse import WabbitParser
+from wabbit.parse import parse_tokens
+from wabbit.tokenize import to_tokens, Token
 from textwrap import dedent
 import unittest
 
 class ScriptModels(unittest.TestCase):
     def setUp(self):
         self.decompiler = WabbitDecompiler()
-        self.parser = WabbitParser()
+        self.maxDiff = None
 
     def test_simple(self):
         # ----------------------------------------------------------------------
@@ -38,11 +39,18 @@ class ScriptModels(unittest.TestCase):
         # This one is given to you as an example. You might need to adapt it
         # according to the names/classes you defined in wabbit.model
         
-        expr_source = "2 + 3 * 4"
-        expr_model = BinOp('+', Int(2),
-                                 BinOp('*', Int(3), Int(4)))
-        self.assertEqual(self.decompiler.to_source(expr_model), expr_source)
-        self.assertEqual(self.parser.to_model(source), model)
+        source = "2 + 3 * 4"
+        tokens = [
+            Token(type='INTEGER', value='2', lineno=1, index=0),
+            Token(type='PLUS', value='+', lineno=1, index=2),
+            Token(type='INTEGER', value='3', lineno=1, index=4),
+            Token(type='TIMES', value='*', lineno=1, index=6),
+            Token(type='INTEGER', value='4', lineno=1, index=8)
+        ]
+        model = [BinOp('+', Int(2), BinOp('*', Int(3), Int(4)))]
+        self.assertEqual(self.decompiler.to_source(model), source)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
     def test_print(self):
         
@@ -58,6 +66,42 @@ class ScriptModels(unittest.TestCase):
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
         print 2 * 3 + -4;""")
+
+        tokens = [
+            Token(type='NAME', value='print', lineno=1, index=0),
+            Token(type='INTEGER', value='2', lineno=1, index=6),
+            Token(type='PLUS', value='+', lineno=1, index=8),
+            Token(type='INTEGER', value='3', lineno=1, index=10),
+            Token(type='TIMES', value='*', lineno=1, index=12),
+            Token(type='MINUS', value='-', lineno=1, index=14),
+            Token(type='INTEGER', value='4', lineno=1, index=15),
+            Token(type='SEMI', value=';', lineno=1, index=16),
+            Token(type='NAME', value='print', lineno=1, index=18),
+            Token(type='INTEGER', value='2', lineno=1, index=24),
+            Token(type='FLOAT', value='.0', lineno=1, index=25),
+            Token(type='MINUS', value='-', lineno=1, index=28),
+            Token(type='INTEGER', value='3', lineno=1, index=30),
+            Token(type='FLOAT', value='.0', lineno=1, index=31),
+            Token(type='DIVIDE', value='/', lineno=1, index=34),
+            Token(type='MINUS', value='-', lineno=1, index=36),
+            Token(type='INTEGER', value='4', lineno=1, index=37),
+            Token(type='FLOAT', value='.0', lineno=1, index=38),
+            Token(type='SEMI', value=';', lineno=1, index=40),
+            Token(type='NAME', value='print', lineno=1, index=42),
+            Token(type='MINUS', value='-', lineno=1, index=48),
+            Token(type='INTEGER', value='2', lineno=1, index=49),
+            Token(type='PLUS', value='+', lineno=1, index=51),
+            Token(type='INTEGER', value='3', lineno=1, index=53),
+            Token(type='SEMI', value=';', lineno=1, index=54),
+            Token(type='NAME', value='print', lineno=1, index=56),
+            Token(type='INTEGER', value='2', lineno=1, index=62),
+            Token(type='TIMES', value='*', lineno=1, index=64),
+            Token(type='INTEGER', value='3', lineno=1, index=66),
+            Token(type='PLUS', value='+', lineno=1, index=68),
+            Token(type='MINUS', value='-', lineno=1, index=70),
+            Token(type='INTEGER', value='4', lineno=1, index=71),
+            Token(type='SEMI', value=';', lineno=1, index=72),
+        ]
         
         model = [
             PrintStatement(BinOp('+', Int(2), BinOp('*', Int(3), UnOp('-', Int(4))))),
@@ -67,7 +111,8 @@ class ScriptModels(unittest.TestCase):
         ]
         
         self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(self.parser.to_model(source), model)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -82,6 +127,28 @@ class ScriptModels(unittest.TestCase):
         tau = 2.0 * pi;
         print tau;""")
         
+        tokens = [
+            Token(type='NAME', value='const', lineno=1, index=0),
+            Token(type='NAME', value='pi', lineno=1, index=6),
+            Token(type='ASSIGN', value='=', lineno=1, index=9),
+            Token(type='INTEGER', value='3', lineno=1, index=11),
+            Token(type='FLOAT', value='.14159', lineno=1, index=12),
+            Token(type='SEMI', value=';', lineno=1, index=18),
+            Token(type='NAME', value='var', lineno=1, index=20),
+            Token(type='NAME', value='tau', lineno=1, index=24),
+            Token(type='NAME', value='float', lineno=1, index=28),
+            Token(type='SEMI', value=';', lineno=1, index=33),
+            Token(type='NAME', value='tau', lineno=1, index=35),
+            Token(type='ASSIGN', value='=', lineno=1, index=39),
+            Token(type='INTEGER', value='2', lineno=1, index=41),
+            Token(type='FLOAT', value='.0', lineno=1, index=42),
+            Token(type='TIMES', value='*', lineno=1, index=45),
+            Token(type='NAME', value='pi', lineno=1, index=47),
+            Token(type='SEMI', value=';', lineno=1, index=49),
+            Token(type='NAME', value='print', lineno=1, index=51),
+            Token(type='NAME', value='tau', lineno=1, index=57),
+            Token(type='SEMI', value=';', lineno=1, index=60)
+        ]
         model = [
             AssignStatement(DeclStorageLocation('pi', None, True), Float(3.14159)),
             ExpressionStatement(DeclStorageLocation('tau', 'float', False)),
@@ -89,7 +156,8 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation('tau'))
         ]
         self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(self.parser.to_model(source), model)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -104,7 +172,37 @@ class ScriptModels(unittest.TestCase):
         } else {
         \tprint b;
         }''')
-        
+       
+        tokens = [
+            Token(type='NAME', value='var', lineno=1, index=0),
+            Token(type='NAME', value='a', lineno=1, index=4),
+            Token(type='NAME', value='int', lineno=1, index=6),
+            Token(type='ASSIGN', value='=', lineno=1, index=10),
+            Token(type='INTEGER', value='2', lineno=1, index=12),
+            Token(type='SEMI', value=';', lineno=1, index=13),
+            Token(type='NAME', value='var', lineno=1, index=15),
+            Token(type='NAME', value='b', lineno=1, index=19),
+            Token(type='NAME', value='int', lineno=1, index=21),
+            Token(type='ASSIGN', value='=', lineno=1, index=25),
+            Token(type='INTEGER', value='3', lineno=1, index=27),
+            Token(type='SEMI', value=';', lineno=1, index=28),
+            Token(type='NAME', value='if', lineno=1, index=30),
+            Token(type='NAME', value='a', lineno=1, index=33),
+            Token(type='LT', value='<', lineno=1, index=35),
+            Token(type='NAME', value='b', lineno=1, index=37),
+            Token(type='LBRACE', value='{', lineno=1, index=39),
+            Token(type='NAME', value='print', lineno=1, index=42),
+            Token(type='NAME', value='a', lineno=1, index=48),
+            Token(type='SEMI', value=';', lineno=1, index=49),
+            Token(type='RBRACE', value='}', lineno=1, index=51),
+            Token(type='NAME', value='else', lineno=1, index=53),
+            Token(type='LBRACE', value='{', lineno=1, index=58),
+            Token(type='NAME', value='print', lineno=1, index=61),
+            Token(type='NAME', value='b', lineno=1, index=67),
+            Token(type='SEMI', value=';', lineno=1, index=68),
+            Token(type='RBRACE', value='}', lineno=1, index=70),
+        ]
+
         model = [
             AssignStatement(DeclStorageLocation('a', 'int', False), Int(2)),
             AssignStatement(DeclStorageLocation('b', 'int', False), Int(3)),
@@ -116,7 +214,8 @@ class ScriptModels(unittest.TestCase):
             ),
         ]
         self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(self.parser.to_model(source), model)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -132,6 +231,47 @@ class ScriptModels(unittest.TestCase):
         \tprint fact;
         \tx = x + 1;
         }''')
+
+        tokens = [
+            Token(type='NAME', value='const', lineno=1, index=0),
+            Token(type='NAME', value='n', lineno=1, index=6),
+            Token(type='ASSIGN', value='=', lineno=1, index=8),
+            Token(type='INTEGER', value='10', lineno=1, index=10),
+            Token(type='SEMI', value=';', lineno=1, index=12),
+            Token(type='NAME', value='var', lineno=1, index=14),
+            Token(type='NAME', value='x', lineno=1, index=18),
+            Token(type='NAME', value='int', lineno=1, index=20),
+            Token(type='ASSIGN', value='=', lineno=1, index=24),
+            Token(type='INTEGER', value='1', lineno=1, index=26),
+            Token(type='SEMI', value=';', lineno=1, index=27),
+            Token(type='NAME', value='var', lineno=1, index=29),
+            Token(type='NAME', value='fact', lineno=1, index=33),
+            Token(type='NAME', value='int', lineno=1, index=38),
+            Token(type='ASSIGN', value='=', lineno=1, index=42),
+            Token(type='INTEGER', value='1', lineno=1, index=44),
+            Token(type='SEMI', value=';', lineno=1, index=45),
+            Token(type='NAME', value='while', lineno=1, index=47),
+            Token(type='NAME', value='x', lineno=1, index=53),
+            Token(type='LT', value='<', lineno=1, index=55),
+            Token(type='NAME', value='n', lineno=1, index=57),
+            Token(type='LBRACE', value='{', lineno=1, index=59),
+            Token(type='NAME', value='fact', lineno=1, index=62),
+            Token(type='ASSIGN', value='=', lineno=1, index=67),
+            Token(type='NAME', value='fact', lineno=1, index=69),
+            Token(type='TIMES', value='*', lineno=1, index=74),
+            Token(type='NAME', value='x', lineno=1, index=76),
+            Token(type='SEMI', value=';', lineno=1, index=77),
+            Token(type='NAME', value='print', lineno=1, index=80),
+            Token(type='NAME', value='fact', lineno=1, index=86),
+            Token(type='SEMI', value=';', lineno=1, index=90),
+            Token(type='NAME', value='x', lineno=1, index=93),
+            Token(type='ASSIGN', value='=', lineno=1, index=95),
+            Token(type='NAME', value='x', lineno=1, index=97),
+            Token(type='PLUS', value='+', lineno=1, index=99),
+            Token(type='INTEGER', value='1', lineno=1, index=101),
+            Token(type='SEMI', value=';', lineno=1, index=102),
+            Token(type='RBRACE', value='}', lineno=1, index=104),
+        ]
         
         model = [
                 AssignStatement(DeclStorageLocation('n', None, True), Int(10)),
@@ -143,9 +283,9 @@ class ScriptModels(unittest.TestCase):
                     AssignStatement(StorageLocation('x'), BinOp('+', StorageLocation('x'), Int(1)))
                 ]),
         ]
-        
         self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(self.parser.to_model(source), model)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -159,6 +299,41 @@ class ScriptModels(unittest.TestCase):
         x = { var t = y; y = x; t; };
         print x;
         print y;''')
+
+        tokens = [
+            Token(type='NAME', value='var', lineno=1, index=0),
+            Token(type='NAME', value='x', lineno=1, index=4),
+            Token(type='ASSIGN', value='=', lineno=1, index=6),
+            Token(type='INTEGER', value='37', lineno=1, index=8),
+            Token(type='SEMI', value=';', lineno=1, index=10),
+            Token(type='NAME', value='var', lineno=1, index=12),
+            Token(type='NAME', value='y', lineno=1, index=16),
+            Token(type='ASSIGN', value='=', lineno=1, index=18),
+            Token(type='INTEGER', value='42', lineno=1, index=20),
+            Token(type='SEMI', value=';', lineno=1, index=22),
+            Token(type='NAME', value='x', lineno=1, index=24),
+            Token(type='ASSIGN', value='=', lineno=1, index=26),
+            Token(type='LBRACE', value='{', lineno=1, index=28),
+            Token(type='NAME', value='var', lineno=1, index=30),
+            Token(type='NAME', value='t', lineno=1, index=34),
+            Token(type='ASSIGN', value='=', lineno=1, index=36),
+            Token(type='NAME', value='y', lineno=1, index=38),
+            Token(type='SEMI', value=';', lineno=1, index=39),
+            Token(type='NAME', value='y', lineno=1, index=41),
+            Token(type='ASSIGN', value='=', lineno=1, index=43),
+            Token(type='NAME', value='x', lineno=1, index=45),
+            Token(type='SEMI', value=';', lineno=1, index=46),
+            Token(type='NAME', value='t', lineno=1, index=48),
+            Token(type='SEMI', value=';', lineno=1, index=49),
+            Token(type='RBRACE', value='}', lineno=1, index=51),
+            Token(type='SEMI', value=';', lineno=1, index=52),
+            Token(type='NAME', value='print', lineno=1, index=54),
+            Token(type='NAME', value='x', lineno=1, index=60),
+            Token(type='SEMI', value=';', lineno=1, index=61),
+            Token(type='NAME', value='print', lineno=1, index=63),
+            Token(type='NAME', value='y', lineno=1, index=69),
+            Token(type='SEMI', value=';', lineno=1, index=70),
+        ]
         
         model = [
             AssignStatement(DeclStorageLocation('x'), Int(37)),
@@ -172,7 +347,8 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation('y')),
                 ]
         self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(self.parser.to_model(source), model)
+        self.assertEqual(list(to_tokens(source)), tokens)
+        self.assertEqual(parse_tokens(iter(tokens)), model)
 
 
 if __name__ == '__main__':
