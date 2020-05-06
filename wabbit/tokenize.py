@@ -6,14 +6,14 @@ import utils
 TOKENS = [
     ("NUMBER", r"\d+(\.\d*)?"),  # Integer or decimal number, TODO: leading "."
     ("SEMICOLON", r";"),  # Statement terminator
-    ("NAME", r"_[A-Za-z][_A-Za-z0-9]+"),  # Identifiers
+    ("NAME", r"[_A-Za-z][_A-Za-z0-9]+"),  # Identifiers
     ("OP", r"[+\-*/]"),  # Arithmetic operators
     ("NEWLINE", r"\n"),  # Line endings
     ("SKIP", r"[ \t]+"),  # Skip over spaces and tabs
-    #     LPAREN   : '('
-    #     RPAREN   : ')'
-    #     LBRACE   : '{'
-    #     RBRACE   : '}'
+    ("LPAREN", r"\("),
+    ("RPAREN", r"\)"),
+    ("LBRACE", "{"),
+    ("RBRACE", "}"),
     # Operators
     ("LE", "<="),
     ("LT", "<"),
@@ -37,6 +37,8 @@ TOKENS = [
     ("MISMATCH", r"."),  # Any other character
 ]
 
+KEYWORDS = ["const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"]
+
 IGNORE = " "
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
@@ -58,9 +60,12 @@ def tokenize(text):
             text = text[match.end() :]
             continue
 
-        for name, regexp in TOKENS:
+        for type_, regexp in TOKENS:
             if match := re.match(regexp, text):
-                yield name, match.string[: match.end()]
+                matched = match.string[: match.end()]
+                if type_ == "NAME" and matched in KEYWORDS:
+                    type_ = "KEYWORD"
+                yield type_, matched
                 text = text[match.end() :]
                 break
         else:
@@ -70,7 +75,13 @@ def tokenize(text):
 def test_tokenizer():
     test_cases = [
         ("+", [("OP", "+")]),
+        ("++", [("OP", "+"), ("OP", "+")]),
+        ("+ +", [("OP", "+"), ("OP", "+")]),
         ("+!", [("OP", "+"), ("LNOT", "!")]),
+        (
+            "(1 + 2)",
+            [("LPAREN", "("), ("NUMBER", "1"), ("OP", "+"), ("NUMBER", "2"), ("RPAREN", ")")],
+        ),
         (
             "+ - * / < <= > >= == != && || !",
             [
@@ -89,6 +100,8 @@ def test_tokenizer():
                 ("LNOT", "!"),
             ],
         ),
+        ("frog", [("NAME", "frog")]),
+        ("const CONST", [("KEYWORD", "const"), ("NAME", "CONST")]),
     ]
     for source, expected_tokens in test_cases:
         actual_tokens = list(tokenize(source))
