@@ -169,7 +169,15 @@ class WabbitParser(Parser):
     @_('PRINT expression SEMI')
     def print_statement(self, p):      # p contains all information from the parse
         # Create a node from your model
-        return PrintStatement(p.expression)
+        node = PrintStatement(p.expression)   # p.lineno is line of left-most token
+        # linemap[node] = p.lineno              # linemap is a dict on the side mapping nodes -> lines
+        return node
+
+    # Error version
+    @_('PRINT error SEMI')
+    def print_statement(self, p):
+        print("Bad print statement")
+        return PrintStatement(Integer(0))   # Have to return something.(Compiler will stop anyways because of error)
 
     # assignment_statement : location ASSIGN expression SEMI
     #
@@ -253,7 +261,9 @@ class WabbitParser(Parser):
 
     @_('CHAR')
     def expression(self, p):
-        return Char(eval(p.CHAR))
+        # Could be better..... alternative: write a real parser for escape codes.
+        # Cheating: test programs only use normal characters and '\n'.
+        return Char(eval(p.CHAR))     # "'\n'" --> eval() --> '\n'
 
     @_('TRUE')
     def expression(self, p):
@@ -270,6 +280,10 @@ class WabbitParser(Parser):
     @_('NAME')
     def type(self, p):
         return p.NAME
+
+    # Custom error handler for syntax error
+    def error(self, p):
+        print("You have a syntax error")
 
 def parse_tokens(raw_tokens):  
     parser = WabbitParser()

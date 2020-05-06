@@ -30,6 +30,14 @@
 from .model import *
 from collections import ChainMap
 
+# Dedicated error handler.  Easier to redefine. Expand later.
+def error(msg):
+    print(msg)
+
+# Future expansion
+def warning(msg):
+    print(msg)
+
 # Code almost identical to interpreter
 
 def check_program(model):
@@ -115,7 +123,7 @@ def check_binop(node, env):
     # Can I do the operation?  If so, what's the result type?
     result_type = _bin_ops.get((node.op, lefttype, righttype))      # float + char --> Error. (not in table)
     if result_type is None:
-        print(f"type error. Can't do {lefttype} {node.op} {righttype}")
+        error(lineno, f"type error. Can't do {lefttype} {node.op} {righttype}")
     return result_type
 
 _unary_ops = {

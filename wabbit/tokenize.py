@@ -130,6 +130,7 @@ class WabbitLexer(Lexer):
     # Character constants.   'x', '\'', '\n', '\xhh'.  Hard because of escape codes.
     CHAR = r"'(\\'|.)*?'"    # This matches any group of characters in-between '...' 
                              # as well as an escaped \'.  
+                             
 
     # Specify tokens as regex rules
     PLUS = r'\+'

@@ -258,9 +258,10 @@ class PrintStatement(Statement):
     '''
     print expression ;
     '''
-    def __init__(self, expression):
+    def __init__(self, expression, lineno=None):
         assert isinstance(expression, Expression) 
         self.expression = expression
+        self.lineno = lineno
 
     def __repr__(self):
         return f'PrintStatement({self.expression})'

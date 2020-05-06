@@ -200,7 +200,20 @@ def parse_statement(tokens):
 #
 def parse_print_statement(tokens):
     tokens.expect('PRINT')      # Wishful thinking "expect" method
-    expr = parse_expression(tokens)
+    try:
+        expr = parse_expression(tokens)
+    except SyntaxError as err:
+        # Try to resynchronize the input on SEMI.
+        while True:
+            tok = tokens.peek()
+            if tok.type != 'SEMI':
+                # Eat the token and throw it away
+                tokens.accept(tok.type)
+            else:
+                break
+        tokens.expect('SEMI')
+        raise SyntaxError("Bad print statement")
+        
     tokens.expect('SEMI')
     return PrintStatement(expr)         #  Create a node from my model
 
