@@ -191,8 +191,8 @@ def parse_statement(tokens):
         return parse_if_statement(tokens)
     elif tok.type == 'WHILE':
         return parse_while_statement(tokens)
-    elif tok.type == 'NAME':                              #  x = 2;    Assignment Statement
-        return parse_assignment_statement(tokens)         #  x + 2;    Expression/Statement   (Which path???)
+    elif tok.type == 'NAME':                      
+        return parse_expression_statement(tokens)         
     else:
         return None
 
@@ -257,10 +257,52 @@ def parse_while_statement(tokens):
     tokens.expect('RBRACE')
     return WhileStatement(testexpr, body)
 
-# expression : term { PLUS|MINUS term }       [ term ]  +  [ term ] - [ term ]
+def parse_expression_statement(tokens):
+    expr = parse_expression(tokens)
+    tokens.expect('SEMI')
+    if isinstance(expr, Expression):
+        return ExpressionStatement(expr)
+    else:
+        return expr
 
-#                                                2            3*4       2*3*4
+# Horrible hack. Pull assignment "location = expression" in and parse as if it
+# were an expression involving a binary operator.  Then, pull it apart and
+# transform it into an AssignmentStatement. This mess is caused by the fact
+# that expressions can be used as statements. 
+
 def parse_expression(tokens):
+    leftterm = parse_orterm(tokens)
+    if tokens.accept('ASSIGN'):
+        rightterm = parse_orterm(tokens)
+        if isinstance(leftterm, LoadLocation):
+            return AssignmentStatement(leftterm.location, rightterm)
+        else:
+            raise SyntaxError("syntax error in location of assignment")
+    return leftterm
+
+def parse_orterm(tokens):
+    leftterm = parse_andterm(tokens)
+    while True:
+        tok = tokens.accept('LOR')
+        if tok:
+            op = tok.value
+            leftterm = BinOp(op, leftterm, parse_andterm(tokens))
+        else:
+            break
+    return leftterm
+
+def parse_andterm(tokens):
+    leftterm = parse_relterm(tokens)
+    while True:
+        tok = tokens.accept('LAND')
+        if tok:
+            op = tok.value
+            leftterm = BinOp(op, leftterm, parse_relterm(tokens))
+        else:
+            break
+    return leftterm
+
+def parse_relterm(tokens):
     leftterm = parse_addterm(tokens)
     while True:
         tok = tokens.accept('LT','LE','GT','GE','EQ','NE')
