@@ -165,6 +165,21 @@ def make_variable_declarations(env): # TODO OOOOO scope???
                 declarations.append(f'{varType} {varName};')
     return '\n'.join(declarations)
 
+def get_type_from_expr(env, expr):
+    if hasattr(expr, 'getType'):
+        return expr.getType()
+    else:
+        key = None
+        if isinstance(expr, str):
+            key = expr
+        else:
+            key = expr.name.name
+        maybe = get_var_type(env, key)
+        if maybe is not None:
+            return maybe
+        else:
+            raise Exception(f'get_type_from_expr no type: {expr}')
+
 @singledispatch
 def ccompile(node, env):
     raise RuntimeError(f"Can't compile {node}")
@@ -174,7 +189,7 @@ def _(node, env):
     compiled = []
     for node in node.children:
         compiledNode = ccompile(node, env)
-        if compiledNode is not None:
+        if compiledNode is not None and not isinstance(node, Var): # if a statement is only a Var we don't want it to be a line of code
             compiled.append(compiledNode + ';') # TODO if, while, this should prob be in Statement, which... doesn't exist
 
     return '\n'.join(compiled)
@@ -183,21 +198,20 @@ def _(node, env):
 def _(node, env):
     left = ccompile(node.left, env)
     right = ccompile(node.right, env)
-    def returnWithType(s):
+    def withType(s):
         s1 = S(s)
-        if hasattr(s, 'getType'):
-            s.setType(left.getType())
-        return s
+        s1.setType(get_type_from_expr(env, left))
+        return s1
     if node.op == '+':
-        returnWithType(f'{left} + {right}')
+        return withType(f'{left} + {right}')
     elif node.op == '*':
-        returnWithType(f'{left} * {right}')
+        return withType(f'{left} * {right}')
     elif node.op == '/':
-        returnWithType(f'{left} / {right}')
+        return withType(f'{left} / {right}')
     elif node.op == '-':
-        returnWithType(f'{left} - {right}')
+        return withType(f'{left} - {right}')
     elif node.op == '<':
-        returnWithType(f'{left} < {right}')
+        return withType(f'{left} < {right}')
     else:
         raise RuntimeError(f'unsupported op: {node.op}')
 
@@ -217,6 +231,7 @@ def _(node, env):
 def _(node, env):
     # put the name and type (if any) into the env
     add_var(env, node.name, node.myType)
+    return f'{node.name}'
 
 @ccompile.register(Assign)
 def _(node, env):
@@ -226,8 +241,9 @@ def _(node, env):
     # remember we can assume correctness because of the typechecker (haw haw) so let's not even
     # check if there's already a type or anything, and heck let's not even worry about if it was
     # a var or a const.
-    if hasattr(right, 'getType'):
-        add_var(env, left, right.getType())
+    myType = get_type_from_expr(env, right)
+    if myType is not None:
+        add_var(env, node.name.name, myType) # TODO location name.name
     else:
         raise Exception(f'whoops, doing an assign and dunno the type left:{left} right:{right}')
     return f'{left} = {right}'
@@ -252,7 +268,6 @@ def _(node, env):
 @ccompile.register(PrintStatement)
 def _(node, env):
     child = ccompile(node.child, env)
-    print(node.child, child)
     type_child = None
     if isinstance(node.child, Variable):
         type_child = get_var_type(env, node.child.name)
@@ -296,13 +311,17 @@ def _(node, env):
     condition = ccompile(node.condition, env)
     body = ccompile(node.body, env)
     # TODO these labels need to be unique for multiple whiles
+    # TODO that variable for the condition needs to be unique too
+    condition_var_name = 'todo_fix_me'
+    add_var(env, condition_var_name, 'int')
     return f'''
-goto Lcondition
+goto Lcondition;
 
 L1:
 {body}
-LCondition:
-{condition}
+Lcondition:
+{condition_var_name} = {condition};
+if ({condition_var_name}) goto L1;
 '''
 
 
@@ -321,9 +340,9 @@ def compile_program(model):
 #include <stdio.h>
 
 int main() {{
-    {variable_declarations}
-    {ccode}
-    return 0;
+{variable_declarations}
+{ccode}
+return 0;
 }}
     '''
 
