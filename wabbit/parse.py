@@ -98,7 +98,7 @@ class WabbitParser(Parser):
         "expression_statement",
         "func_definition",
         "struct_definition",
-        # "enum_definition",
+        "enum_definition",
         # "if_statement",
         # "if_let_statement",
         # "while_statement",
@@ -136,7 +136,7 @@ class WabbitParser(Parser):
     def const_definition(self, p):
         return Const(p.NAME, p.type, p.expression)
 
-    # func_definition : FUNC NAME LPAREN [ exprlist ] RPAREN type LBRACE statements RBRACE
+    # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE
     @_("FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE")
     def func_definition(self, p):
         print("func definition", p[0])
@@ -177,14 +177,19 @@ class WabbitParser(Parser):
     # enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
     @_("ENUM NAME LBRACE { enum_choice } RBRACE")
     def enum_definition(self, p):
+        print(p.enum_choice)
         return Enum(p.NAME, *p.enum_choice)
 
     # enum_choice : NAME SEMI
     #             | NAME LPAREN NAME RPAREN
-    @_("NAME SEMI", "NAME LPAREN NAME RPAREN")
+    @_("NAME SEMI")
     def enum_choice(self, p):
-        type = getattr(p, "NAME1", None)
-        return Enum(p.NAME0, type)
+        return EnumChoice(p.NAME, None)
+
+    @_("NAME LPAREN NAME RPAREN SEMI")
+    def enum_choice(self, p):
+        print("name lparent\n\n\n", p[0])
+        return EnumChoice(p.NAME0, p.NAME1)
 
     # if_statement : IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     @_("IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]")
@@ -245,11 +250,6 @@ class WabbitParser(Parser):
         print("factor", "minus")
         return UnaryOp("-", p.expression)
 
-    @_("NAME LPAREN exprlist RPAREN",)
-    def factor(self, p):
-        print("factor", "exprlist")
-        return FunctionCall(p.NAME, p.exprlist)
-
     @_("LBRACE statements RBRACE",)
     def factor(self, p):
         print("factor", "compound")
@@ -285,18 +285,6 @@ class WabbitParser(Parser):
     @_("LPAREN RPAREN")
     def literal(self, p):
         return Empty()
-
-    # exprlist : expression { COMMA expression }
-    #          | empty
-    @_("expression { COMMA expression }")
-    def exprlist(self, p):
-        print("exprlist")
-        args = [p.expression0] + p.expression1
-        return Statements(args)
-
-    @_("empty")
-    def exprlist(self, p):
-        return p.empty
 
     # location : NAME
     #          | expression DOT NAME

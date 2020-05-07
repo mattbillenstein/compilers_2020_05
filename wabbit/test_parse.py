@@ -371,3 +371,35 @@ def test_parser_struct():
     tokens = tokenize(source)
     assert parser.parse(tokens) == Statements([Struct("Fraction")])
 
+
+def test_parser_enum_definition():
+    parser = WabbitParser()
+
+    source = """enum Choice {
+        YES;
+        NO;
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Enum("Choice", EnumChoice("YES"), EnumChoice("NO"))]
+    )
+
+    source = """enum MaybeStuff {
+        NO;
+        MaybeFloat(float);
+        MaybeInt(int);
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Enum(
+                "MaybeStuff",
+                EnumChoice("NO", None),
+                EnumChoice("MaybeFloat", "float"),
+                EnumChoice("MaybeInt", "int"),
+            )
+        ]
+    )
+

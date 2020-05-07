@@ -164,6 +164,11 @@ class Enum(Definition):
     def __repr__(self):
         return f"Enum({self.name}, {self.choices})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.name == other.name and self.choices == other.choices
+
 
 class EnumChoice(Definition):
     """
@@ -183,6 +188,11 @@ class EnumChoice(Definition):
 
     def __repr__(self):
         return f"EnumChoice({self.name}, {self.type})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.name == other.name and self.type == other.type
 
 
 class EnumLocation(Location):
