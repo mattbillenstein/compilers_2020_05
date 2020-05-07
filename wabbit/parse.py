@@ -160,29 +160,38 @@ class WabbitParser(Parser):
     def statement(self, p):
         return ExpressionStatement(p.expression)
 
-
     @_('PRINT expression SEMI')
     def print_statement(self, p):
         return Print(p.expression)
+
+## ============  Conflict here =================
 
     @_('location ASSIGN expression SEMI')
     def assignment_statement(self, p):
         return Assignment(p.location, p.expression)
 
-    @_('CONST NAME [ type ] ASSIGN expression SEMI')
-    def const_definition(self, p):
-        return Const(p.NAME, p.type, p.expression)
-
-    @_('VAR NAME ASSIGN expression SEMI')
+    @_('VAR NAME [ type ] ASSIGN expression SEMI')
     def var_definition(self, p):
-        return Var(p.NAME, Type(None), p.expression)
+        print("var definition 1")
+        return Var(p.NAME, p.type, p.expression)
 
     @_('VAR NAME type [ ASSIGN expression ] SEMI')
     def var_definition(self, p):
-        if p.ASSIGN:
-            return Var(p.NAME, p.type, p.expression)
-        else:
-            return Var(p.NAME, p.type)
+        print("var definition 2")
+        return Var(p.NAME, p.type, p.expression)
+
+## ==============================================
+    @_('NAME')
+    def location(self, p):
+        return Name(p.NAME)
+
+    @_('NAME')
+    def type(self, p):
+        return p.NAME
+
+    @_('CONST NAME [ type ] ASSIGN expression SEMI')
+    def const_definition(self, p):
+        return Const(p.NAME, p.expression, p.type)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
@@ -257,123 +266,9 @@ class WabbitParser(Parser):
     def expression(self, p):
         return Bool(False)
 
-    @_('NAME')
-    def location(self, p):
-        return Name(p.NAME)
-
-    # @_('NAME')
-    # def type(self, p):
-    #     return p.NAME
-
     # Custom error handler for syntax error
     def error(self, p):
         print(f"You have a syntax error at line {p.lineno} and index {p.index}")
-
-
-#     @_('orterm LOR orterm')
-#     def expression(self, p):
-#         return BinOp('||', p.orterm0, p.orterm1)
-
-
-#     @_('orterm')
-#     def expression(self, p):
-#         return p.orterm
-
-# # orterm:
-#     @_('andterm LAND andterm')
-#     def orterm(self, p):
-#         return BinOp('&&', p.andterm0, p.andterm1)
-
-#     @_('andterm')
-#     def orterm(self, p):
-#         return p.andterm
-
-
-# # andterm:
-#     @_('sumterm LT sumterm',
-#        'sumterm LE sumterm',
-#        'sumterm GT sumterm',
-#        'sumterm GE sumterm',
-#        'sumterm EQ sumterm',
-#        'sumterm NE sumterm')
-#     def andterm(self, p):
-#         return BinOp(p[1], p.sumterm0, p.sumterm1)
-
-#     @_('sumterm')
-#     def andterm(self, p):
-#         return p.sumterm
-
-# # sumterm:
-#     @_('multerm PLUS multerm',
-#        'multerm MINUS multerm')
-#     def sumterm(self, p):
-#         return BinOp(p[1], p.multerm0, p.multerm1)
-
-#     @_('multerm')
-#     def sumterm(self, p):
-#         return p.multerm
-
-# # multerm:
-#     @_('factor DIVIDE factor',
-#        'factor TIMES factor')
-#     def multerm(self, p):
-#         return BinOp(p[1], p.factor0, p.factor1)
-
-#     @_('factor')
-#     def multerm(self, p):
-#         return p.factor
-
-# # factor :
-#     @_('literal')
-#     def factor(self, p):
-#         return p.literal
-
-#     @_('location')
-#     def factor(self, p):
-#         return p.location
-
-# # factor :
-#     @_('PLUS expression',
-#        'MINUS expression',
-#        'LNOT expression')
-#     def factor(self, p):
-#         return UnaryOp(p[0], p.expression)
-
-
-#     @_('LBRACE statements RBRACE')
-#     def factor(self, p):
-#         return p.statements
-
-
-# # literal :
-
-#     @_('INTEGER')
-#     def literal(self, p):
-#         return Integer(int(p.INTEGER))
-
-#     @_('FLOAT',
-#        'CHAR',
-#        'TRUE',
-#        'FALSE',
-#        'LPAREN RPAREN'
-#        )
-#     def literal(self, p):
-#         if p.FLOAT:
-#             return Float(float(p.FLOAT))
-#         else:
-#             print("Other literals need to be implemented.")
-#             raise SyntaxError()
-
-    # @_('NAME')
-    # def location(self, p):
-    #     return Name(repr(p.NAME))
-
-    @_('NAME')
-    def type(self, p):
-        if p.NAME is not None:
-            return Type(p.NAME)
-        else:
-            return Type(None)
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()
