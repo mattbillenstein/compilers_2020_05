@@ -159,6 +159,20 @@ class Environment(UserDict):
         )
 
 
+class BreakEncountered(RuntimeError):
+    # Maybe raise this for break statements
+    # Catch where legal
+    ...
+
+
+class ContinueEncountered(RuntimeError):
+    # Maybe raise this for continue statements
+    # Catch where legal
+    ...
+
+class ReturnEncountered(RuntimeError):
+    ...
+
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = Environment()
@@ -293,12 +307,15 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
 def interpret_clause_node(clause_node, env: Environment):
     with env.child_env():
         for statement in clause_node.statements:
-            if isinstance(statement, BreakStatement):
-                break
-            if isinstance(statement, ContinueStatement):
-                continue
-            if isinstance(statement, ReturnStatement):
-                return interpret(statement, env)  # not sure about this
+            # if isinstance(statement, BreakStatement):
+            #     break
+            # if isinstance(statement, ContinueStatement):
+            #     continue
+            # if isinstance(statement, ReturnStatement):
+            #     return interpret(statement, env)  # not sure about this
+            # EDIT: This is probably not the right place to handle this since
+            #       the rules aren't the same for every kind of clause
+            #       need to move to interpret impl for nodes that support this
             interpret(statement, env)
 
 
@@ -350,22 +367,27 @@ def interpret_character_literal(character_literal_node, env):
 
 
 @interpret.register(BreakStatement)
-def interpret_break_statement(break_statement_node, env):
-    raise RuntimeError(
-        "break statement should not have been actually interpreted. Did you use break outside a while loop?"
+def interpret_break_statement(_, __):
+    raise BreakEncountered(
+        "break statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
+        "Did you use break outside a while loop?"
     )
 
 
 @interpret.register(ContinueStatement)
 def interpret_continue_statement(_, __):
-    raise RuntimeError(
-        "continue statement should not have been actually interpreted. Did you use continue outside a while loop?"
+    raise ContinueEncountered(
+        "continue statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
+        "Did you use continue outside a while loop?"
     )
 
 
 @interpret.register(ReturnStatement)
 def interpret_return_statement(return_statement_node, env):
-    return interpret(return_statement_node.expression, env)
+    return_expr = return_statement_node.expression
+    retval = interpret(return_expr, env)
+    raise ReturnEncountered(retval)  # Hack to make sure illegal usage of return is not used
+
 
 
 @interpret.register(FunctionCall)
