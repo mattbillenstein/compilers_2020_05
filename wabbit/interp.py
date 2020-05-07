@@ -268,8 +268,6 @@ class Interpreter:
         # visit block, args get injected into the block scope there
         return self.visit_Block(func.block, args)
 
-    # TODO: struct stuff
-
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
         # instances...
