@@ -93,6 +93,7 @@ class Interpreter:
     def __init__(self):
         self.env = None
         self.stdout = []
+        self.return_to_call = False
 
     def current_scope(self):
         return self.env.maps[0]
@@ -170,7 +171,12 @@ class Interpreter:
         ret = None
         for n in node.statements:
             ret = self.visit(n)
+
+            # this is kinda hacky, but we need some way to jump up through the
+            # call stack to a Call in the case of a return in a nested block...
             if isinstance(n, Return):
+                self.return_to_call = True
+            if self.return_to_call:
                 break
 
         # hmm, should a block actually return something? See Compound
@@ -266,7 +272,9 @@ class Interpreter:
             args[farg.name.value] = self.visit(arg)
 
         # visit block, args get injected into the block scope there
-        return self.visit_Block(func.block, args)
+        val = self.visit_Block(func.block, args)
+        self.return_to_call = False
+        return val
 
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
@@ -314,6 +322,8 @@ def main(args):
 
     ret, env, stdout = interpret(text)
     for s in stdout:
+        if not isinstance(s, str):
+            s = str(s)
         sys.stdout.write(s)
 
 

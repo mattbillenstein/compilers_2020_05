@@ -195,7 +195,6 @@ class WabbitParser(sly.Parser):
     def argdef(self, p):
         return ArgDef(p.name, p.type)
 
-    # call
     @_('name LPAREN [ callargs ] RPAREN')
     def node(self, p):
         return Call(p.name, p.callargs)
