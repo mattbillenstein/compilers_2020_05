@@ -1,3 +1,4 @@
+from collections import ChainMap
 from dataclasses import dataclass
 from typing import Any, Union, Optional, List
 
@@ -141,8 +142,7 @@ class BlockExpression(ExpressionNode):
 
 @dataclass
 class ScalarNode(ExpressionNode):
-    def visit(self, visitor, ctx):
-        return visitor.visit_ScalarNode(self, ctx)
+    pass
 
 
 @dataclass
@@ -218,9 +218,6 @@ class ModelVisitor:
     def visit_BlockExpression(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ScalarNode(self, node, ctx):
-        raise NotImplementedError
-    
     def visit_Int(self, node, ctx):
         raise NotImplementedError
     
@@ -229,3 +226,34 @@ class ModelVisitor:
     
     def visit_Float(self, node, ctx):
         raise NotImplementedError
+
+
+class ScopeAwareModelVisitor(ModelVisitor):
+    def visit_Program(self, node, global_ctx):
+        ctx = ChainMap(global_ctx)
+        node.statements.visit(self, ctx)
+        return None
+
+    def visit_Statements(self, node, parent_ctx):
+        ctx = self.newStash(parent_ctx)
+        for stmt in node.statements:
+            stmt.visit(self, ctx)
+        return None
+
+    def visit_BlockExpression(self, node, ctx):
+        ret = None
+        ctx = self.newStash(ctx)
+        for stmt in node.block.statements:
+            ret = stmt.visit(self, ctx)
+        return ret
+
+    def getStash(self, ctx, name):
+        return ctx[name]
+
+    def setStash(self, ctx, name, storage):
+        ctx[name] = storage
+        return None
+
+    def newStash(self, ctx):
+        return ctx.new_child()
+

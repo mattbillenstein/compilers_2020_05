@@ -2,10 +2,6 @@ from .model import *
 from collections import ChainMap
 
 
-def interpret_statements(statements):
-    return interpret_program(Program(statements))
-
-
 def interpret_program(program):
     # Make the initial environment (a dict)
     stdout = []
@@ -13,6 +9,10 @@ def interpret_program(program):
     interpreter = Interpreter(stdout)
     program.visit(interpreter, global_ctx)
     return stdout
+
+
+def interpret_statements(statements):
+    return interpret_program(Program(statements))
 
 
 UNDEF = object()
@@ -37,21 +37,10 @@ class Storage():
         return self.value
 
 
-class Interpreter(ModelVisitor):
+class Interpreter(ScopeAwareModelVisitor):
     def __init__(self, stdout):
         self.stdout = stdout
 
-    def visit_Statements(self, node, parent_ctx):
-        ctx = self.newScope(parent_ctx)
-        for stmt in node.statements:
-            stmt.visit(self, ctx)
-        return None
-    
-    def visit_Program(self, node, global_ctx):
-        ctx = ChainMap(global_ctx)
-        node.statements.visit(self, ctx)
-        return None
-    
     def visit_StorageIdentifier(self, node, ctx):
         # gimme the key for this name in this context
         return str(node.name)
@@ -59,7 +48,7 @@ class Interpreter(ModelVisitor):
     def visit_StorageLocation(self, node, ctx):
         # gimme the value for this key in this context
         name = node.identifier.visit(self, ctx)
-        storage = self.getStorage(ctx, name)
+        storage = self.getStash(ctx, name)
         return storage.get()
 
     def visit_DeclStorageLocation(self, node, ctx):
@@ -67,7 +56,7 @@ class Interpreter(ModelVisitor):
         name = node.identifier.visit(self, ctx)
         if name in ctx:
             raise
-        self.setStorage(ctx, name, Storage(node._type, node.const))
+        self.setStash(ctx, name, Storage(node._type, node.const))
         return name
     
     def visit_FuncCall(self, node, ctx):
@@ -81,7 +70,7 @@ class Interpreter(ModelVisitor):
         name = node.location.visit(self, ctx)
         if node.value is not None:
             value = node.value.visit(self, ctx)
-            storage = self.getStorage(ctx, name)
+            storage = self.getStash(ctx, name)
             storage.set(value)
         return None
 
@@ -153,22 +142,6 @@ class Interpreter(ModelVisitor):
         else:
             raise
 
-    def visit_BlockExpression(self, node, ctx):
-        ret = None
-        ctx = self.newScope(ctx)
-        for stmt in node.block.statements:
-            ret = stmt.visit(self, ctx)
-        return ret
-
     def visit_ScalarNode(self, node, ctx):
         return node.value
-
-    def newScope(self, ctx):
-        return ctx.new_child()
-
-    def getStorage(self, ctx, name):
-        return ctx[name]
-
-    def setStorage(self, ctx, name, storage):
-        ctx[name] = storage
 

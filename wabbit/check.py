@@ -29,33 +29,99 @@
 
 from .model import *
 
-def check_program(program):
-    return True
 
-
-# Top-level function used to check programs
 def check_statements(statements):
-    env = { }
-    return check(statements, env)
-    # Maybe return True/False if there are errors
-
-# Internal function used to check nodes with an environment
-def check(node, env):
-    return True
-
-# Sample main program
-def main(filename):
-    from .parse import parse_file
-    model = parse_file(filename)
-    check_program(model)
-
-if __name__ == '__main__':
-    import sys
-    main(sys.argv[1])
+    return check_program(Program(statements))
 
 
+def check_program(program):
+    # Make the initial environment (a dict)
+    ctx = {}
+    checker = Checker()
+    program.visit(checker, ctx)
 
-        
 
+class Checker(ScopeAwareModelVisitor):
+    def __init__(self):
+        self.env = ChainMap()
+    
+    def visit_StorageIdentifier(self, node, ctx):
+        # gimme the key for this name in this context
+        return str(node.name)
+    
+    def visit_StorageLocation(self, node, ctx):
+        # gimme the type for the key in this context
+        name = node.identifier.visit(self, ctx)
+        storage = self.getStorage(ctx, name)
+        return storage._type
+    
+    def visit_DeclStorageLocation(self, node, ctx):
+        # I'll store values in this name in this context with this key and this type
+        raise NotImplementedError
+    
+    def visit_FuncCall(self, node, ctx):
+        raise NotImplementedError
+    
+    def visit_FuncDeclStatement(self, node, ctx):
+        raise NotImplementedError
+    
+    def visit_AssignStatement(self, node, ctx):
+        # Store a value in the locaiton with this name
+        name = node.location.visit(self, ctx)
+        if name not in ctx:
+            self.log_error("Can't assign to undeclared location")
 
-        
+        storage = ctx[name]
+        if storage.is_const():
+            self.log_error("Can't assign to a constant variable")
+
+        value_type = node.value.visit(self, ctx)
+        if storage._type != value_type:
+            self.log_error("Type mismatch error")
+        return None
+    
+    def visit_PrintStatement(self, node, ctx):
+        return None
+    
+    def visit_ConditionalStatement(self, node, ctx):
+        return None
+    
+    def visit_ConditionalLoopStatement(self, node, ctx):
+        return None
+    
+    def visit_ContinueLoopStatement(self, node, ctx):
+        return None
+    
+    def visit_BreakLoopStatement(self, node, ctx):
+        return None
+    
+    def visit_ExpressionStatement(self, node, ctx):
+        return node.statement.visit(self, ctx)
+    
+    def visit_ReturnStatement(self, node, ctx):
+        raise NotImplementedError
+    
+    def visit_BinOp(self, node, ctx):
+        raise NotImplementedError
+    
+    def visit_UnOp(self, node, ctx):
+        raise NotImplementedError
+    
+    def visit_BlockExpression(self, node, ctx):
+        ret = None
+        ctx = self.newScope(ctx)
+        for stmt in node.block.statements:
+            ret = stmt.visit(self, ctx)
+        return ret
+    
+    def visit_Int(self, node, ctx):
+        return 'int'
+    
+    def visit_Char(self, node, ctx):
+        return 'char'
+    
+    def visit_Float(self, node, ctx):
+        return 'float'
+
+    def newScope(self, ctx):
+        return ctx.new_child()
