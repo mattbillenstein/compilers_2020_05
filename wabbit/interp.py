@@ -9,6 +9,8 @@ from wabbit.model import (
     Assign,
     BinOp,
     Block,
+    Bool,
+    Char,
     ConstDef,
     Float,
     If,
@@ -16,10 +18,10 @@ from wabbit.model import (
     Name,
     Node,
     Print,
+    Statements,
     UnaryOp,
     VarDef,
     While,
-    Statements,
 )
 
 OPERATORS = {
@@ -46,11 +48,19 @@ class Interpreter:
         return getattr(self, method_name)(node, env, **kwargs)
 
     @typechecked
-    def interpret_Float(self, node: Float, env):
+    def interpret_Bool(self, node: Bool, env) -> bool:
         return node.value
 
     @typechecked
-    def interpret_Integer(self, node: Integer, env):
+    def interpret_Char(self, node: Char, env) -> str:
+        return node.value
+
+    @typechecked
+    def interpret_Float(self, node: Float, env) -> float:
+        return node.value
+
+    @typechecked
+    def interpret_Integer(self, node: Integer, env) -> int:
         return node.value
 
     @typechecked
@@ -85,6 +95,7 @@ class Interpreter:
     @typechecked
     def interpret_Print(self, node: Print, env):
         sys.stdout.write(str(self.interpret(node.expression, env)) + "\n")
+        sys.stdout.flush()
 
     @typechecked
     def interpret_If(self, node: If, env):
