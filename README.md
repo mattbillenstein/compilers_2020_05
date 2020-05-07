@@ -92,6 +92,8 @@ about a day in advance (an email notification will also be sent).
 * [Part 4 - Parsing](https://vimeo.com/414973515/c64a69c8bb) (26 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/04Parsing.pdf)
 * [Part 5 - Type Checking](https://vimeo.com/415496010/c8a7d880fd) (13 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/05TypeChecking.pdf) 
 * [Part 6 - Code Generation](https://vimeo.com/415496570/329760928e) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/06CodeGeneration.pdf) 
+* [Part 7 - Transformations](https://vimeo.com/415915433/c7b6db33fd) (5 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/07Transformations.pdf) 
+* [Part 8 - Intermediate Code](https://vimeo.com/415915651/be16724fd6) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/08IRCode.pdf) 
 
 ## Live Session Recordings
 
@@ -117,5 +119,4 @@ Video recordings of live sessions will be posted here.
 * [Project 4, Parsing in Practice](https://vimeo.com/415631778/b3b3d1c157) (67 min)
 * [Project 4, Parsing, errors, precedence](https://vimeo.com/415636966/f82ce24e02) (38 min)
 * [Project 5, Type Checking](https://vimeo.com/415678414/d87a14cb3f) (32 min)
-
 
