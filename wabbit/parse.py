@@ -207,8 +207,8 @@ class Parser(BaseParser):
             or self.constdef()
             or self.if_()
             or self.while_()
-            or self.expression()
             or self.assign()
+            or self.expression()
         )
 
         if statement:
