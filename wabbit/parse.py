@@ -131,7 +131,7 @@ class Parser(BaseParser):
             return None
 
         self.lookahead = None
-        test = self.expression()
+        assert (test := self.expression())
         then = self.block()
         else_ = self._else()
         return If(test, then.statements, else_.statements if else_ else None)
@@ -147,7 +147,7 @@ class Parser(BaseParser):
             return None
 
         self.lookahead = None
-        test = self.expression()
+        assert (test := self.expression())
         then = self.block()
         return While(test, then.statements)
 
@@ -168,7 +168,7 @@ class Parser(BaseParser):
 
         self.lookahead = None
 
-        expression = self.expression()
+        assert (expression := self.expression())
         self.expect("SEMICOLON")
         node = Print(expression)
 
@@ -188,7 +188,7 @@ class Parser(BaseParser):
 
         self.expect("ASSIGN")
 
-        expression = self.expression()
+        assert (expression := self.expression())
         self.expect("SEMICOLON")
         node = Assign(location, expression)
 
@@ -213,11 +213,12 @@ class Parser(BaseParser):
         else:
             type_ = None
 
-        self.expect("ASSIGN")
-
-        value = (
-            self.expression()
-        )  # TODO: value might be missing, in which case type must be present
+        if self.accept("ASSIGN"):
+            self.lookahead = None
+            assert (value := self.expression())
+        else:
+            value = None
+            assert type_
 
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
@@ -270,12 +271,11 @@ class Parser(BaseParser):
     #      | location
     #      | literal
     #      | LBRACE statements RBRACE
-    def expression(self) -> Expression:
+    def expression(self) -> Optional[Expression]:
         print(blue(f"expression(): next = {self.peek()}"))
 
-        left = self._additive_term()
-        if not left:
-            raise RuntimeError(f"Error parsing expression: next = {self.peek()}")
+        if not (left := self._additive_term()):
+            return None
 
         while tok := self.accept(
             "ADD", "SUB", "MUL", "DIV", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
@@ -294,7 +294,7 @@ class Parser(BaseParser):
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
             self.lookahead = None
-            assert (expr := self.expression()) , "Unary"  # noqa:E203
+            assert (expr := self.expression())
             return UnaryOp(tok.token, expr)
 
     def name(self) -> Optional[Name]:
