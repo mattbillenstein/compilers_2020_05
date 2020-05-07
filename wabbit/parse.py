@@ -106,7 +106,6 @@ type      : NAME
 """
 
 from dataclasses import dataclass
-from typing import Callable
 from typing import Optional
 
 from utils import print_source, print_diff
@@ -341,29 +340,31 @@ class Parser(BaseParser):
         print(green(f"    parsed ConstDef {node}"))
         return node
 
-    def expression(self) -> Optional[Expression]:
-        return self._additive_term()
+    def expression(self) -> Optional[Expression]:  # TODO: Is this really Optional?
+        parse_factor = (
+            lambda self: self._literal() or self.name() or self._unary_op() or self.block()
+        )
+        parse_multerm = self._make_expression_parser(["MUL", "DIV"], parse_factor)
+        parse_addterm = self._make_expression_parser(["ADD", "SUB"], parse_multerm)
+        parse_relterm = self._make_expression_parser(
+            ["LT", "LE", "GT", "GE", "EQ", "NE"], parse_addterm
+        )
+        parse_andterm = self._make_expression_parser(["LAND"], parse_relterm)
+        parse_orterm = self._make_expression_parser(["LOR"], parse_andterm)
 
-    def _additive_term(self) -> Optional[Expression]:
-        print(blue(f"expression(): next = {self.peek()}"))
+        return parse_orterm(self)
 
-        if not (left := self._multiplicative_term()):
-            return None
+    def _make_expression_parser(self, operators, child_parser):
+        def parser(self) -> Optional[Expression]:
+            print(blue(f"expression({operators}): next = {self.peek()}"))
+            left = child_parser(self)
+            while tok := self.accept(*operators):
+                assert (right := child_parser(self))
+                left = BinOp(tok.token, left, right)
+            print(green(f"    parsed {left}"))
+            return left
 
-        while tok := self.accept(
-            "ADD", "SUB", "MUL", "DIV", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
-        ):
-            self.lookahead = None
-            right = self._multiplicative_term()
-            assert right, "Expected right"
-            left = BinOp(tok.token, left, right)  # type: ignore
-
-        print(green(f"    parsed Expression {left}"))
-        return left
-
-    def _multiplicative_term(self) -> Optional[Expression]:
-        term = self._literal() or self.name() or self._unary_op() or self.block()
-        return term
+        return parser
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
