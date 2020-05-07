@@ -7,7 +7,7 @@ PYTEST = $(BIN)/pytest
 PYTHON_FILES = wabbit/model.py wabbit/tokenize.py wabbit/parse.py script_models.py
 WABBITSCRIPT_FILES = tests/Script/*.wb
 
-all: lint type-check test wabbitscript-examples parse
+all: lint type-check test
 
 format:
 	@$(BIN) --quiet --line-length 99 $(PYTHON_FILES)
