@@ -265,7 +265,9 @@ def compile_grouping(node, env, cfunc):
 
 @rule(Compound)
 def compile_compound(node, env, cfunc):
-    compile(node.statements, env, cfunc)
+    cfunc.statements += '{\n'
+    compile(node.statements, env.new_child(), cfunc)
+    cfunc.statements += '}\n'
 
 @rule(ExpressionStatement)
 def compile_expression_statement(node, env, cfunc):
