@@ -144,6 +144,10 @@ class WabbitParser(sly.Parser):
     def node(self, p):
         return p.node
 
+    @_('LPAREN node RPAREN')
+    def node(self, p):
+        return p.node
+
     @_(*[f'{op} node %prec UNARY' for op in WabbitLexer._unaop])
     def node(self, p):
         return UnaOp(p[0], p.node)
@@ -199,13 +203,9 @@ class WabbitParser(sly.Parser):
     def node(self, p):
         return Call(p.name, p.callargs)
 
-    @_('callarg { COMMA callarg }')
+    @_('node { COMMA node }')
     def callargs(self, p):
-        return [p.callarg0] + p.callarg1
-
-    @_('node')
-    def callarg(self, p):
-        return p.node
+        return [p.node0] + p.node1
 
     @_('RETURN node SEMI')
     def node(self, p):
@@ -238,6 +238,22 @@ class WabbitParser(sly.Parser):
     @_('CHAR')
     def node(self, p):
         return Char(p.CHAR)
+
+    @_('TRUE')
+    def node(self, p):
+        return Bool(True)
+
+    @_('FALSE')
+    def node(self, p):
+        return Bool(False)
+
+    @_('BREAK')
+    def node(self, p):
+        return Break()
+
+    @_('CONTINUE')
+    def node(self, p):
+        return Continue()
 
     @_('name')
     def node(self, p):

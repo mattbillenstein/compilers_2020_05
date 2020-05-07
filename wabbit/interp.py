@@ -48,6 +48,17 @@ from functools import wraps
 from .model import *
 from .parse import parse
 
+class DoBreak(Exception):
+    pass
+
+class DoContinue(Exception):
+    pass
+
+class DoReturn(Exception):
+    def __init__(self, value):
+        self.value = value
+#        super()__init('')
+
 class DeepChainMap(ChainMap):
     'Variant of ChainMap that allows direct updates to inner scopes'
 
@@ -93,7 +104,6 @@ class Interpreter:
     def __init__(self):
         self.env = None
         self.stdout = []
-        self.return_to_call = False
 
     def current_scope(self):
         return self.env.maps[0]
@@ -125,6 +135,9 @@ class Interpreter:
         return node.value
 
     def visit_Float(self, node):
+        return node.value
+
+    def visit_Bool(self, node):
         return node.value
 
     def visit_Char(self, node):
@@ -171,13 +184,6 @@ class Interpreter:
         ret = None
         for n in node.statements:
             ret = self.visit(n)
-
-            # this is kinda hacky, but we need some way to jump up through the
-            # call stack to a Call in the case of a return in a nested block...
-            if isinstance(n, Return):
-                self.return_to_call = True
-            if self.return_to_call:
-                break
 
         # hmm, should a block actually return something? See Compound
         return ret
@@ -240,7 +246,12 @@ class Interpreter:
 
     def visit_While(self, node):
         while self.visit(node.cond):
-            self.visit(node.block)
+            try:
+                self.visit(node.block)
+            except DoBreak:
+                break
+            except DoContinue:
+                pass
 
     def visit_Func(self, node):
         # just store the function node into the current scope, see Call for
@@ -249,6 +260,12 @@ class Interpreter:
 
     def visit_Return(self, node):
         return self.visit(node.value)
+
+    def visit_Continue(self, node):
+        raise DoContinue()
+
+    def visit_Break(self, node):
+        raise DoBreak()
 
     def visit_Call(self, node):
         func = self.env[node.name.value]
@@ -272,9 +289,11 @@ class Interpreter:
             args[farg.name.value] = self.visit(arg)
 
         # visit block, args get injected into the block scope there
-        val = self.visit_Block(func.block, args)
-        self.return_to_call = False
-        return val
+        try:
+            ret = self.visit_Block(func.block, args)
+        except DoReturn as e:
+            ret = e.value
+        return ret
 
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
@@ -322,9 +341,10 @@ def main(args):
 
     ret, env, stdout = interpret(text)
     for s in stdout:
-        if not isinstance(s, str):
-            s = str(s)
-        sys.stdout.write(s)
+        print(s)
+#        if not isinstance(s, str):
+#            s = str(s)
+#        sys.stdout.write(s)
 
 
 if __name__ == '__main__':

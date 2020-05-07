@@ -27,6 +27,9 @@ class SourceVisitor:
     def visit_Float(self, node):
         return f'{node.value}'
 
+    def visit_Bool(self, node):
+        return f'{node.value}'.lower()
+
     def visit_Char(self, node):
         return f"'{node.value}'"
 

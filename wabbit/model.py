@@ -103,6 +103,22 @@ class Float(Node):
     def __repr__(self):
         return f'Float({self.value})'
 
+class Bool(Node):
+    def __init__(self, value):
+        assert isinstance(value, bool)
+        self.value = value
+
+    def __repr__(self):
+        return f'Bool({self.value})'
+
+class Break(Node):
+    def __repr__(self):
+        return f'Break()'
+
+class Continue(Node):
+    def __repr__(self):
+        return f'Continue()'
+
 class BinOp(Node):
     '''
     Example: left + right
