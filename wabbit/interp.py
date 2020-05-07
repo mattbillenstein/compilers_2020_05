@@ -386,7 +386,13 @@ def interpret_continue_statement(_, __):
 def interpret_return_statement(return_statement_node, env):
     return_expr = return_statement_node.expression
     retval = interpret(return_expr, env)
-    raise ReturnEncountered(retval)  # Hack to make sure illegal usage of return is not used
+
+    # Hack to make sure illegal usage of return is not used
+    raise ReturnEncountered(
+        "return statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
+        "Did you use continue outside a while loop?",
+        retval
+    )
 
 
 
@@ -404,7 +410,14 @@ def interpret_function_call_node(function_call_node, env):
     with env.child_env():
         for param, arg_val in zip(func.parameters, arguments):
             env[param.name] = arg_val
-        return interpret(func_clause, env)
+        try:
+            return interpret(func_clause, env)
+        except ReturnEncountered as ret_exception:
+            #  we use a hack of raising an error on return statements
+            #  so we pull the return value out of the exception object
+            retval = ret_exception.args[1]
+            return retval
+
 
 
 @interpret.register(StructField)
