@@ -123,7 +123,7 @@ from .tokenize import tokenize, WabbitLexer
 
 
 class WabbitParser(sly.Parser):
-    debugfile = 'parser.txt'
+#    debugfile = 'parser.txt'
 
     tokens = WabbitLexer.tokens
 
@@ -246,6 +246,10 @@ class WabbitParser(sly.Parser):
     @_('FALSE')
     def node(self, p):
         return Bool(False)
+
+    @_('LPAREN RPAREN')
+    def node(self, p):
+        return UNIT
 
     @_('BREAK')
     def node(self, p):

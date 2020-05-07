@@ -124,7 +124,7 @@ class BinOp(Node):
     Example: left + right
     '''
     def __init__(self, op, left, right):
-        assert op in ('+', '-', '/', '*', '<', '>', '<=', '>=', '!=', '==')
+        assert op in ('+', '-', '/', '*', '<', '>', '<=', '>=', '!=', '==', '&&', '||'), op
         assert isinstance(left, Node)
         assert isinstance(right, Node)
         self.op = op
@@ -365,6 +365,15 @@ class Attribute(Node):
 
     def __repr__(self):
         return f'Attribute({self.name}, {self.attr})'
+
+class Unit(Node):
+    def __repr__(self):
+        return f'Unit()'
+
+    def __str__(self):
+        return '()'
+
+UNIT = Unit()
 
 
 def compare_model(m1, m2):

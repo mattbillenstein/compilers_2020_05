@@ -129,6 +129,9 @@ class Interpreter:
         return {
             'int': int,
             'float': float,
+            'bool': bool,
+            'char': str,
+            'unit': type(UNIT),
         }[node.type]
 
     def visit_Integer(self, node):
@@ -140,12 +143,25 @@ class Interpreter:
     def visit_Bool(self, node):
         return node.value
 
+    def visit_Unit(self, node):
+        return node
+
     def visit_Char(self, node):
         # only during execution, return the unescaped char
         return node.unescape()
 
     def visit_BinOp(self, node):
         left = self.visit(node.left)
+
+        # short-circuit eval
+        if node.op == '||':
+            if left:
+                return True
+
+        if node.op == '&&':
+            if not left:
+                return False
+
         right = self.visit(node.right)
 
         assert type(left) == type(right), (left, right)
@@ -166,6 +182,8 @@ class Interpreter:
             '>=': lambda a, b: a>=b,
             '!=': lambda a, b: a!=b,
             '==': lambda a, b: a==b,
+            '&&': lambda a, b: a and b,
+            '||': lambda a, b: a and b,
         }[node.op](left, right)
 
     def visit_UnaOp(self, node):
@@ -341,10 +359,12 @@ def main(args):
 
     ret, env, stdout = interpret(text)
     for s in stdout:
-        print(s)
-#        if not isinstance(s, str):
-#            s = str(s)
-#        sys.stdout.write(s)
+        if not isinstance(s, str):
+            if isinstance(s, bool):
+                s = 'true' if s else 'false'
+            print(s)
+        else:
+            sys.stdout.write(s)
 
 
 if __name__ == '__main__':
