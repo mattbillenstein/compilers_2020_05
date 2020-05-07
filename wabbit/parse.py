@@ -219,13 +219,17 @@ class Parser(BaseParser):
             return statement
 
     def if_(self) -> Optional[Statement]:
+        print(blue(f"if(): next = {self.peek()}"))
+
         if not self.accept("IF"):
             return None
 
         assert (test := self.expression())
         assert (then := self.block())
         else_ = self._else()
-        return If(test, then.statements, else_.statements if else_ else None)
+        node = If(test, then.statements, else_.statements if else_ else None)
+        print(green(f"    parsed If: {node}"))
+        return node
 
     def _else(self) -> Optional[Block]:
         if not self.accept("ELSE"):
@@ -234,12 +238,16 @@ class Parser(BaseParser):
         return block
 
     def while_(self) -> Optional[Statement]:
+        print(blue(f"while(): next = {self.peek()}"))
+
         if not self.accept("WHILE"):
             return None
 
         assert (test := self.expression())
         assert (then := self.block())
-        return While(test, then.statements)
+        node = While(test, then.statements)
+        print(green(f"    parsed While: {node}"))
+        return node
 
     def block(self) -> Optional[Block]:
         if not self.accept("LBRACE"):

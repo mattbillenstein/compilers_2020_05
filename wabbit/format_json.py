@@ -19,7 +19,7 @@ class TreeFormatter:
     @typechecked
     def visit(self, node: Node, **kwargs):
         data = node.__dict__.copy()
-        for child in ["left", "right"]:
+        for child in ["left", "right", "then", "test", "else_"]:
             if hasattr(node, child):
                 data[child] = self.visit(getattr(node, child))
         if hasattr(node, "statements"):
