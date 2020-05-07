@@ -4,7 +4,7 @@ BLACK = $(BIN)/black
 FLAKE8 = $(BIN)/flake8
 MYPY = $(BIN)/mypy
 PYTEST = $(BIN)/pytest
-PYTHON_FILES = wabbit/model.py wabbit/tokenize.py wabbit/typecheck.py wabbit/parse.py wabbit/interp.py script_models.py
+PYTHON_FILES = wabbit/c.py wabbit/model.py wabbit/tokenize.py wabbit/typecheck.py wabbit/parse.py wabbit/interp.py script_models.py
 WABBITSCRIPT_FILES = tests/Script/*.wb
 
 all: lint type-check test
