@@ -19,7 +19,7 @@ def test_parser_name():
 
     source = "myObj;"
     tokens = tokenize(source)
-    assert parser.parse(tokens) == Statements(["myObj"])
+    assert parser.parse(tokens) == Statements([Variable("myObj")])
 
     source = "var x = 3;"
     tokens = tokenize(source)

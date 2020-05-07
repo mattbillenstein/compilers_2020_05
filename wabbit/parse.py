@@ -119,7 +119,7 @@ class WabbitParser(Parser):
     # assignment_statement : location ASSIGN expression SEMI
     @_("location ASSIGN expression SEMI")
     def assignment_statement(self, p):
-        return Assignment(location, expression)
+        return Assignment(p.location, p.expression)
 
     # variable_definition : VAR NAME [ type ] ASSIGN expression SEMI
     #                     | VAR NAME type [ ASSIGN expression ] SEMI
@@ -243,6 +243,7 @@ class WabbitParser(Parser):
     # multerm : factor { TIMES|DIVIDE factor }
     @_("factor { TIMES factor }")
     def multerm(self, p):
+        print(p.factor0, p.TIMES, p.factor1)
         left_term = p.factor0
         for term in p.factor1:
             left_term = BinOp("*", left_term, term)
@@ -323,13 +324,10 @@ class WabbitParser(Parser):
 
     # exprlist : expression { COMMA expression }
     #          | empty
-    @_("expression  COMMA expression")
+    @_("expression { COMMA expression }")
     def exprlist(self, p):
-        return ExpressionList(*[p.expression0, p.expression1])
-
-    @_("expression")
-    def exprlist(self, p):
-        return ExpressionList(p.expression)
+        args = [p.expression0] + p.expression1
+        return ExpressionList(*args)
 
     @_("empty")
     def exprlist(self, p):
@@ -339,7 +337,7 @@ class WabbitParser(Parser):
     #          | expression DOT NAME
     @_("NAME")
     def location(self, p):
-        return p.NAME
+        return Variable(p.NAME)
 
     @_("expression DOT NAME")
     def location(self, p):
