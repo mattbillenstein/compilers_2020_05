@@ -10,12 +10,15 @@ from wabbit.parse import parse_source
 
 path = "tests/Script/%s.wb"
 
+chartest = "chartest"
+cond = "cond"
 fact = "fact"
+fib = "fib"
 floattest = "floattest"
 inttest = "inttest"
+mandel_loop = "mandel_loop"
 
-
-with open(path % inttest) as f:
+with open(path % mandel_loop) as f:
     source = f.read()
 
 model = parse_source(source)

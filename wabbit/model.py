@@ -125,6 +125,26 @@ class BinOp(Expression):
             print("in BinOp, self.right = ", self.right)
             raise
 
+
+class Bool(Expression):
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Bool({self.value})"
+
+
+class Char(Expression):
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return f"Char({self.value})"
+
+    def is_valid(self):
+        assert isinstance(self.value, str)
+
+
 class Const(Definition):
     """Examples:
         const pi = 3.14159;
@@ -198,7 +218,7 @@ class If(Statement):
         self.condition = condition
         self.result = result
         self.alternative = alternative
-        self.is_valid()
+        # self.is_valid()
 
     def __repr__(self):
         if self.alternative is None:
@@ -363,6 +383,15 @@ def to_source_Assignment(node):
 @add(BinOp)
 def to_source_BinOp(node):
     return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
+
+
+@add(Bool)
+def to_source_Bool(node):
+    return str(node.value)
+
+@add(Char)
+def to_source_Char(node):
+    return node.value
 
 @add(Const)
 def to_source_Const(node):

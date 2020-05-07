@@ -104,6 +104,14 @@ def interpret_BinOp(node, env):
     else:
         raise RuntimeError(f"Unsupported operator {node.op}")
 
+@add(Bool)
+def interpret_Char(node, env):
+    return node.value
+
+@add(Char)
+def interpret_Char(node, env):
+    return node.value
+
 @add(Const)
 def interpret_Const(node, env):
     name = node.name
@@ -147,10 +155,16 @@ def interpret_Name(node, env):
 
 @add(Print)
 def interpret_Print(node, env):
-    expr = interpret(node.expression, env)
+    value = interpret(node.expression, env)
     if 'capture_print' in env:
-        env['capture_print'].append(expr)
-    print(expr)
+        env['capture_print'].append(value)
+    if isinstance(value, str):
+        if value == "\\n":
+            print()
+        else:
+            print(value, end='')
+    else:
+        print(value)
 
 
 @add(Statements)

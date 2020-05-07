@@ -229,18 +229,13 @@ class WabbitParser(Parser):
 
     @_('LPAREN expression RPAREN')
     def expression(self, p):
-        return Grouping(p.expression)
+        return Group(p.expression)
 
     @_('LBRACE statements RBRACE')
     def expression(self, p):
         return Compound(p.statements)
 
-    # @_('location')
-    # def expression(self, p):
-    #     return p[0]
-    #     # return LoadLocation(p.location)
-
-    @_('INTEGER')           # triggers
+    @_('INTEGER')
     def expression(self, p):
         return Integer(int(p.INTEGER))
 
@@ -250,9 +245,7 @@ class WabbitParser(Parser):
 
     @_('CHAR')
     def expression(self, p):
-        # Could be better..... alternative: write a real parser for escape codes.
-        # Cheating: test programs only use normal characters and '\n'.
-        return Char(eval(p.CHAR))     # "'\n'" --> eval() --> '\n'
+        return Char(p.CHAR)
 
     @_('TRUE')
     def expression(self, p):
