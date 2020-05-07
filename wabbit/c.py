@@ -72,7 +72,7 @@
 #    }
 #
 # Here's what the corresponding C code might look like (it can vary
-# as long as you object the general rules above):
+# as long as you observe the general rules above):
 #
 #    #include <stdio.h>
 #
