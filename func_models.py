@@ -18,7 +18,7 @@
 from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.parse import parse
-from wabbit.source_visitor import compare_source
+from wabbit.source import compare_source
 
 # ----------------------------------------------------------------------
 # Program 6: Functions.  The program prints out the first factorials

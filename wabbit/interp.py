@@ -112,7 +112,7 @@ class Interpreter:
         ret = self.visit(node)
 
         if isinstance(self.env.get('main'), Func):
-            ret = self.visit(self.env['main'].block)
+            ret = self.visit(Call(Name('main'), []))
 
         assert self.env is not None and len(self.env.maps) == 1
         return ret, self.current_scope(), self.stdout
@@ -120,7 +120,11 @@ class Interpreter:
     def visit(self, node):
         assert node is not None
         m = getattr(self, f'visit_{node.__class__.__name__}')
-        return m(node)
+        x = m(node)
+        if '--debug' in sys.argv:
+            print('visit', node, '-->', x)
+            input()
+        return x
 
     def visit_Name(self, node):
         return self.env.get(node.value)
@@ -277,7 +281,7 @@ class Interpreter:
         self.env[node.name.value] = node
 
     def visit_Return(self, node):
-        return self.visit(node.value)
+        raise DoReturn(self.visit(node.value))
 
     def visit_Continue(self, node):
         raise DoContinue()

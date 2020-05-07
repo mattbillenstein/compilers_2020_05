@@ -115,6 +115,7 @@
 #    - ANTLR (https://www.antlr.org).
 
 import os.path
+import sys
 
 import sly
 
@@ -291,5 +292,4 @@ def main(args):
     print(parse(text))
 
 if __name__ == '__main__':
-    import sys
     main(sys.argv[1:])

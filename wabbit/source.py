@@ -1,4 +1,8 @@
+import os
+import sys
+
 from .model import Node
+from .parse import parse
 
 NoneType = type(None)
 
@@ -29,6 +33,9 @@ class SourceVisitor:
 
     def visit_Bool(self, node):
         return f'{node.value}'.lower()
+
+    def visit_Break(self, node):
+        return 'break'
 
     def visit_Char(self, node):
         return f"'{node.value}'"
@@ -129,3 +136,21 @@ def compare_source(source, expected):
                 break
             i += len(repr(a)) - 2
         raise ValueError('Mismatched Source')
+
+def source(text):
+    return to_source(parse(text))
+
+def main(args):
+    if args:
+        if os.path.isfile(args[0]):
+            with open(args[0]) as file:
+                text = file.read()
+        else:
+            text = args[0]
+    else:
+        text = sys.stdin.read()
+
+    print(source(text))
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

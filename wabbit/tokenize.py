@@ -72,6 +72,7 @@
 #
 # ----------------------------------------------------------------------
 
+import sys
 import os.path
 
 import sly
@@ -188,5 +189,4 @@ def main(args):
         print(tok)
 
 if __name__ == '__main__':
-    import sys
     main(sys.argv[1:])
