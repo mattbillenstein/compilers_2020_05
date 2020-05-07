@@ -125,6 +125,8 @@ def check_binop(node, env):
     result_type = _bin_ops.get((node.op, lefttype, righttype))      # float + char --> Error. (not in table)
     if result_type is None:
         error(node.lineno, f"Unsupported operation. {lefttype}{node.op}{righttype}")
+    # Annotate the node
+    node.type = result_type
     return result_type
 
 _unary_ops = {
@@ -155,7 +157,6 @@ def check_compound(node, env):
 def check_load_location(node, env):
     # Feels wrong. Having to look inside location to get a name.
     loc = check(node.location, env)
-    print("LOC:", loc)
     if loc:
         return loc.type
 
@@ -168,6 +169,11 @@ def check_const_definition(node, env):
     value_type = check(node.value, env)
     if node.type and node.type != value_type:
         error(node.lineno, f"Type error {node.type} = {value_type}")
+
+    # Fill in the type of the const definition
+    if not node.type:
+        node.type = value_type
+
     env[node.name] = node     # Put the ConstDefinition itself node in the environment
 
 @rule(VarDefinition)
@@ -176,6 +182,14 @@ def check_var_definition(node, env):
         value_type = check(node.value, env)
         if node.type and node.type != value_type:
             error(node.lineno, f"Type error {node.type} = {value_type}")
+
+        if not node.type:
+            node.type = value_type
+
+    # A variable must have a type assigned
+    if not node.type:
+        error(node.lineno, f"Can't determine type of {node.name}")
+
     env[node.name] = node    # Put the VarDefinition node in environment
 
 @rule(AssignmentStatement)

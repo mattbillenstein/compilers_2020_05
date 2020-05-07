@@ -130,16 +130,70 @@
 # are fully correct with respect to their usage of types and names.
 
 from .model import *
+from collections import ChainMap
+
+# I think you want some kind of "C Function" object that gathers everything
+# that's being generated as output.
+
+class CFunction:
+    def __init__(self, name):
+        self.name = name
+        self.locals = ""      # Local variables
+        self.statements = ""  # Statements generated
+
+    def __str__(self):
+        return (f"int {self.name}()" + " {\n" + self.locals + self.statements + "}\n")
+    
+    def tempname(self, node):
+        return f'_{id(node)}'
 
 # Top-level function to handle an entire program.
 def compile_program(model):
-    # ... you define ...
-    pass
+    env = ChainMap()           # Environment.  To keep track of definitions and things.
+    cfunc = CFunction('main')  # Function that code is going into
+    compile(model, env, cfunc)
+    return str(cfunc)
 
+# Discussion of how this is supposed to work.  env is an environment where we keep
+# track of definitions of things (variables, consts, etc.).   cfunc is an object 
+# representing a C function--it is the source code that we're creating.  The
+# return value from compile() is going to be a typed value. 
 
+@singledispatch
+def compile(node, env, cfunc):
+    raise RuntimeError(f"Can't compile {node}")
 
+rule = compile.register
 
+@rule(Statements)
+def compile_statements(node, env, cfunc):
+    for stmt in node.statements:
+        compile(stmt, env, cfunc)
 
+@rule(Integer)
+def compile_integer(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'int {lname};\n'
+    cfunc.statements += f'{lname} = {node.value};\n'
+
+@rule(Float)
+def compile_float(node, env, cfunc):
+    return ("float", str(node.value))
+
+@rule(BinOp)
+def compile_binop(node, env, cfunc):
+    compile(node.left, env, cfunc)
+    compile(node.right, env, cfunc)
+    lname = cfunc.tempname(node.left)
+    rname = cfunc.tempname(node.right)
+    myname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {myname};\n'
+    cfunc.statements += f'{myname} = {lname} {node.op} {rname};\n'
+
+@rule(PrintStatement)
+def compile_print_statement(node, env, cfunc):
+    compile(node.expression, env, cfunc)
+    cfunc.statements += f'printf("%i\\n", {cfunc.tempname(node.expression)});\n'
 
 
 def main(filename):
@@ -150,6 +204,7 @@ def main(filename):
     check_program(model)
     code = compile_program(model)
     with open('out.c', 'w') as file:
+        file.write("#include <stdio.h>\n")
         file.write(code)
     print('Wrote: out.c')
 
