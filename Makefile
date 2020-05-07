@@ -16,7 +16,7 @@ lint:
 	@$(FLAKE8) $(PYTHON_FILES)
 
 type-check:
-	@$(MYPY) --check-untyped-defs --config-file=tox.ini --no-color-output $(PYTHON_FILES)
+	@$(MYPY) --check-untyped-defs --no-warn-no-return --config-file=tox.ini --no-color-output $(PYTHON_FILES)
 
 test:
 	$(PYTEST) --quiet wabbit/tokenize.py

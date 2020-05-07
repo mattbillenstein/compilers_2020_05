@@ -117,10 +117,10 @@ class Parser(BaseParser):
 
     # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     def if_(self) -> Optional[Statement]:
-        if self.accept("IF"):
-            self.lookahead = None
-        else:
+        if not self.accept("IF"):
             return None
+
+        self.lookahead = None
         test = self.expression()
         then = self.block()
         else_ = self._else()
@@ -133,10 +133,10 @@ class Parser(BaseParser):
         return self.block()
 
     def while_(self) -> Optional[Statement]:
-        if self.accept("WHILE"):
-            self.lookahead = None
-        else:
+        if not self.accept("WHILE"):
             return None
+
+        self.lookahead = None
         test = self.expression()
         then = self.block()
         return While(test, then.statements)
@@ -153,10 +153,10 @@ class Parser(BaseParser):
     def print(self) -> Optional[Statement]:
         print(blue(f"print(): next = {self.peek()}"))
 
-        if self.accept("PRINT"):
-            self.lookahead = None
-        else:
+        if not self.accept("PRINT"):
             return None
+
+        self.lookahead = None
 
         expression = self.expression()
         self.expect("SEMICOLON")
@@ -190,11 +190,10 @@ class Parser(BaseParser):
     def vardef(self) -> Optional[VarDef]:
         print(blue(f"vardef(): next = {self.peek()}"))
 
-        if self.accept("VAR"):
-            self.lookahead = None
-        else:
+        if not self.accept("VAR"):
             return None
 
+        self.lookahead = None
         name = Name(self.expect("NAME").token)
 
         type_: Optional[str]
@@ -220,11 +219,10 @@ class Parser(BaseParser):
     def constdef(self) -> Optional[ConstDef]:
         print(blue(f"constdef(): next = {self.peek()}"))
 
-        if self.accept("CONST"):
-            self.lookahead = None
-        else:
+        if not self.accept("CONST"):
             return None
 
+        self.lookahead = None
         name = Name(self.expect("NAME").token)
 
         type_: Optional[str]
@@ -290,8 +288,6 @@ class Parser(BaseParser):
         if tok := self.accept("NAME"):
             self.lookahead = None
             return Name(tok.token)
-        else:
-            return None
 
     # literal : INTEGER
     #         | FLOAT
@@ -306,29 +302,21 @@ class Parser(BaseParser):
         if tok := self.accept("INTEGER"):
             self.lookahead = None
             return Integer(int(tok.token))
-        else:
-            return None
 
     def float(self):
         if tok := self.accept("FLOAT"):
             self.lookahead = None
             return Float(float(tok.token))
-        else:
-            return None
 
     def bool(self):
         if tok := self.accept("BOOL"):
             self.lookahead = None
             return Bool({"true": True, "false": False}[tok.token])
-        else:
-            return None
 
     def char(self):
         if tok := self.accept("CHAR"):
             self.lookahead = None
             return Char(tok.token)
-        else:
-            return None
 
 
 # Top-level function that runs everything
