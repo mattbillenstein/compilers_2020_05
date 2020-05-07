@@ -430,12 +430,6 @@ class ScriptModels(unittest.TestCase):
         llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
-
-class FuncModels(unittest.TestCase):
-    def setUp(self):
-        self.decompiler = WabbitDecompiler()
-        self.maxDiff = None
-
     @unittest.skip
     def test_func(self):
         # ----------------------------------------------------------------------
@@ -496,11 +490,7 @@ class FuncModels(unittest.TestCase):
                     ReturnStatement(Int(0))
                 ]),
         ]
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
 
     @unittest.skip
@@ -534,11 +524,7 @@ class FuncModels(unittest.TestCase):
         output = ''
         tokens = []
         model = []
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
         
     @unittest.skip
     def test_enums(self):
@@ -592,8 +578,4 @@ class FuncModels(unittest.TestCase):
         output = ''
         tokens = []
         model = []
-        self.assertEqual(self.decompiler.to_source(model), source)
-        self.assertEqual(list(to_tokens(source)), tokens)
-        self.assertEqual(parse_tokens(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), output)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
