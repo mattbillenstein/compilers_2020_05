@@ -1,0 +1,30 @@
+<html>
+<body>
+<h3>Simple math</h3>
+
+Result of converting the following program:
+<pre>
+print 2 + 3 * 4; // 14
+print 2 + 3;     // 5
+print 2 * 3 - 4; // 2
+</pre>
+
+<pre id="myout">The output is: </pre>
+
+<script>
+    var imports = {
+       runtime : {
+           _print: (x) => {document.getElementById("myout").innerHTML += x + "\n";},
+       }
+    };
+    fetch("simple_math.wasm").then(response =>
+       response.arrayBuffer()
+    ).then(bytes =>
+       WebAssembly.instantiate(bytes, imports)
+    ).then(results => {
+       window.main = results.instance.exports.main;
+       window.main();
+    });
+</script>
+</body>
+</html>
