@@ -9,6 +9,28 @@ def to_minc(program: Program):
     return compiler.csrc
 
 
+UNDEF = object()
+
+
+class Storage():
+    def __init__(self, _type, const):
+        self._type = _type
+        self.const = const
+        self.value = UNDEF
+
+    def is_unset(self):
+        return self.value == UNDEF
+
+    def set(self, value):
+        self.value = value
+        return None
+
+    def get(self):
+        if self.value is UNDEF:
+            raise RuntimeError()
+        return self.value
+
+
 class MinCCompiler(ScopeAwareModelVisitor):
     '''
     This Wabbit-to-C Compiler is implemented as a ScopeAwareModelVisitor which evaluates wabbit, transpiling into
@@ -28,19 +50,25 @@ class MinCCompiler(ScopeAwareModelVisitor):
 
     def visit_StorageIdentifier(self, node, ctx):
         # gimme the key for this name in this context
-        return str(node.name)
+        return (None, str(node.name))
     
     def visit_StorageLocation(self, node, ctx):
         # gimme the type for the key in this context
-        return node.identifier.visit(self, ctx)
+        idtype, idname = node.identifier.visit(self, ctx)
+        storage = self.getStash(ctx, idname)
+        return (storage._type, idname)
     
     def visit_DeclStorageLocation(self, node, ctx):
         # I'll store values in this name in this context with this key and this type
+        name = node.identifier.name
+        if name in ctx:
+            raise
+        self.setStash(ctx, name, Storage(node._type, node.const))
         ret = 'const' if node.const else 'var'
-        ret += ' ' + node.identifier.name
-        if node._type:
-            ret += ' ' + str(node._type)
-        return ret
+        ret += ' ' + name
+        ret += ' ' + str(node._type)
+        self.csrc.append(ret)
+        return (node._type, node.identifier.name)
 
     def visit_FuncCall(self, node, ctx):
         args = ', '.join(arg.visit(self, ctx) for arg in node.args)
@@ -58,7 +86,12 @@ class MinCCompiler(ScopeAwareModelVisitor):
     
     def visit_AssignStatement(self, node, ctx):
         # Store a value in the locaiton with this name
-        return node.location.visit(self, ctx) + (' = ' + node.value.visit(self, ctx) if node.value is not None else '') + ';'
+        loctype, locname = node.location.visit(self, ctx)
+        if node.value is not None:
+            exprtype, exprval = node.value.visit(self, ctx)
+            print(locname, exprtype, exprval)
+            self.csrc.append(locname + ' = ' + exprval + ';')
+        return (None, None)
     
     def visit_PrintStatement(self, node, ctx):
         exprtype, exprval = node.expr.visit(self, ctx)
@@ -109,6 +142,7 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def visit_BinOp(self, node, ctx):
         lefttype, leftexpr = node.left.visit(self, ctx)
         righttype, rightexpr = node.right.visit(self, ctx)
+        print(righttype, rightexpr)
         result_type = binop_typemap[(node.op, lefttype, righttype)]
         cvar = self.next_cvar()
         self.csrc.append(''.join([cvar, ' = ', leftexpr, ' ', node.op, ' ', rightexpr, ';']))
