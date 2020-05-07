@@ -320,9 +320,9 @@ class Var(Definition):
         self.value = value
 
     def __repr__(self):
-        type = f", 'type={self.type}" if self.type is not None else ''
+        type = f", '{self.type}'" if self.type is not None else ''
         value = f", 'value={self.value}" if self.value is not None else ''
-        return f"Var('{self.name}{type}{value}"
+        return f"Var('{self.name}'{type}{value})"
 
 
 class While(Statement):

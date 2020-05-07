@@ -173,13 +173,11 @@ class WabbitParser(Parser):
 
     @_('VAR NAME [ type ] ASSIGN expression SEMI')
     def var_definition(self, p):
-        print("var definition 1")
-        return Var(p.NAME, p.type, p.expression)
+        return Var(p.NAME, p.type, value=p.expression)
 
-    @_('VAR NAME type [ ASSIGN expression ] SEMI')
+    @_('VAR NAME type SEMI')
     def var_definition(self, p):
-        print("var definition 2")
-        return Var(p.NAME, p.type, p.expression)
+        return Var(p.NAME, p.type)
 
 ## ==============================================
     @_('NAME')
@@ -196,10 +194,7 @@ class WabbitParser(Parser):
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
-        if p.statements1:
-            return If(p.expression, p.statements0, p.statements1)
-        else:
-            return If(p.expression, p.statements0)
+        return If(p.expression, p.statements0, p.statements1)
 
 
     @_('WHILE expression LBRACE statements RBRACE')

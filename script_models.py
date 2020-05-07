@@ -23,7 +23,8 @@
 from collections import ChainMap
 from wabbit.model import *
 from wabbit.interp import interpret
-# from wabbit.parse import parse_source
+from wabbit.parse import parse_source
+from wabbit.tokenize import tokenize
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -51,7 +52,7 @@ source1 = """
     print 2 * 3 + -4;
 """
 
-# print(parse_source(source1))
+print(parse_source(source1))
 
 
 expr1 = BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
@@ -67,7 +68,6 @@ model1 = Statements(
     )
 
 # print(to_source(model1))
-# print(parse_source(source1))
 
 # print("model1: expect the 4 following values:", -10, 2.75, 1, 2, "\n")
 # interpret(model1, {})
@@ -95,12 +95,13 @@ expr4 = Print(Name('tau'))
 
 model2 = Statements(expr1, expr2, expr3, expr4)
 
-# print(parse_source(source2))
+
+# print(parse_source(test_source))
 
 # print(to_source(model2))
 
-print("\n\nmodel2: expect the following value:", 6.28318, "\n")
-interpret(model2, ChainMap())
+# print("\n\nmodel2: expect the following value:", 6.28318, "\n")
+# interpret(model2, ChainMap())
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
