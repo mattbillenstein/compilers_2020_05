@@ -34,7 +34,9 @@ wabbitscript-examples:
 	done
 
 parse:
-	@for f in *.wb; do $(PYTHON) -m wabbit.parse $$f; done
+	@for f in $(WABBITSCRIPT_FILES); do \
+		$(PYTHON) -m wabbit.parse $$f; \
+	done
 
 ELISP_FILES = $(shell fd .el$$ exercises)
 test-elisp:
