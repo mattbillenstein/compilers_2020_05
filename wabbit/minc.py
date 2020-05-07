@@ -1,17 +1,21 @@
 from .model import *
 
 
-def to_llvm(program: Program):
+def to_minc(program: Program):
     # Make the initial environment (a dict)
     ctx = {}
-    compiler = LLVMCompiler()
+    compiler = MinCCompiler()
     return program.visit(compiler, ctx)
 
 
-class LLVMCompiler(ScopeAwareModelVisitor):
+class MinCCompiler(ScopeAwareModelVisitor):
     '''
-    This Wabbit-to-LLVM Compiler is implemented as a ScopeAwareModelVisitor which evaluates wabbit, transpiling into
-    LLVM IR fragments, and propgating up to each node to assist in transpilation.
+    This Wabbit-to-C Compiler is implemented as a ScopeAwareModelVisitor which evaluates wabbit, transpiling into
+    C fragments, and propgating up to each node to assist in transpilation.
+
+    The minimalist flavor of C produced by this compiler has the following constraints:
+        * Only one operation per line
+        * Only use goto for control flow
     '''
     def __init__(self):
         self.env = ChainMap()

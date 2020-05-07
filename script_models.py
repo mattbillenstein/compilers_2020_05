@@ -26,6 +26,9 @@ from wabbit.parse import to_model
 from wabbit.tokenize import to_tokens, Token
 from wabbit.check import check_statements
 from wabbit.interp import interpret_program
+from wabbit.minc import to_minc
+from wabbit.wasm import to_wasm
+from wabbit.llvm import to_llvm
 from textwrap import dedent
 import unittest
 
@@ -37,13 +40,16 @@ class ScriptModels(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
 
-    def programs_match(self, wabbit, tokens, statements, stdout):
+    def programs_match(self, wabbit, tokens, statements, stdout, errors, minc, wasm, llvm):
         self.assertEqual(list(to_tokens(wabbit)), tokens)
         self.assertEqual(to_model(iter(tokens)), statements)
         # XXX skip this test for now as the checker's implementation is paused
-        # self.assertEqual(check_statements(statements), [])
+        # self.assertEqual(check_statements(statements), errors)
         self.assertEqual(interpret_program(Program(statements)), stdout)
         self.assertEqual('\n'.join(to_wabbit(statements)), wabbit)
+        self.assertEqual('\n'.join(to_minc(Program(statements))), minc)
+#        self.assertEqual('\n'.join(to_wasm(Program(statements)), wasm)
+#        self.assertEqual('\n'.join(to_llvm(Program(statements)), llvm)
 
     def test_simple(self):
         # ----------------------------------------------------------------------
@@ -61,7 +67,11 @@ class ScriptModels(unittest.TestCase):
         ]
         model = Statements([ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))])
         stdout = []
-        self.programs_match(wabbit, tokens, model, stdout)
+        errors = []
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_print(self):
         
@@ -119,7 +129,11 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
             ])
         
-        self.programs_match(wabbit, tokens, model, stdout)
+        errors = []
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -134,6 +148,7 @@ class ScriptModels(unittest.TestCase):
         tau = 2.0 * pi;
         print tau;""")
         stdout = ['6.28318']
+        errors = []
         
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
@@ -162,7 +177,10 @@ class ScriptModels(unittest.TestCase):
                 StorageLocation(StorageIdentifier('pi')))),
             PrintStatement(StorageLocation(StorageIdentifier('tau')))
         ])
-        self.programs_match(wabbit, tokens, model, stdout)
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -178,6 +196,7 @@ class ScriptModels(unittest.TestCase):
         \tprint b;
         }''')
         stdout = ['2']
+        errors = []
        
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -220,7 +239,10 @@ class ScriptModels(unittest.TestCase):
                 ])
             ),
             ])
-        self.programs_match(wabbit, tokens, model, stdout)
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -237,6 +259,7 @@ class ScriptModels(unittest.TestCase):
         \tx = x + 1;
         }''')
         stdout = ['1', '2', '6', '24', '120', '720', '5040', '40320', '362880']
+        errors = []
         tokens = [
             Token(type='CONST', value='const', lineno=1, index=0),
             Token(type='NAME', value='n', lineno=1, index=6),
@@ -291,7 +314,10 @@ class ScriptModels(unittest.TestCase):
                     ])
                 ),
             ])
-        self.programs_match(wabbit, tokens, model, stdout)
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -306,6 +332,7 @@ class ScriptModels(unittest.TestCase):
         print x;
         print y;''')
         stdout = ['42', '37']
+        errors = []
 
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),
@@ -353,7 +380,10 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation(StorageIdentifier('x'))),
             PrintStatement(StorageLocation(StorageIdentifier('y'))),
             ])
-        self.programs_match(wabbit, tokens, model, stdout)
+        minc = ''
+        wasm = ''
+        llvm = ''
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
 
 class FuncModels(unittest.TestCase):
