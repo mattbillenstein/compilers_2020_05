@@ -41,6 +41,7 @@
 # created in the example_models.py file.
 #
 
+from collections import ChainMap
 from functools import singledispatch
 from .model import *
 
@@ -51,7 +52,8 @@ from .model import *
 
 def interpret_program(model):
     # Make the initial environment (a dict)
-    env = { }
+    from wabbit.parse import parse_source
+    env = ChainMap()
     interpret(model, env)
 
 @singledispatch

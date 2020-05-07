@@ -133,5 +133,7 @@ dmypy.json
 .pyre/
 
 # debugger file and other
-parser.out
+*.out
 ignore.py
+ignore.wb
+out.c

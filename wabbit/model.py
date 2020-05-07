@@ -307,7 +307,7 @@ class UnaryOp(Expression):
         except AssertionError:
             print(self.op)
             raise
-        assert isinstance(self.value, Expression)
+        assert isinstance(self.value, (int, float, Name))
 
 
 class Var(Definition):
@@ -396,14 +396,6 @@ def to_source_If(node):
 @add(Integer)
 def to_source_Integer(node):
     return repr(node.value)
-
-# @add(LoadLocation)
-# def to_source_LoadLocation(node):
-#     return to_source(node.location)
-
-# @add(NamedLocation)
-# def to_source_NamedLocation(node):
-#     return f"{node.name}"
 
 @add(Name)
 def to_source_Name(node):
