@@ -28,30 +28,40 @@
 # The directory tests/Errors has Wabbit programs with various errors.
 
 from .model import *
+from functools import singledispatch
+from collections import ChainMap
 
 # Top-level function used to check programs
 def check_program(model):
-    env = { }
+    env = ChainMap()
     check(model, env)
     # Maybe return True/False if there are errors
 
+
 # Internal function used to check nodes with an environment
+@singledispatch
 def check(node, env):
-    pass
+    raise RuntimeError(f"Don't know how to typecheck {node}")
+
+
+rule = check.register
+
+
+@rule(Float)
+def check_Float(node, env):
+    return "float"
+
 
 # Sample main program
 def main(filename):
     from .parse import parse_file
+
     model = parse_file(filename)
     check_program(model)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
 
-
-
-        
-
-
-        

@@ -132,6 +132,7 @@
 
 from functools import singledispatch
 from collections import ChainMap
+from wabbit.typecheck import check_program
 from .model import *
 
 
@@ -141,8 +142,25 @@ class CFunction:
         self.locals = ""  # Local variables
         self.statements = ""  # Statements generated
 
+        self.varnames = self._next_variable()
+        self.next_name = None
+
     def __str__(self):
         return f"int {self.name}()" + " {\n" + self.locals + self.statements + "\n}"
+
+    def _next_variable(self):
+        i = 1
+        while True:
+            yield f"_{i}"
+            i += 1
+
+    def get_variable(self):
+        if self.next_name is None:
+            self.next_name = next(self.varnames)
+
+        result = self.next_name
+        self.next_name = None
+        return result
 
 
 # Top-level function to handle an entire program.
@@ -164,19 +182,59 @@ rule = compile.register
 
 @rule(Statements)
 def compile_Statements(node, env, cfunc):
-    for statement in node.statements:
+    for i, statement in enumerate(node.statements):
         compile(statement, env, cfunc)
         cfunc.statements += ";"
+        if i < len(node.statements) - 1:
+            cfunc.statements += "\n"
 
 
 @rule(Float)
 def compile_Float(node, env, cfunc):
-    cfunc.statements += f"{node.value}"
+    varname = cfunc.get_variable()
+
+    cfunc.locals += f"float {varname};\n"
+    cfunc.locals += f"{varname} = {node.value};\n"
+
+    cfunc.statements += f"{varname}"
+
+    return ("float", varname)
 
 
 @rule(Integer)
 def compile_Integer(node, env, cfunc):
-    cfunc.statements += f"{node.value}"
+    varname = cfunc.get_variable()
+
+    cfunc.locals += f"int {varname}"
+    cfunc.statements += f"{varname}"
+
+    return ("int", varname)
+
+
+@rule(Const)
+def compile_Const(node, env, cfunc):
+    if node.type:
+        cfunc.locals += f"{node.name} {node.type};\n"
+    else:
+        node_type = compile(node.value, env, cfunc)[0]
+
+    if node.value:
+        cfunc.statements += f"{node.name} = "
+        compile(node.value, env, cfunc)
+
+
+@rule(Var)
+def compile_Var(node, env, cfunc):
+    if node.type:
+        node_type = node.type
+    else:
+        node_type = compile(node.value, env, CFunction("tmp"))[0]
+
+    cfunc.locals += f"{node.name} {node_type};\n"
+
+    if node.value:
+        cfunc.statements += f"{node.name} = "
+        compile(node.value, env, cfunc)
 
 
 @rule(BinOp)
