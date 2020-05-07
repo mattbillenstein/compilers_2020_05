@@ -227,6 +227,10 @@ models.append(
 
 if __name__ == "__main__":
     for i, (source, model) in enumerate(zip(sources, models)):
+
+        if i != 1:
+            continue
+
         print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
 
@@ -234,9 +238,8 @@ if __name__ == "__main__":
         parsed_model = Parser(tokenize(source)).statements()
         utils.print_diff(model, parsed_model, formatter=format_json)
         check(source, parsed_model)
-
-        if i == 0:
-            break
+        print(parsed_model)
+        interpret_program(parsed_model)
 
         if False:
             print("Expected model\n")

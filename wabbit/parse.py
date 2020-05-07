@@ -136,9 +136,11 @@ from .tokenize import tokenize, Token, TokenStream
 blue = lambda s: __import__("clint").textui.colored.blue(s, always=True, bold=True)  # noqa
 green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=True)  # noqa
 
+_print = print
 
-# def print(*args):
-#     pass
+
+def print(*args):
+    pass
 
 
 @dataclass
@@ -402,6 +404,7 @@ class Parser(BaseParser):
 
 
 def parse_source(source):
+    print = _print
     print_source(source)
 
     # Tokenize
@@ -421,6 +424,9 @@ def parse_source(source):
     transpiled = format_source(model)
     print_diff(source, transpiled)
 
+    # Interpret
+    print(interpret_program(model))
+
     return model
 
 
@@ -432,6 +438,8 @@ def parse_file(filename):
 
 if __name__ == "__main__":
     import sys
+
+    from wabbit.interp import interpret_program
 
     if len(sys.argv) != 2:
         raise SystemExit("Usage: wabbit.parse filename")
