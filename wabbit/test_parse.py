@@ -136,32 +136,36 @@ def test_parser_name():
     #     assert parser.parse(tokens) == Statements([Const("b", "float", Float(3.1))])
 
 
-# def test_script_models():
-#     parser = WabbitParser()
+def test_script_models():
+    parser = WabbitParser()
 
-#     source1 = """
-#         print 2 + 3 * -4;
-#         print 2.0 - 3.0 / -4.0;
-#         print -2 + 3;
-#         print 2 * 3 + -4;
-#     """
-#     model1 = Statements(
-#         [
-#             Print(
-#                 BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
-#             ),
-#             Print(
-#                 BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
-#             ),
-#             Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
-#             Print(
-#                 BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))
-#             ),
-#         ]
-#     )
+    source1 = """
+        print 2 + 3 * -4;
+        print 2.0 - 3.0 / -4.0;
+        print -2 + 3;
+        print 2 * 3 + -4;
+    """
+    model1 = Statements(
+        [
+            Print(
+                BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
+            ),
+            Print(
+                BinOp(
+                    "-",
+                    Float("2.0"),
+                    BinOp("/", Float("3.0"), UnaryOp("-", Float("4.0"))),
+                )
+            ),
+            Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+            Print(
+                BinOp("+", BinOp("*", Integer(2), Integer(3)), UnaryOp("-", Integer(4)))
+            ),
+        ]
+    )
 
-#     tokens = tokenize(source1)
-#     assert parser.parse(tokens) == model1
+    tokens = tokenize(source1)
+    assert parser.parse(tokens) == model1
 
 
 def test_parser_basics():

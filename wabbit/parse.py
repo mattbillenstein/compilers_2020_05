@@ -91,7 +91,7 @@ class WabbitParser(Parser):
     #           | return_statement
     #           | expression SEMI
     @_(
-        # "print_statement",
+        "print_statement",
         # "assignment_statement",
         # "variable_definition",
         # "const_definition",
@@ -114,7 +114,6 @@ class WabbitParser(Parser):
     # print_statement : PRINT expression SEMI
     @_("PRINT expression SEMI")
     def print_statement(self, p):
-        print("print statement", p[0])
         return Print(p.expression)
 
     # assignment_statement : location ASSIGN expression SEMI
