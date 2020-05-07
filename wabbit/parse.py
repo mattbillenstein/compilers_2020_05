@@ -282,7 +282,13 @@ class Parser(BaseParser):
         return left
 
     def _additive_term(self) -> Optional[Expression]:
-        return self._literal() or self.name()
+        return self._literal() or self.name() or self._unary_op()
+
+    def _unary_op(self) -> Optional[UnaryOp]:
+        if tok := self.accept("ADD", "SUB"):
+            self.lookahead = None
+            assert (expr := self.expression()) , "Unary"  # noqa:E203
+            return UnaryOp(tok.token, expr)
 
     def name(self) -> Optional[Name]:
         if tok := self.accept("NAME"):
