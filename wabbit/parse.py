@@ -170,6 +170,10 @@ class WabbitParser(Parser):
     def statement(self, p):
         return Return(p.expr)
 
+    @_('CONTINUE SEMI')
+    def statement(self, p):
+        return Continue()
+
     @_('{ argument }')
     def arguments(self, p):
         return Arguments(p.argument)
@@ -224,6 +228,10 @@ class WabbitParser(Parser):
     @_('expr [ COMMA ]')
     def invoking_argument(self, p):
         return InvokingArgument(p.expr)
+
+    @_('LPAREN expr RPAREN')
+    def expr(self, p):
+        return Grouping(p.expr)
 
 def parse_tokens(tokens):
     parser = WabbitParser()

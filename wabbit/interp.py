@@ -51,7 +51,6 @@ def interpret_program(model):
     env = { }
     interpret(model, env)
 
-
 @singledispatch
 def interpret(node, env):
     raise RuntimeError(f"Can't interpret {node}")
@@ -59,6 +58,14 @@ def interpret(node, env):
 @interpret.register(Integer)
 def _(node, env):
     return node.value
+
+@interpret.register(UnaryOp)
+def _(node, env):
+    right = interpret(node.right, env)
+    if node.op == '+':
+        return +right
+    if node.op == '-':
+        return -right
 
 @interpret.register(BinOp)
 def _(node, env):
@@ -93,6 +100,10 @@ def _(node, env):
 @interpret.register(Const)
 def _(node, env):
     env[node.name] = interpret(node.value, env)
+
+@interpret.register(Grouping)
+def _(node, env):
+    return(interpret(node.node, env))
 
 @interpret.register(Var)
 def _(node, env):

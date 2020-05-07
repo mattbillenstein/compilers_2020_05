@@ -88,3 +88,11 @@ env = {}
 interpret(model4, env)
 print('env after', env)
 print()
+
+model103 = BinOp('*', Grouping(BinOp('+', Integer(2), Integer(3))), Integer(4))
+print(103)
+env = {}
+print('interpreted', interpret(model103, env), 'should be 20')
+print('env after', env)
+print()
+

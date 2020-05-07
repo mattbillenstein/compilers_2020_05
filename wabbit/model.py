@@ -46,8 +46,6 @@
 # Feel free to modify as appropriate.  You don't even have to use classes
 # if you want to go in a different direction with it.
 
-# TODO UnaryOp
-# TODO Grouping (for when they put parens around things to say which go first)
 # TODO implement is_correct for everything
 # TODO I guess all the language features that aren't tested in script_models...
 # TODO is_expression and is_assignable for Function, Arguments, Argument, Return, InvokingArguments, InvokingArgument, FunctionInvocation
@@ -194,6 +192,24 @@ class Var(Node):
 
     def __repr__(self):
         return f'Var({self.name}, {self.myType})'
+
+class Continue(Node):
+    def __init__(self):
+        super().__init__()
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Continue()'
+
+class Grouping(Node):
+    def __init__(self, node):
+        super().__init__()
+        self.node = node
+        self.is_expression = True
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Grouping({self.node})'
 
 class Assign(Node):
     def __init__(self, name, value):
@@ -458,6 +474,10 @@ def to_source(node):
         if node.value is True:
             return 'true'
         return 'false'
+    elif isinstance(node, Continue):
+        return 'continue'
+    elif isinstance(node, Grouping):
+        return f'({to_source(node.node)})'
     else:
         raise RuntimeError(f"Can't convert {node} to source")
 

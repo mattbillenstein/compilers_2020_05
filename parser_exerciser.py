@@ -205,3 +205,14 @@ print(s)
 print(parse_source(s))
 print()
 
+print(102)
+s = "continue;"
+print(s)
+print(parse_source(s))
+print()
+
+print(103)
+s = "(2 + 3) * 4;"
+print(s)
+print(parse_source(s))
+print()

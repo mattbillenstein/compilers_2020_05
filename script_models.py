@@ -184,6 +184,12 @@ model101 = Statements([
     ])
 print(to_source(model101))
 print()
+
+model103 = Statements([
+    BinOp('*', Grouping(BinOp('+', Integer(2), Integer(3))) , Integer(4))
+    ])
+print(to_source(model103))
+print()
 # ----------------------------------------------------------------------
 # What's next?  If you've made it here are are looking for more,
 # proceed to the file "func_models.py" and continue.
