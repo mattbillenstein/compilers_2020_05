@@ -1,5 +1,3 @@
-#!/usr/bin/env python3 -m
-
 # interp.py
 #
 # In order to write a compiler for a programming language, it helps to

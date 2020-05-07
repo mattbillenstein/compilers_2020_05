@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # tokenizer.py
 #
 # The role of a tokenizer is to turn raw text into recognized symbols 
