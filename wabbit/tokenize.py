@@ -27,7 +27,10 @@ TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("SEMICOLON", r";"),
     ("BOOL", r"(true|false)"),
     ("NAME", r"[_A-Za-z]([_A-Za-z0-9]+)?"),
-    ("OP", r"[+\-*/]"),
+    ("ADD", r"\+"),
+    ("SUB", r"\-"),
+    ("MUL", r"\*"),
+    ("DIV", r"/"),
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
     ("LBRACE", "{"),
@@ -89,21 +92,21 @@ def tokenize(text: str) -> TokenStream:
 
 def test_tokenizer():
     test_cases = [
-        ("+", [("OP", "+")]),
-        ("++", [("OP", "+"), ("OP", "+")]),
-        ("+ +", [("OP", "+"), ("OP", "+")]),
-        ("+!", [("OP", "+"), ("LNOT", "!")]),
+        ("+", [("ADD", "+")]),
+        ("++", [("ADD", "+"), ("ADD", "+")]),
+        ("+ +", [("ADD", "+"), ("ADD", "+")]),
+        ("+!", [("ADD", "+"), ("LNOT", "!")]),
         (
             "(1 + 2)",
-            [("LPAREN", "("), ("INTEGER", "1"), ("OP", "+"), ("INTEGER", "2"), ("RPAREN", ")")],
+            [("LPAREN", "("), ("INTEGER", "1"), ("ADD", "+"), ("INTEGER", "2"), ("RPAREN", ")")],
         ),
         (
             "+ - * / < <= > >= == != && || !",
             [
-                ("OP", "+"),
-                ("OP", "-"),
-                ("OP", "*"),
-                ("OP", "/"),
+                ("ADD", "+"),
+                ("SUB", "-"),
+                ("MUL", "*"),
+                ("DIV", "/"),
                 ("LT", "<"),
                 ("LE", "<="),
                 ("GT", ">"),

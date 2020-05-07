@@ -265,20 +265,26 @@ class Parser(BaseParser):
     def expression(self) -> Expression:
         print(blue(f"expression(): next = {self.peek()}"))
 
-        left = self._literal() or self.name()  # TODO: arbitrary expression
+        left = self._additive_term()
         if not left:
             raise RuntimeError(f"Error parsing expression: next = {self.peek()}")
 
-        if tok := self.accept(
-            "PLUS", "MINUS", "TIMES", "DIVIDE", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
+        while tok := self.accept(
+            "ADD", "SUB", "MUL", "DIV", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
         ):
             self.lookahead = None
-            right = self._literal() or self.name()  # TODO: arbitrary expression
+            right = self._additive_term()
             assert right, "Expected right"
             left = BinOp(tok.token, left, right)  # type: ignore
 
+        if self.accept("SEMICOLON"):  # ?
+            self.lookahead = None
+
         print(green(f"    parsed Expression {left}"))
         return left
+
+    def _additive_term(self) -> Optional[Expression]:
+        return self._literal() or self.name()
 
     def name(self) -> Optional[Name]:
         if tok := self.accept("NAME"):
