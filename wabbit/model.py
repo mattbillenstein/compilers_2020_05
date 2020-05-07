@@ -438,8 +438,7 @@ class Float(Expression):
     """
 
     def __init__(self, value):
-        assert isinstance(value, float)
-        self.value = value
+        self.value = str(value)
 
     def __repr__(self):
         return f"Float({self.value})"
@@ -448,9 +447,6 @@ class Float(Expression):
         if other is None or type(self) != type(other):
             return False
         return self.value == other.value
-
-    def __hash__(self):
-        return hash(self.value)
 
 
 class Const(Definition):
@@ -604,9 +600,6 @@ class BinOp(Expression):
             and self.left == other.left
             and self.right == other.right
         )
-
-    def __hash__(self):
-        return hash(self.op) ^ hash(self.left) ^ hash(self.right)
 
 
 # ------ Debugging function to convert a model into source code (for easier viewing)

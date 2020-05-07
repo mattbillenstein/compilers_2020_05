@@ -6,7 +6,7 @@ from wabbit.to_source import to_source
 from tests.Script.test_helpers import assert_expectations
 
 
-def test_parser_name():
+def test_parser_arithmetic():
     parser = WabbitParser()
 
     source = "2;"
@@ -15,27 +15,7 @@ def test_parser_name():
 
     source = "2.3;"
     tokens = tokenize(source)
-    assert parser.parse(tokens) == Statements([Float(2.3)])
-
-    #     source = "myObj;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Variable("myObj")])
-
-    #     source = "var x = 3;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Var("x", None, Integer(3))])
-
-    #     source = "var y int = 3;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Var("y", "int", Integer(3))])
-
-    #     source = "const a = 3.1;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Const("a", None, Float(3.1))])
-
-    #     source = "const b float = 3.1;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Const("b", "float", Float(3.1))])
+    assert parser.parse(tokens) == Statements([Float("2.3")])
 
     source = "2 + 3;"
     tokens = tokenize(source)
@@ -56,7 +36,7 @@ def test_parser_name():
     source = "5 * 9 + 2;"
     tokens = tokenize(source)
     assert parser.parse(tokens) == Statements(
-        [BinOp("*", Integer(2), BinOp("*", Integer(3), Integer(8)))]
+        [BinOp("+", BinOp("*", Integer(5), Integer(9)), Integer(2))]
     )
 
     source = "(2 + 3) * 8;"
@@ -67,7 +47,7 @@ def test_parser_name():
 
     source = "2.9 + 2.7;"
     tokens = tokenize(source)
-    assert parser.parse(tokens) == Statements([BinOp("+", Float(2.9), Float(2.7))])
+    assert parser.parse(tokens) == Statements([BinOp("+", Float("2.9"), Float("2.7"))])
 
     source = "3 * -4;"
     tokens = tokenize(source)
@@ -122,57 +102,85 @@ def test_parser_name():
     assert parser.parse(tokens) == Statements(
         [
             Print(
-                BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
+                BinOp(
+                    "-",
+                    Float("2.0"),
+                    BinOp("/", Float("3.0"), UnaryOp("-", Float("4.0"))),
+                )
             )
         ]
     )
 
 
-def test_script_models():
+def test_parser_name():
     parser = WabbitParser()
 
-    source1 = """
-        print 2 + 3 * -4;
-        print 2.0 - 3.0 / -4.0;
-        print -2 + 3;
-        print 2 * 3 + -4;
-    """
-    model1 = Statements(
-        [
-            Print(
-                BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
-            ),
-            Print(
-                BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
-            ),
-            Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
-            Print(
-                BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))
-            ),
-        ]
-    )
+    #     source = "myObj;"
+    #     tokens = tokenize(source)
+    #     assert parser.parse(tokens) == Statements([Variable("myObj")])
 
-    tokens = tokenize(source1)
-    assert parser.parse(tokens) == model1
+    #     source = "var x = 3;"
+    #     tokens = tokenize(source)
+    #     assert parser.parse(tokens) == Statements([Var("x", None, Integer(3))])
+
+    #     source = "var y int = 3;"
+    #     tokens = tokenize(source)
+    #     assert parser.parse(tokens) == Statements([Var("y", "int", Integer(3))])
+
+    #     source = "const a = 3.1;"
+    #     tokens = tokenize(source)
+    #     assert parser.parse(tokens) == Statements([Const("a", None, Float(3.1))])
+
+    #     source = "const b float = 3.1;"
+    #     tokens = tokenize(source)
+    #     assert parser.parse(tokens) == Statements([Const("b", "float", Float(3.1))])
 
 
-# def test_parser_basics():
-#     source = "2.9 * 2.7"
-#     tokens = tokenize(source)
+# def test_script_models():
 #     parser = WabbitParser()
 
-#     assert parser.parse(tokens) == BinOp("*", Float(2.9), Float(2.7))
-
-#     source = "2 / 7"
-#     tokens = tokenize(source)
-#     parser = WabbitParser()
-
-#     assert parser.parse(tokens) == BinOp("/", Integer(2), Integer(7))
-
-#     source = "2 + 3 / 7"
-#     tokens = tokenize(source)
-#     parser = WabbitParser()
-
-#     assert parser.parse(tokens) == BinOp(
-#         "+", Integer(2), BinOp("/", Integer(3), Integer(7))
+#     source1 = """
+#         print 2 + 3 * -4;
+#         print 2.0 - 3.0 / -4.0;
+#         print -2 + 3;
+#         print 2 * 3 + -4;
+#     """
+#     model1 = Statements(
+#         [
+#             Print(
+#                 BinOp("+", Integer(2), BinOp("*", Integer(3), UnaryOp("-", Integer(4))))
+#             ),
+#             Print(
+#                 BinOp("-", Float(2.0), BinOp("/", Float(3.0), UnaryOp("-", Float(4.0))))
+#             ),
+#             Print(BinOp("+", UnaryOp("-", Integer(2)), Integer(3))),
+#             Print(
+#                 BinOp("*", Integer(2), BinOp("+", Integer(3), UnaryOp("-", Integer(4))))
+#             ),
+#         ]
 #     )
+
+#     tokens = tokenize(source1)
+#     assert parser.parse(tokens) == model1
+
+
+def test_parser_basics():
+    source = "2.9 * 2.7;"
+    tokens = tokenize(source)
+    parser = WabbitParser()
+
+    assert parser.parse(tokens) == Statements([BinOp("*", Float("2.9"), Float("2.7"))])
+
+    source = "2 / 7;"
+    tokens = tokenize(source)
+    parser = WabbitParser()
+
+    assert parser.parse(tokens) == Statements([BinOp("/", Integer(2), Integer(7))])
+
+    source = "2 + 3 / 7;"
+    tokens = tokenize(source)
+    parser = WabbitParser()
+
+    assert parser.parse(tokens) == Statements(
+        [BinOp("+", Integer(2), BinOp("/", Integer(3), Integer(7)))]
+    )

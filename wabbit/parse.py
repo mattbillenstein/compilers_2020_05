@@ -204,71 +204,6 @@ class WabbitParser(Parser):
 
     # break_statement : BREAK SEMI
 
-    # expression : orterm { LOR ortem }
-    @_("orterm LOR orterm")
-    def expression(self, p):
-        print("expression", p[0])
-        return BinOp("||", p.orterm0, p.orterm1)
-
-    @_("orterm")
-    def expression(self, p):
-        print("expression no op", p.orterm)
-        return p.orterm
-
-    # orterm : andterm { LAND andterm }
-    @_("andterm LAND andterm")
-    def orterm(self, p):
-        print("orterm", p[0])
-        return BinOp("&&", p.andterm0, p.andterm1)
-
-    @_("andterm")
-    def orterm(self, p):
-        print("orterm no op", p.andterm)
-
-        return p.andterm
-
-    # andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
-    @_("sumterm compare_op sumterm",)
-    def andterm(self, p):
-        return BinOp(p.compare_op, p.sumterm0, p.sumterm1)
-
-    @_("sumterm")
-    def andterm(self, p):
-        print("andterm no op", p[0])
-        return p.sumterm
-
-    @_("LT", "LE", "GT", "GE", "EQ", "NE")
-    def compare_op(self, p):
-        return p[0]
-
-    @_("multerm sumop multerm")
-    def sumterm(self, p):
-        print("sumterm", p.sumop, p.multerm0, p.multerm1)
-        return BinOp(p.sumop, p.multerm0, p.multerm1)
-
-    @_("multerm")
-    def sumterm(self, p):
-        print("sumterm no op", p[0])
-        return p.multerm
-
-    @_("PLUS", "MINUS")
-    def sumop(self, p):
-        return p[0]
-
-    # multerm : factor { TIMES|DIVIDE factor }
-    @_("factor mulop factor")
-    def multerm(self, p):
-        return BinOp(p.mulop, p.factor0, p.factor1)
-
-    @_("factor")
-    def multerm(self, p):
-        print("multerm no op", p[0])
-        return p.factor
-
-    @_("TIMES", "DIVIDE")
-    def mulop(self, p):
-        return p[0]
-
     # continue_statement : CONTINUE SEMI
     @_("CONTINUE SEMI")
     def continue_statement(self, p):
@@ -278,6 +213,15 @@ class WabbitParser(Parser):
     @_("RETURN expression SEMI")
     def return_statement(self, p):
         return Return(p.expression)
+
+    @_(*[f"expression {op} expression" for op in WabbitLexer._binop])
+    def expression(self, p):
+        print("BINOPPP CALLED", p[1], p.expression0, p.expression1)
+        return BinOp(p[1], p.expression0, p.expression1)
+
+    @_("factor")
+    def expression(self, p):
+        return p.factor
 
     # factor : literal
     #        | ....
@@ -324,7 +268,7 @@ class WabbitParser(Parser):
 
     @_("FLOAT")
     def literal(self, p):
-        return Float(float(p.FLOAT))
+        return Float(p.FLOAT)
 
     @_("CHAR")
     def literal(self, p):

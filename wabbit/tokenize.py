@@ -194,6 +194,22 @@ class WabbitLexer(Lexer):
     DOT = r"\."
     COMMA = r","
 
+    _binop = {
+        "LOR",
+        "LAND",
+        "LNOT",
+        "LE",
+        "LT",
+        "GE",
+        "GT",
+        "EQ",
+        "NE",
+        "PLUS",
+        "TIMES",
+        "MINUS",
+        "DIVIDE",
+    }
+
     @_(CHAR)
     def CHAR(self, token):
         token.value = token.value.replace("'", "")
@@ -208,6 +224,11 @@ class WabbitLexer(Lexer):
     @_(INTEGER)
     def INTEGER(self, token):
         token.value = int(token.value)
+        return token
+
+    @_(FLOAT)
+    def FLOAT(self, token):
+        token.value = str(float(token.value))
         return token
 
 
