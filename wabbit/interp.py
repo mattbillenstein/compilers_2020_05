@@ -1,7 +1,7 @@
+import sys
 from collections import ChainMap
 from dataclasses import dataclass
 import operator
-import sys
 
 from typeguard import typechecked
 
@@ -126,3 +126,16 @@ class Interpreter:
 def interpret_program(node: Statements):
     env: ChainMap = ChainMap()
     return Interpreter().interpret(node, env)
+
+
+if __name__ == "__main__":
+    from wabbit.parse import parse_source
+
+    debug = False
+    args = sys.argv[1:]
+    if args[0] == "-d":
+        debug = True
+        args = args[1:]
+
+    with open(args[0]) as fh:
+        interpret_program(parse_source(fh.read(), debug))

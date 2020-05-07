@@ -391,7 +391,7 @@ class Parser(BaseParser):
             return Char(tok.token)
 
 
-def parse_source(source):
+def parse_source_debug(source):
     print = _print
     print_source(source)
 
@@ -418,10 +418,11 @@ def parse_source(source):
     return model
 
 
-def parse_file(filename):
-    with open(filename) as file:
-        text = file.read()
-    return parse_source(text)
+def parse_source(source, debug=False):
+    if debug:
+        parse_source_debug(source)
+    else:
+        return Parser(tokenize(source)).statements()
 
 
 if __name__ == "__main__":
@@ -429,6 +430,13 @@ if __name__ == "__main__":
 
     from wabbit.interp import interpret_program
 
-    if len(sys.argv) != 2:
-        raise SystemExit("Usage: wabbit.parse filename")
-    parse_file(sys.argv[1])
+    n_args = len(sys.argv[1:])
+    if n_args not in [1, 2]:
+        raise SystemExit("Usage: wabbit.parse filename [debug]")
+
+    debug = n_args == 2
+
+    with open(sys.argv[1]) as file:
+        source = file.read()
+
+    parse_source(debug)

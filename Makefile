@@ -20,6 +20,7 @@ type-check:
 
 test:
 	$(PYTEST) --quiet wabbit/tokenize.py
+	$(PYTEST) --quiet tests/interp.py
 
 test-python-exercises:
 	@$(PYTHON) -m doctest $(PYTHON_FILES)
