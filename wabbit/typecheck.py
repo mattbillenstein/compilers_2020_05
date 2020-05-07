@@ -238,6 +238,14 @@ def check_location(node, env):
         error(node.lineno, "{node.name} not defined!")
     return defn
 
+@rule(BreakStatement)
+def check_break_statement(node, env):
+    pass
+
+@rule(ContinueStatement)
+def check_continue_statement(node, env):
+    pass
+
 # Sample main program
 def main(filename):
     from .parse import parse_file
