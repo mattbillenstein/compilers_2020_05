@@ -155,7 +155,7 @@ def generate_program(model):
 
 # Internal function for generating code on each node
 @singledispatch
-def generate(node, mod):
+def generate(node, func):
     raise RuntimeError(f"Can't generate {node}")
 
 
@@ -170,8 +170,22 @@ def generate_Statements(node, func):
 
 @rule(Float)
 def generate_Float(node, func):
-    print("fconst")
     func.fconst(float(node.value))
+
+
+@rule(Char)
+def generate_Char(node, func):
+    func.fconst(ord(node.char))
+
+
+@rule(Var)
+def generate_Var(node, func):
+    v_idx = func.alloca(FLOAT64)
+    # e.g. put float on stack
+    generate(node.value, func)
+
+    func.local_set(v_idx)
+    func.local_get(v_idx)
 
 
 @rule(BinOp)
