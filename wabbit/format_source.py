@@ -1,4 +1,3 @@
-from textwrap import dedent
 from typeguard import typechecked
 
 from wabbit.model import (

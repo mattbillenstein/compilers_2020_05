@@ -19,7 +19,18 @@ class Token(NamedTuple):
 TokenStream = Generator[Token, None, None]
 
 
-KEYWORDS = {"const", "var", "print", "break", "continue", "if", "else", "while", "true", "false"}
+KEYWORDS = {
+    "const",
+    "var",
+    "print",
+    "break",
+    "continue",
+    "if",
+    "else",
+    "while",
+    "true",
+    "false",
+}
 TYPES = {"bool", "char", "int", "float"}
 TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("FLOAT", r"\d+\.\d*"),  # TODO: floats with nothing before the "."

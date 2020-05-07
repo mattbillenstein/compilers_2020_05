@@ -1,6 +1,5 @@
 from collections import ChainMap
 from dataclasses import dataclass
-from .model import Node
 
 from typeguard import typechecked
 

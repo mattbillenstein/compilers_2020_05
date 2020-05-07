@@ -69,8 +69,9 @@ class CFunction:
         self.instructions.append(f"{c_name} = {node.value};")
 
     def _get_or_create_name(self, node, prefix="", should_exist=None):
-        if id(node) not in self._c_names:
-            assert should_exist != True, node
+        uid = id(node)
+        if uid not in self._c_names:
+            assert should_exist is not True, node
             self._c_names[uid] = f"_{prefix}_{next(self.name_counter)}"
         return self._c_names[uid]
 

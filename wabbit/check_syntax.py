@@ -1,19 +1,9 @@
 from typeguard import typechecked
 
 from wabbit.model import (
-    Assign,
-    BinOp,
-    ConstDef,
-    Float,
-    If,
-    Integer,
-    Name,
     Node,
-    Print,
-    UnaryOp,
-    VarDef,
-    While,
     Statements,
+    VarDef,
 )
 
 

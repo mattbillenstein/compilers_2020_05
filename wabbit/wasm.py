@@ -28,15 +28,19 @@
 #    def generate_expression(node, mod):
 #       ...
 #
-# In these functions, you will produce code by interacting with the 
+# In these functions, you will produce code by interacting with the
 # Wasm module in various ways.
 #
 
-from .model import *
 
 # Class representing the world of Wasm
 class WabbitWasmModule:
     pass
+
+
+def encode_module(module):
+    ...
+
 
 # Top-level function for generating code from the model
 def generate_program(model):
@@ -44,27 +48,25 @@ def generate_program(model):
     generate(model, mod)
     return mod
 
+
 # Internal function for generating code on each node
 def generate(node, mod):
     raise RuntimeError(f"Can't generate {node}")
 
+
 def main(filename):
     from .parse import parse_file
     from .typecheck import check_program
+
     model = parse_file(filename)
-    check_program(model):
+    check_program(model)
     mod = generate_program(model)
-    with open('out.wasm', 'wb') as file:
+    with open("out.wasm", "wb") as file:
         file.write(encode_module(mod.module))
     print("Wrote out.wasm")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
-
-        
-        
-
-    
-
-                   

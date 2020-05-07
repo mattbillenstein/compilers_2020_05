@@ -17,9 +17,9 @@
 #    node = Integer(5)
 #
 # To the compiler, it won't matter---the finally produced code
-# will be the same. 
+# will be the same.
 #
-# One thing that's a bit different about this project is that 
+# One thing that's a bit different about this project is that
 # it's mostly just focused on the structure of the model itself
 # and not aspects of type checking or code generation.  Mostly
 # it's just about transformation.  You write functions like this:
@@ -30,19 +30,22 @@
 #       return newnode
 #
 
-from .model import *
 
 def transform(node):
     # Return the node back (unmodified) or a new node in its place
     return node
 
+
 # Main function (for testing)
 def main(filename):
     from .parse import parse_file
+
     model = parse_file(filename)
     model = transform(model)
     print(model)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])

@@ -30,7 +30,7 @@
 #    def generate_expression(node, mod):
 #       ...
 #
-# In these functions, you will produce code by interacting with the 
+# In these functions, you will produce code by interacting with the
 # module in some way.
 #
 # One somewhat messy bit concerns the mapping of Wabbit types to
@@ -38,7 +38,7 @@
 # (see below)
 
 from llvmlite import ir
-from .model import *
+
 
 # Define LLVM types corresponding to Wabbit types
 int_type = ir.IntType(32)
@@ -46,9 +46,11 @@ float_type = ir.DoubleType()
 bool_type = ir.IntType(1)
 char_type = ir.IntType(8)
 
+
 # The LLVM world that Wabbit is populating
 class WabbitLLVMModule:
     pass
+
 
 # Top-level function
 def generate_program(model):
@@ -56,9 +58,11 @@ def generate_program(model):
     generate(model, mod)
     return mod
 
+
 # Internal function to to generate code for each node type
 def generate(node, mod):
     raise RuntimeError(f"Can't generate code for {node}")
+
 
 # Sample main program that runs the compiler
 def main(filename):
@@ -66,15 +70,14 @@ def main(filename):
     from .typecheck import check_program
 
     model = parse_file(filename)
-    check_program(model):
+    check_program(model)
     mod = generate_program(model)
-    with open('out.ll', 'w') as file:
+    with open("out.ll", "w") as file:
         file.write(str(mod))
-    print('Wrote out.ll')
+    print("Wrote out.ll")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
-
-
-
