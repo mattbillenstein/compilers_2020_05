@@ -160,6 +160,56 @@ class Float(ScalarNode):
     value: float
 
 
+
+binop_typemap = {
+    # Integer operations
+    ('+', 'int', 'int') : 'int',
+    ('-', 'int', 'int') : 'int',
+    ('*', 'int', 'int') : 'int',
+    ('/', 'int', 'int') : 'int',
+    ('<', 'int', 'int') : 'bool',
+    ('<=', 'int', 'int') : 'bool',
+    ('>', 'int', 'int') : 'bool',
+    ('>=', 'int', 'int') : 'bool',
+    ('==', 'int', 'int') : 'bool',
+    ('!=', 'int', 'int') : 'bool',
+
+    # Float operations
+    ('+', 'float', 'float') : 'float',
+    ('-', 'float', 'float') : 'float',
+    ('*', 'float', 'float') : 'float',
+    ('/', 'float', 'float') : 'float',
+    ('<', 'float', 'float') : 'bool',
+    ('<=', 'float', 'float') : 'bool',
+    ('>', 'float', 'float') : 'bool',
+    ('>=', 'float', 'float') : 'bool',
+    ('==', 'float', 'float') : 'bool',
+    ('!=', 'float', 'float') : 'bool',
+
+    # Char operations
+    ('<', 'char', 'char') : 'bool',
+    ('<=', 'char', 'char') : 'bool',
+    ('>', 'char', 'char') : 'bool',
+    ('>=', 'char', 'char') : 'bool',
+    ('==', 'char', 'char') : 'bool',
+    ('!=', 'char', 'char') : 'bool',
+
+    # Bool operations
+    ('==', 'bool', 'bool') : 'bool',
+    ('!=', 'bool', 'bool') : 'bool',
+    ('&&', 'bool', 'bool') : 'bool',
+    ('||', 'bool', 'bool') : 'bool',
+}
+
+unop_typemap = {
+    ('+', 'int') : 'int',
+    ('-', 'int') : 'int',
+    ('+', 'float') : 'float',
+    ('-', 'float') : 'float',
+    ('!', 'bool') : 'bool',
+}
+
+
 class ModelVisitor:
     def __init__(self):
         raise NotImplementedError

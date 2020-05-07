@@ -109,14 +109,14 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def visit_BinOp(self, node, ctx):
         lefttype, leftexpr = node.left.visit(self, ctx)
         righttype, rightexpr = node.right.visit(self, ctx)
-        result_type = 'int'
+        result_type = binop_typemap[(node.op, lefttype, righttype)]
         cvar = self.next_cvar()
         self.csrc.append(''.join([cvar, ' = ', leftexpr, ' ', node.op, ' ', rightexpr, ';']))
         return (result_type, cvar)
     
     def visit_UnOp(self, node, ctx):
         righttype, rightexpr = node.right.visit(self, ctx)
-        result_type = 'int'
+        result_type = unop_typemap[(node.op, righttype)]
         cvar = self.next_cvar()
         self.csrc.append(''.join([cvar, ' = ', node.op, ' ', rightexpr, ';']))
         return (result_type, cvar)
@@ -125,10 +125,10 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return '{ ' + ' '.join(node.block.visit(self, ctx)) + ' }'
     
     def visit_Int(self, node, ctx):
-        return ('int ', str(node.value))
+        return ('int', str(node.value))
     
     def visit_Char(self, node, ctx):
-        return ('char ', str(node.value))
+        return ('char', str(node.value))
     
     def visit_Float(self, node, ctx):
-        return ('float ', str(node.value))
+        return ('float', str(node.value))
