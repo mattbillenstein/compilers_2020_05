@@ -57,35 +57,65 @@ def check_Assignment(node, env):
             e[name] = value
             return
 
+
+valid_binop = {
+    # Integer operations
+    ('+', 'int', 'int') : 'int',
+    ('-', 'int', 'int') : 'int',
+    ('*', 'int', 'int') : 'int',
+    ('/', 'int', 'int') : 'int',
+    ('<', 'int', 'int') : 'bool',
+    ('<=', 'int', 'int') : 'bool',
+    ('>', 'int', 'int') : 'bool',
+    ('>=', 'int', 'int') : 'bool',
+    ('==', 'int', 'int') : 'bool',
+    ('!=', 'int', 'int') : 'bool',
+
+    # Float operations
+    ('+', 'float', 'float') : 'float',
+    ('-', 'float', 'float') : 'float',
+    ('*', 'float', 'float') : 'float',
+    ('/', 'float', 'float') : 'float',
+    ('<', 'float', 'float') : 'bool',
+    ('<=', 'float', 'float') : 'bool',
+    ('>', 'float', 'float') : 'bool',
+    ('>=', 'float', 'float') : 'bool',
+    ('==', 'float', 'float') : 'bool',
+    ('!=', 'float', 'float') : 'bool',
+
+    # Char operations
+    ('==', 'char', 'char') : 'bool',
+    ('!=', 'char', 'char') : 'bool',
+
+    # Bool operations
+    ('==', 'bool', 'bool') : 'bool',
+    ('!=', 'bool', 'bool') : 'bool',
+    ('&&', 'bool', 'bool') : 'bool',
+    ('||', 'bool', 'bool') : 'bool',
+}
+
 @add(BinOp)
 def check_BinOp(node, env):
-    left = check(node.left, env)
-    right = check(node.right, env)
-    if node.op == "+":
-        return left + right
-    elif node.op == "-":
-        return left - right
-    elif node.op == "*":
-        return left * right
-    elif node.op == "/":
-        if isinstance(left, int):
-            return left // right
-        else:
-            return left / right
-    elif node.op == ">":
-        return left > right
-    elif node.op == ">=":
-        return left >= right
-    elif node.op == "<":
-        return left < right
-    elif node.op == ">=":
-        return left >= right
-    elif node.op == "==":
-        return left == right
-    elif node.op == "!=":
-        return left != right
+
+    try:
+        return valid_binop[(node.op, check(node.left, env), check(node.right, env))]
+    except KeyError:
+        raise TypeError(f"incompatible types {node.left} {node.op} {node.right}")
+
+@add(Bool)
+def check_Bool(node, env):
+    if node.value in ['true', 'false']:
+        return 'bool'
     else:
-        raise RuntimeError(f"Unsupported operator {node.op}")
+        raise TypeError(f"Expected 'true' or 'false'; got {node.value}")
+
+@add(Char)
+def check_Char(node, env):
+    if isinstance(node.value, str) and len(node.value) == 1:
+        return 'char'
+    else:
+        raise TypeError(f"Expected a 'char'; got {node.value}")
+
 
 @add(Const)
 def check_Const(node, env):
@@ -106,7 +136,9 @@ def check_ExpressionStatement(node, env):
 
 @add(Float)
 def check_Float(node, env):
-    return node.value
+    if not isinstance(node.value, float):
+        raise TypeError(f"Argument of Float is not a float: {node.value}")
+    return 'float'
 
 @add(If)
 def check_If(node, env):
@@ -118,6 +150,8 @@ def check_If(node, env):
 
 @add(Integer)
 def check_Integer(node, env):
+    if not isinstance(node.value, int):
+        raise TypeError(f"Argument of Integer is not an int: {node.value}")
     return "int"
 
 @add(Group)
@@ -132,15 +166,13 @@ def check_Name(node, env):
 @add(Print)
 def check_Print(node, env):
     expr = check(node.expression, env)
-    if 'capture_print' in env:
-        env['capture_print'].append(expr)
-    print(expr)
-
+    return True
 
 @add(Statements)
 def check_Statements(node, env):
     for s in node.statements:
         check(s, env)
+    return True
 
 @add(Type)
 def check_Type(node, env):
@@ -149,10 +181,13 @@ def check_Type(node, env):
 @add(UnaryOp)
 def check_UnaryOp(node, env):
     value = check(node.value, env)
-    if node.op == "-":
-        return -value
-    else:
+    if node.op in ['+', '-'] and value in ['float', 'int']:
         return value
+
+    if node.op == "!" and value in ['bool']:
+        return value
+
+    raise TypeError(f"Incompatible type for operation: {node.op} {node.value}")
 
 @add(Var)
 def check_Var(node, env):
@@ -176,11 +211,6 @@ def check_While(node, env):
             check(node.statements, env.new_child())
         else:
             break
-
-
-
-
-
 
 # Sample main program
 def main(filename):
