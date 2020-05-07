@@ -151,13 +151,14 @@ class WabbitParser(Parser):
        'const_definition',
        'var_definition',
        'if_statement',
-       'while_statement'
+       'while_statement',
+       'expression_statement'
        )
     def statement(self, p):
         return p[0] # Just return whatever the thing is
 
     @_('expression SEMI')
-    def statement(self, p):
+    def expression_statement(self, p):
         return ExpressionStatement(p.expression)
 
     @_('PRINT expression SEMI')
@@ -239,10 +240,10 @@ class WabbitParser(Parser):
     def expression(self, p):
         return Compound(p.statements)
 
-    @_('location')
-    def expression(self, p):
-        return p[0]
-        # return LoadLocation(p.location)
+    # @_('location')
+    # def expression(self, p):
+    #     return p[0]
+    #     # return LoadLocation(p.location)
 
     @_('INTEGER')           # triggers
     def expression(self, p):
