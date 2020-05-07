@@ -171,9 +171,7 @@ class BaseParser:
 
         if tok.type_ in types_:
             print(green(f"    -> {tok}"))
-            self.lookahead = (
-                None  # TODO: we don't need to set lookahead = None below if we're doing it here
-            )
+            self.lookahead = None
             return tok
         # print(blue("    -> reject"))
         return None
@@ -216,17 +214,13 @@ class Parser(BaseParser):
 
         if statement:
             print(green(f"    parsed Statement: {statement}"))
-
-            if self.accept("SEMICOLON"):  # ?
-                self.lookahead = None
-
+            self.accept("SEMICOLON")
             return statement
 
     def if_(self) -> Optional[Statement]:
         if not self.accept("IF"):
             return None
 
-        self.lookahead = None
         assert (test := self.expression())
         assert (then := self.block())
         else_ = self._else()
@@ -235,7 +229,6 @@ class Parser(BaseParser):
     def _else(self) -> Optional[Block]:
         if not self.accept("ELSE"):
             return None
-        self.lookahead = None
         assert (block := self.block())
         return block
 
@@ -243,7 +236,6 @@ class Parser(BaseParser):
         if not self.accept("WHILE"):
             return None
 
-        self.lookahead = None
         assert (test := self.expression())
         assert (then := self.block())
         return While(test, then.statements)
@@ -261,8 +253,6 @@ class Parser(BaseParser):
         if not self.accept("PRINT"):
             return None
 
-        self.lookahead = None
-
         assert (expression := self.expression())
         self.expect("SEMICOLON")
         node = Print(expression)
@@ -273,11 +263,9 @@ class Parser(BaseParser):
     def assign(self) -> Optional[Statement]:
         print(blue(f"assign(): next = {self.peek()}"))
 
-        if tok := self.accept("NAME"):  # TODO: location
-            location = Location(tok.token)
-            self.lookahead = None
-        else:
+        if not (tok := self.accept("NAME")):  # TODO: location
             return None
+        location = Location(tok.token)
 
         self.expect("ASSIGN")
 
@@ -294,18 +282,15 @@ class Parser(BaseParser):
         if not self.accept("VAR"):
             return None
 
-        self.lookahead = None
         name = Name(self.expect("NAME").token)
 
         type_: Optional[str]
         if tok := self.accept("TYPE"):
             type_ = tok.token
-            self.lookahead = None
         else:
             type_ = None
 
         if self.accept("ASSIGN"):
-            self.lookahead = None
             assert (value := self.expression())
         else:
             value = None
@@ -323,13 +308,11 @@ class Parser(BaseParser):
         if not self.accept("CONST"):
             return None
 
-        self.lookahead = None
         name = Name(self.expect("NAME").token)
 
         type_: Optional[str]
         if tok := self.accept("TYPE"):
             type_ = tok.token
-            self.lookahead = None
         else:
             type_ = None
 
@@ -342,7 +325,7 @@ class Parser(BaseParser):
         print(green(f"    parsed ConstDef {node}"))
         return node
 
-    def expression(self) -> Optional[Expression]:  # TODO: Is this really Optional?
+    def expression(self) -> Optional[Expression]:
         parse_factor = (
             lambda self: self._literal() or self.name() or self._unary_op() or self.block()
         )
@@ -370,13 +353,11 @@ class Parser(BaseParser):
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
-            self.lookahead = None
             assert (expr := self.expression())
             return UnaryOp(tok.token, expr)
 
     def name(self) -> Optional[Name]:
         if tok := self.accept("NAME"):
-            self.lookahead = None
             return Name(tok.token)
 
     def _literal(self) -> Literal:
@@ -384,22 +365,18 @@ class Parser(BaseParser):
 
     def integer(self):
         if tok := self.accept("INTEGER"):
-            self.lookahead = None
             return Integer(int(tok.token))
 
     def float(self):
         if tok := self.accept("FLOAT"):
-            self.lookahead = None
             return Float(float(tok.token))
 
     def bool(self):
         if tok := self.accept("BOOL"):
-            self.lookahead = None
             return Bool({"true": True, "false": False}[tok.token])
 
     def char(self):
         if tok := self.accept("CHAR"):
-            self.lookahead = None
             return Char(tok.token)
 
 
