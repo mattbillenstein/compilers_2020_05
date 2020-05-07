@@ -399,16 +399,27 @@ class If(Statement):
     Example if x < y
     """
 
-    def __init__(self, test, when_true, when_false):
+    def __init__(self, test, when_true, when_false=None):
         assert isinstance(test, Expression) or isinstance(test, Definition)
         assert isinstance(when_true, Statement)
-        assert isinstance(when_false, Statement)
+        assert when_false is None or isinstance(when_false, Statement)
         self.test = test
         self.when_true = when_true
         self.when_false = when_false
 
     def __repr__(self):
         return f"If({self.test}, {self.when_true}, {self.when_false})"
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if type(self) != type(other):
+            return False
+        return (
+            self.test == other.test
+            and self.when_true == other.when_true
+            and self.when_false == other.when_false
+        )
 
 
 class While(Statement):

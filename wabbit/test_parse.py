@@ -403,3 +403,38 @@ def test_parser_enum_definition():
         ]
     )
 
+
+def test_parser_if():
+    parser = WabbitParser()
+
+    source = """if x >= 10 * 3 {
+        print x;
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            If(
+                BinOp(">=", Variable("x"), BinOp("*", Integer(10), Integer(3))),
+                Statements([Print(Variable("x"))]),
+            )
+        ]
+    )
+
+    source = """if x >= 10 * 3 {
+        print x;
+    } else {
+        print 3.2;
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            If(
+                BinOp(">=", Variable("x"), BinOp("*", Integer(10), Integer(3))),
+                Statements([Print(Variable("x"))]),
+                Statements([Print(Float('3.2'))])
+            )
+        ]
+    )
+

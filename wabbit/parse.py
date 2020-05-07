@@ -99,7 +99,7 @@ class WabbitParser(Parser):
         "func_definition",
         "struct_definition",
         "enum_definition",
-        # "if_statement",
+        "if_statement",
         # "if_let_statement",
         # "while_statement",
         # "while_let_statement",
@@ -188,13 +188,12 @@ class WabbitParser(Parser):
 
     @_("NAME LPAREN NAME RPAREN SEMI")
     def enum_choice(self, p):
-        print("name lparent\n\n\n", p[0])
         return EnumChoice(p.NAME0, p.NAME1)
 
     # if_statement : IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     @_("IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]")
     def if_statement(self, p):
-        return If(p.expr, p.statements0, p.statements1)
+        return If(p.expression, p.statements0, p.statements1)
 
     # if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     # @_(
