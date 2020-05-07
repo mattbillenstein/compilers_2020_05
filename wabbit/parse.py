@@ -273,24 +273,28 @@ class Parser(BaseParser):
     #      | literal
     #      | LBRACE statements RBRACE
     def expression(self) -> Optional[Expression]:
+        return self._additive_term()
+
+    def _additive_term(self) -> Optional[Expression]:
         print(blue(f"expression(): next = {self.peek()}"))
 
-        if not (left := self._additive_term()):
+        if not (left := self._multiplicative_term()):
             return None
 
         while tok := self.accept(
             "ADD", "SUB", "MUL", "DIV", "LT", "LE", "GT", "GE", "EQ", "NE", "LAND", "LOR"
         ):
             self.lookahead = None
-            right = self._additive_term()
+            right = self._multiplicative_term()
             assert right, "Expected right"
             left = BinOp(tok.token, left, right)  # type: ignore
 
         print(green(f"    parsed Expression {left}"))
         return left
 
-    def _additive_term(self) -> Optional[Expression]:
-        return self._literal() or self.name() or self._unary_op() or self.block()
+    def _multiplicative_term(self) -> Optional[Expression]:
+        term = self._literal() or self.name() or self._unary_op() or self.block()
+        return term
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
