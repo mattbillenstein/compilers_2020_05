@@ -195,6 +195,22 @@ def compile_print_statement(node, env, cfunc):
     compile(node.expression, env, cfunc)
     cfunc.statements += f'printf("%i\\n", {cfunc.tempname(node.expression)});\n'
 
+@rule(VarDefinition)
+@rule(ConstDefinition)
+def compile_var_definition(node, env, cfunc):
+    # Still need to track var/const definitions for later use
+    # Need to emit a C variable declaration for this of some kind.
+    env[node.name] = node    
+    cfunc.locals += f'{node.type} {node.name};\n'
+    if node.value:
+        compile(node.value, env, cfunc)
+        cfunc.statements += f'{node.name} = {cfunc.tempname(node.value)};\n'
+
+@rule(LoadLocation)
+def compile_load_location(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {lname};\n'
+    cfunc.statements += f'{lname} = {node.location.name};\n'   # messy.
 
 def main(filename):
     from .parse import parse_file

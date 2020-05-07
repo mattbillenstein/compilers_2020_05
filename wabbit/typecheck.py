@@ -143,6 +143,7 @@ def check_unary_op(node, env):
     resulttype = _unary_ops.get((node.op, optype))
     if not resulttype:
         error(node.lineno, f"Unsupported operation. {node.op}{optype}")
+    node.type = resulttype
     return resulttype
 
 @rule(Grouping)
@@ -158,6 +159,7 @@ def check_load_location(node, env):
     # Feels wrong. Having to look inside location to get a name.
     loc = check(node.location, env)
     if loc:
+        node.type = loc.type
         return loc.type
 
 @rule(PrintStatement)
