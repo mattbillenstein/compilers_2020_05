@@ -326,10 +326,7 @@ class Parser(BaseParser):
         return node
 
     def expression(self) -> Optional[Expression]:
-        parse_factor = (
-            lambda self: self._literal() or self.name() or self._unary_op() or self.block()
-        )
-        parse_multerm = self._make_expression_parser(["MUL", "DIV"], parse_factor)
+        parse_multerm = self._make_expression_parser(["MUL", "DIV"], self._factor)
         parse_addterm = self._make_expression_parser(["ADD", "SUB"], parse_multerm)
         parse_relterm = self._make_expression_parser(
             ["LT", "LE", "GT", "GE", "EQ", "NE"], parse_addterm
@@ -338,6 +335,10 @@ class Parser(BaseParser):
         parse_orterm = self._make_expression_parser(["LOR"], parse_andterm)
 
         return parse_orterm(self)
+
+    @staticmethod
+    def _factor(self):
+        return self._literal() or self.name() or self._unary_op() or self.block()
 
     def _make_expression_parser(self, operators, child_parser):
         def parser(self) -> Optional[Expression]:
@@ -353,7 +354,7 @@ class Parser(BaseParser):
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
-            assert (expr := self.expression())
+            assert (expr := self._factor(self))
             return UnaryOp(tok.token, expr)
 
     def name(self) -> Optional[Name]:
