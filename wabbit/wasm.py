@@ -34,6 +34,7 @@
 
 from wabbit.model import *
 from wabbit.wasm_helpers import *
+from functools import singledispatch
 
 
 class WasmModule:
@@ -49,13 +50,12 @@ class WasmImportedFunction:
     A function defined outside of the Wasm environment
     """
 
-    def __init__(self, module, env_name, name, arg_types, return_types):
+    def __init__(self, module, envname, name, argtypes, rettypes):
         self.module = module
-        self.env_name = env_name
+        self.envname = envname
         self.name = name
-        self.arg_types = arg_types
-        self.return_types = return_types
-
+        self.argtypes = argtypes
+        self.rettypes = rettypes
         self.idx = len(module.imported_functions)
         module.imported_functions.append(self)
 
@@ -65,12 +65,11 @@ class WasmFunction:
     A natively defined Wasm function
     """
 
-    def __init__(self, module, name, arg_types, return_types):
+    def __init__(self, module, name, argtypes, rettypes):
         self.module = module
         self.name = name
-        self.arg_types = arg_types
-        self.return_types = return_types
-
+        self.argtypes = argtypes
+        self.rettypes = rettypes
         self.idx = len(module.imported_functions) + len(module.functions)
         module.functions.append(self)
 
@@ -81,36 +80,42 @@ class WasmFunction:
         self.local_types = []
 
     def iconst(self, value):
-        self.code += i32const + encode_signed(value)
+        self.code += b"\x41" + encode_signed(value)
+
+    def fconst(self, value):
+        self.code += b"\x44" + encode_FLOAT64(value)
 
     def iadd(self):
-        self.code += i32add
+        self.code += b"\x6a"
+
+    def fadd(self):
+        self.code += b"\xa0"
 
     def imul(self):
-        self.code += i32mul
+        self.code += b"\x6c"
+
+    def ret(self):
+        self.code += b"\x0f"
 
     def call(self, func):
         self.code += b"\x10" + encode_unsigned(func.idx)
 
-    def ret(self):
-        self.code += return_type
-
     def alloca(self, type):
-        idx = len(self.local_types) + len(self.arg_types)
-        self.local_types.append(self)
+        idx = len(self.argtypes) + len(self.local_types)
+        self.local_types.append(type)
         return idx
 
     def local_get(self, idx):
-        self.code += local_get + encode_unsigned(idx)
+        self.code += b"\x20" + encode_unsigned(idx)
 
     def local_set(self, idx):
-        self.code += local_set + encode_unsigned(idx)
+        self.code += b"\x21" + encode_unsigned(idx)
 
     def global_get(self, gvar):
-        self.code += global_get + encode_unsigned(gvar.idx)
+        self.code += b"\x23" + encode_unsigned(gvar.idx)
 
     def global_set(self, gvar):
-        self.code += global_set + encode_unsigned(gvar.idx)
+        self.code += b"\x24" + encode_unsigned(gvar.idx)
 
 
 class WasmGlobalVariable:
@@ -123,7 +128,6 @@ class WasmGlobalVariable:
         self.name = name
         self.type = type
         self.initializer = initializer
-
         self.idx = len(module.global_variables)
         module.global_variables.append(self)
 
@@ -135,14 +139,41 @@ class WabbitWasmModule:
 
 # Top-level function for generating code from the model
 def generate_program(model):
-    mod = WabbitWasmModule()
-    generate(model, mod)
+    mod = WasmModule("example")
+    _print = WasmImportedFunction(mod, "runtime", "_print", [FLOAT64], [])
+    main = WasmFunction(mod, "main", [], [])
+
+    generate(model, main)
+
+    main.call(_print)
+    main.ret()
     return mod
 
 
 # Internal function for generating code on each node
+@singledispatch
 def generate(node, mod):
     raise RuntimeError(f"Can't generate {node}")
+
+
+rule = generate.register
+
+
+@rule(Statements)
+def generate_Statements(node, func):
+    for s in node.statements:
+        generate(s, func)
+
+
+@rule(Float)
+def generate_Float(node, func):
+    print("fconst")
+    func.fconst(float(node.value))
+
+
+@rule(BinOp)
+def generate_BinOp(node, func):
+    func.fadd()
 
 
 def main(filename):
