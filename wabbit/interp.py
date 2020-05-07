@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # interp.py
 #
 # In order to write a compiler for a programming language, it helps to
@@ -40,9 +42,13 @@
 # created in the example_models.py file.
 #
 
+import os.path
+import sys
 from collections import ChainMap
+from functools import wraps
 
-from .model import *
+from model import *
+from parse import parse
 
 class DeepChainMap(ChainMap):
     'Variant of ChainMap that allows direct updates to inner scopes'
@@ -61,18 +67,29 @@ class DeepChainMap(ChainMap):
                 return
         raise KeyError(key)
 
-d = DeepChainMap()
-
-# Top level function that interprets an entire program. It creates the
-# initial environment that's used for storing variables.
-
 # TODO
 # - Program node, so Block doesn't need to return
 # - Scope only if var/const in a block?
 # - look at scoping more - make sure we set things in the proper scope
 
-def interpret(node):
-    return Interpreter().interpret(node)
+def new_scope(func):
+    '''Call function with new scope, remove it after the function exits'''
+    def inner(*args, **kwargs):
+        self = args[0]
+        try:
+            if self.env is None:
+                self.env = DeepChainMap()
+            else:
+                self.env = self.env.new_child()
+
+            return func(*args, **kwargs)
+        finally:
+            # don't remove the last scope since this is what we return to check
+            # simple expressions
+            if len(self.env.maps) > 1:
+                self.env = self.env.parents
+
+    return inner
 
 
 class Interpreter:
@@ -80,31 +97,22 @@ class Interpreter:
         self.env = None
         self.stdout = []
 
+    def current_scope(self):
+        return self.env.maps[0]
+
     def interpret(self, node):
-        x = self.visit(node)
+        ret = self.visit(node)
 
         if isinstance(self.env.get('main'), Func):
-            x = self.visit(self.env['main'].block)
+            ret = self.visit(self.env['main'].block)
 
         assert self.env is not None and len(self.env.maps) == 1
-        return x, self.env.maps[0], self.stdout
+        return ret, self.current_scope(), self.stdout
 
     def visit(self, node):
         assert node is not None
         m = getattr(self, f'visit_{node.__class__.__name__}')
         return m(node)
-
-    def _new_scope(self):
-        # push new scope, hack if this is the first block to not add an extra
-        # scope...
-        if self.env is None:
-            self.env = DeepChainMap()
-        else:
-            self.env = self.env.new_child()
-
-    def _del_scope(self):
-        if len(self.env.maps) > 1:
-            self.env = self.env.parents
 
     def visit_Name(self, node):
         return self.env.get(node.value)
@@ -131,7 +139,7 @@ class Interpreter:
     def visit_BinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        x =  {
+        return {
             '+': lambda a, b: a+b,
             '-': lambda a, b: a-b,
             '*': lambda a, b: a*b,
@@ -143,7 +151,6 @@ class Interpreter:
             '!=': lambda a, b: a!=b,
             '==': lambda a, b: a==b,
         }[node.op](left, right)
-        return x
 
     def visit_UnaOp(self, node):
         return {
@@ -152,17 +159,17 @@ class Interpreter:
             '!': lambda a: not a,
         }[node.op](self.visit(node.arg))
 
-    def visit_Block(self, node):
-        self._new_scope()
+    @new_scope
+    def visit_Block(self, node, args=None):
+        if args:
+            # called with args, insert them into the current scope
+            self.current_scope().update(args)
 
         ret = None
         for n in node.statements:
             ret = self.visit(n)
             if isinstance(n, Return):
-                self._del_scope()
-                return ret
-
-        self._del_scope()
+                break
 
         # hmm, should a block actually return something? See Compound
         return ret
@@ -176,8 +183,7 @@ class Interpreter:
 
     def visit_Const(self, node):
         name = node.name.value
-        # set in the current scope
-        self.env.maps[0][name] = v = self.visit(node.arg)
+        self.current_scope()[name] = v = self.visit(node.arg)
         if node.type is not None:
             t = self.visit(node.type)
             assert isinstance(v, t), (v, t)
@@ -194,12 +200,12 @@ class Interpreter:
             arg = typ()
 
         # set in the current scope
-        self.env.maps[0][name] = arg
+        self.current_scope()[name] = arg
 
     def visit_Assign(self, node):
         name = node.name.value
         arg = self.visit(node.arg)
-        # FIXME, protect const?
+        # FIXME, protect const somehow?
         self.env[name] = arg
 
     def visit_If(self, node):
@@ -214,16 +220,9 @@ class Interpreter:
         return ret
 
     def visit_Func(self, node):
-        # store the function block
+        # just store the function node into the current scope, see Call for
+        # calling...
         self.env[node.name.value] = node
-
-    def visit_Arg(self, node):
-        # arg of a function call
-        duh
-        return f'{self.visit(node.name)} {self.visit(node.type)}'
-
-    def visit_Field(self, node):
-        return node.name.value, self.visit(node.type)
 
     def visit_Return(self, node):
         return self.visit(node.value)
@@ -239,22 +238,21 @@ class Interpreter:
                 d[name] = typ()
             return d
 
-        self._new_scope()
-
-        # insert all call arguments into the new scope
+        # visit args and put them into a scope
+        args = {}
         for farg, arg in zip(func.args, node.args):
-            self.env.maps[0][farg.name.value] = v = self.visit(arg)
+            args[farg.name.value] = self.visit(arg)
 
-        x = self.visit(func.block)
-
-        self._del_scope()
-
-        return x
+        # visit block, args get injected into the block scope there
+        return self.visit_Block(func.block, args)
 
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
         # instances...
         self.env[node.name.value] = node
+
+    def visit_Field(self, node):
+        return node.name.value, self.visit(node.type)
 
     def visit_Enum(self, node):
         duh
@@ -265,3 +263,28 @@ class Interpreter:
         duh
         type = f'({self.visit(node.type)})' if node.type else ''
         return f'{self.visit(node.name)}{type}'
+
+
+def interpret(text_or_node):
+    node = text_or_node
+    if not isinstance(text_or_node, Node):
+        node = parse(text_or_node)
+    return Interpreter().interpret(node)
+
+def main(args):
+    if args:
+        if os.path.isfile(args[0]):
+            with open(args[0]) as file:
+                text = file.read()
+        else:
+            text = args[0]
+    else:
+        text = sys.stdin.read()
+
+    ret, env, stdout = interpret(text)
+    for s in stdout:
+        sys.stdout.write(s)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
