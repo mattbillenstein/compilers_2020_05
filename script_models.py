@@ -287,14 +287,15 @@ class ScriptModels(unittest.TestCase):
         const n int = 10;
         var x int = 1;
         var fact int = 1;
+        L1:
         t1 = x < n;
-        while (t1) {
+        if (t1) {
         t2 = fact * x;
         fact = t2;
         printf("%i\\n", fact);
         t3 = x + 1;
         x = t3;
-        t1 = x < n;
+        goto L1;
         }''')
         stdout = ['1', '2', '6', '24', '120', '720', '5040', '40320', '362880']
         errors = []
@@ -367,6 +368,15 @@ class ScriptModels(unittest.TestCase):
         x = { var t = y; y = x; t; };
         print x;
         print y;''')
+        minc = dedent('''\
+        var x int = 37;
+        var y int = 42;
+        var t = y; 
+        y = x; 
+        x = t
+        kill T
+        printf("%i\\n", x);
+        printf("%i\\n", y);''')
         stdout = ['42', '37']
         errors = []
 

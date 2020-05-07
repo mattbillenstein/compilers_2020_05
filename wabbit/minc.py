@@ -42,15 +42,21 @@ class MinCCompiler(ScopeAwareModelVisitor):
     '''
     def __init__(self):
         self.csrc = []
-        self.ctr = 0
+        self.tctr = 0
+        self.lctr = 0
         self.tmpvars = {}
 
     def tmpvar(self, value_csrc):
-        self.ctr += 1
-        tmpvarname = 't' + str(self.ctr)
+        self.tctr += 1
+        tmpvarname = 't' + str(self.tctr)
         self.tmpvars[tmpvarname] = value_csrc
         self.csrc.append(tmpvarname + ' = ' + value_csrc + ';')
         return tmpvarname
+
+    def nextLabel(self):
+        self.lctr += 1
+        labelname = 'L' + str(self.lctr)
+        return labelname
 
     def visit_StorageIdentifier(self, node, ctx):
         # gimme the key for this name in this context
@@ -131,10 +137,12 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return (None, None)
     
     def visit_ConditionalLoopStatement(self, node, ctx):
+        label = self.nextLabel()
+        self.csrc.append(label + ':')
         condtype, tmpvar = node.cond.visit(self, ctx)
-        self.csrc.append('while (' + tmpvar + ') {')
+        self.csrc.append('if (' + tmpvar + ') {')
         node.block.visit(self, ctx)
-        self.csrc.append(tmpvar + ' = ' + self.tmpvars[tmpvar] + ';')
+        self.csrc.append('goto ' + label + ';')
         self.csrc.append('}')
         return (None, None)
     
@@ -161,7 +169,7 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def visit_UnOp(self, node, ctx):
         righttype, rightexpr = node.right.visit(self, ctx)
         result_type = unop_typemap[(node.op, righttype)]
-        tmpvar = self.tmpvar(node.op, ' ', rightexpr)
+        tmpvar = self.tmpvar(node.op + ' ' + rightexpr)
         return (result_type, tmpvar)
     
     def visit_BlockExpression(self, node, ctx):
