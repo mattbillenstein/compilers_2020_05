@@ -46,7 +46,7 @@ if a < b {
     ),
     (
         """
-const n = 3;
+const n = 4;
 var x int = 1;
 var fact int = 1;
 while x < n {
