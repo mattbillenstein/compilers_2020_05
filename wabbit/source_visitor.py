@@ -16,7 +16,7 @@ class SourceVisitor:
         return node.value
 
     def visit_Attribute(self, node):
-        return f'{self.visit(node.name)}.{self.visit(node.attr)}'
+        return f'{self.visit(node.name)}.{node.attr}'
 
     def visit_Type(self, node):
         return node.type

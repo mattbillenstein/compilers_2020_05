@@ -312,7 +312,7 @@ class Struct(Node):
         self.fields = fields
 
     def __repr__(self):
-        return f'Struct({self.name}, {self.args})'
+        return f'Struct({self.name}, {self.fields})'
 
 class Enum(Node):
     is_statement = True
@@ -342,8 +342,8 @@ class Member(Node):
 
 class Attribute(Node):
     def __init__(self, name, attr):
-        assert isinstance(name, Name)
-        assert isinstance(attr, Name)
+        assert isinstance(name, (Name, Attribute))
+        assert isinstance(attr, str)
         self.name = name
         self.attr = attr
 

@@ -133,11 +133,19 @@ class Interpreter:
     def visit_BinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
+
+        assert type(left) == type(right), (left, right)
+
+        if node.op == '/':
+            if isinstance(left, int):
+                # integer division
+                return left // right
+            return left / right
+
         return {
             '+': lambda a, b: a+b,
             '-': lambda a, b: a-b,
             '*': lambda a, b: a*b,
-            '/': lambda a, b: a/b,
             '<': lambda a, b: a<b,
             '>': lambda a, b: a>b,
             '<=': lambda a, b: a<=b,
@@ -198,10 +206,25 @@ class Interpreter:
         self.current_scope()[name] = arg
 
     def visit_Assign(self, node):
-        name = node.name.value
-        arg = self.visit(node.arg)
         # FIXME, protect const somehow?
-        self.env[name] = arg
+        arg = self.visit(node.arg)
+
+        if isinstance(node.name, Name):
+            name = node.name.value
+            self.env[name] = arg
+            return
+
+        # Attribute - recursively lookup the dict to set the value in...
+        attr = node.name
+        env = self.resolve_Attribute(attr.name)
+        env[attr.attr] = arg
+
+    def resolve_Attribute(self, node):
+        if isinstance(node, Name):
+            # we're updating an existing struct, so we don't need
+            # current_scope() here - update it in whatever scope it lives in...
+            return self.env[node.value]
+        return self.resolve_Attribute(node.name)[node.attr]
 
     def visit_If(self, node):
         if self.visit(node.cond):
@@ -225,12 +248,16 @@ class Interpreter:
         func = self.env[node.name.value]
 
         if isinstance(func, Struct):
-            # just return a dict with the fields and the default of the type
-            d = {}
-            for n in func.fields:
-                name, typ = self.visit(n)
-                d[name] = typ()
-            return d
+            struct = func
+            # visit args and put them into a dict for this instance of the
+            # struct...
+            assert len(struct.fields) == len(node.args)
+
+            # hack, revisit the type of this...
+            values = {}
+            for field, arg in zip(struct.fields, node.args):
+                values[field.name.value] = self.visit(arg)
+            return values
 
         # visit args and put them into a scope
         assert len(func.args) == len(node.args)
@@ -249,12 +276,14 @@ class Interpreter:
         self.env[node.name.value] = node
 
     def visit_Field(self, node):
-        duh
-        return node.name.value, self.visit(node.type)
+        return node.name.value, self.visit(node.name)
 
     def visit_Attribute(self, node):
-        duh
-        return f'{self.visit(node.name)}.{self.visit(node.attr)}'
+        obj = self.visit(node.name)
+        attr = node.attr
+        if isinstance(obj, dict):
+            return obj[attr]
+        return getattr(obj, attr)
 
     # TODO: enum stuff
 

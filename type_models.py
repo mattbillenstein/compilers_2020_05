@@ -28,6 +28,10 @@ struct Fraction {
     denominator int;
 }
 
+struct Foo {
+    frac Fraction;
+}
+
 func frac_mul(a Fraction, b Fraction) Fraction {
     return Fraction(a.numerator * b.numerator, a.denominator * b.denominator);
 }
@@ -41,6 +45,13 @@ c.numerator = c.numerator / 4;
 c.denominator = c.denominator / 4;
 print c.numerator;
 print c.denominator;
+var d = Foo(Fraction(7, 8));
+print d.frac.numerator;
+print d.frac.denominator;
+d.frac.numerator = 1;
+d.frac.denominator = 2;
+print d.frac.numerator;
+print d.frac.denominator;
 '''
 
 model7 = Block([
@@ -48,12 +59,15 @@ model7 = Block([
         Field(Name('numerator'), Type('int')),
         Field(Name('denominator'), Type('int')),
     ]),
+    Struct(Name('Foo'), [
+        Field(Name('frac'), Type('Fraction')),
+    ]),
     Func(Name('frac_mul'),
         Block([
             Return(
                 Call(Name('Fraction'), [
-                    BinOp('*', Attribute(Name('a'), Name('numerator')), Attribute(Name('b'), Name('numerator'))),
-                    BinOp('*', Attribute(Name('a'), Name('denominator')), Attribute(Name('b'), Name('denominator'))),
+                    BinOp('*', Attribute(Name('a'), 'numerator'), Attribute(Name('b'), 'numerator')),
+                    BinOp('*', Attribute(Name('a'), 'denominator'), Attribute(Name('b'), 'denominator')),
                 ]),
             ),
         ], indent=' '*4),
@@ -63,17 +77,26 @@ model7 = Block([
     Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
     Var(Name('y'), Call(Name('Fraction'), [Integer(3), Integer(8)])),
     Var(Name('c'), Call(Name('frac_mul'), [Name('x'), Name('y')])),
-    Print(Attribute(Name('c'), Name('numerator'))),
-    Print(Attribute(Name('c'), Name('denominator'))),
-    Assign(Attribute(Name('c'), Name('numerator')), BinOp('/', Attribute(Name('c'), Name('numerator')), Integer(4))),
-    Assign(Attribute(Name('c'), Name('denominator')), BinOp('/', Attribute(Name('c'), Name('denominator')), Integer(4))),
-    Print(Attribute(Name('c'), Name('numerator'))),
-    Print(Attribute(Name('c'), Name('denominator'))),
+    Print(Attribute(Name('c'), 'numerator')),
+    Print(Attribute(Name('c'), 'denominator')),
+    Assign(Attribute(Name('c'), 'numerator'), BinOp('/', Attribute(Name('c'), 'numerator'), Integer(4))),
+    Assign(Attribute(Name('c'), 'denominator'), BinOp('/', Attribute(Name('c'), 'denominator'), Integer(4))),
+    Print(Attribute(Name('c'), 'numerator')),
+    Print(Attribute(Name('c'), 'denominator')),
+
+    # nested structs...
+    Var(Name('d'), Call(Name('Foo'), [Call(Name('Fraction'), [Integer(7), Integer(8)])])),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'numerator')),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'denominator')),
+    Assign(Attribute(Attribute(Name('d'), 'frac'), 'numerator'), Integer(1)),
+    Assign(Attribute(Attribute(Name('d'), 'frac'), 'denominator'), Integer(2)),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'numerator')),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'denominator')),
 ])
 
 compare_source(model7, source7)
-#x, env, stdout = interpret(model7)
-#assert False, (x, env, stdout)
+x, env, stdout = interpret(model7)
+assert stdout == [3, 32, 0, 8, 7, 8, 1, 2], (x, env, stdout)
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.
