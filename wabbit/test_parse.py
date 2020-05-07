@@ -157,6 +157,54 @@ def test_parser_assignment_and_location():
     )
 
 
+def test_const_definition():
+    parser = WabbitParser()
+
+    source = "const maxSeen = 2 + x * 7;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Const(
+                "maxSeen",
+                None,
+                BinOp("+", Integer(2), BinOp("*", Variable("x"), Integer(7))),
+            )
+        ]
+    )
+
+    source = "const lastSeen = x;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Const("lastSeen", None, Variable("x"),)])
+
+    source = "const lastSeen = 23.9;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Const("lastSeen", None, Float("23.9"))])
+
+    source = "const maxSeen int = 2 + x * 7;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Const(
+                "maxSeen",
+                "int",
+                BinOp("+", Integer(2), BinOp("*", Variable("x"), Integer(7))),
+            )
+        ]
+    )
+
+    source = "const lastSeen Point = x;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Const("lastSeen", "Point", Variable("x"),)]
+    )
+
+    source = "const lastSeen Line = 23.9;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Const("lastSeen", "Line", Float("23.9"))]
+    )
+
+
 def test_script_models():
     parser = WabbitParser()
 

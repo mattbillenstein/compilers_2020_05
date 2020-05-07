@@ -94,7 +94,7 @@ class WabbitParser(Parser):
         "print_statement",
         "assignment_statement",
         # "variable_definition",
-        # "const_definition",
+        "const_definition",
         "expression_statement",
         # "func_definition",
         # "struct_definition",
