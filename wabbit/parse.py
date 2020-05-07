@@ -134,7 +134,7 @@ class WabbitParser(Parser):
         ('left', TIMES, DIVIDE),  # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
 
         # Unary -x.   -> Super high precedence    2 * -x.
-        ('right', UNARY),  # 'UNARY' is a fake token (does not exist in tokenizer)
+        ('right', UNARY),  # 'UNARY' is a fake token (does not exist in tokenizer). Used below with %prec.
     ]
 
     # program : statements
@@ -162,6 +162,8 @@ class WabbitParser(Parser):
        'var_definition',
        'if_statement',
        'while_statement',
+       'break_statement',
+       'continue_statement',
        'expression_statement',
        )
     def statement(self, p):
@@ -172,42 +174,53 @@ class WabbitParser(Parser):
     @_('PRINT expression SEMI')
     def print_statement(self, p):  # p contains all information from the parse
         # Create a node from your model
-        return PrintStatement(p.expression)
+        node = PrintStatement(p.expression, lineno=p.lineno)  # p.lineno is line of left-most token
+        return node
+
+    # Error version
+    @_('PRINT error SEMI')
+    def print_statement(self, p):
+        print("Bad print statement")
+        return PrintStatement(Integer(0))  # Have to return something.(Compiler will stop anyways because of error)
 
     # assignment_statement : location ASSIGN expression SEMI
     #
     @_('location ASSIGN expression SEMI')
     def assignment_statement(self, p):
-        return AssignmentStatement(p.location,
-                                   p.expression)
+        return AssignmentStatement(p.location, p.expression, lineno=p.lineno)
 
     # const_definition : CONST NAME [ NAME ] ASSIGN expression SEMI
     #
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
-        return ConstDefinition(p.NAME,
-                               p.type,
-                               p.expression)
+        return ConstDefinition(p.NAME, p.type, p.expression, lineno=p.lineno)
 
-    @_('VAR NAME [ type ] [ ASSIGN expression ] SEMI')  # var x = 23;    var int x;   var x;  (syntax allowed)
+    @_('VAR NAME [ type ] [ ASSIGN expression ] SEMI')
     def var_definition(self, p):
         # Do we check for both missing type/expression here?  Is it a syntax error?
         # Is it some other kind of error?  Let's ignore the error for the moment.
-        return VarDefinition(p.NAME,
-                             p.type,
-                             p.expression)
+        return VarDefinition(p.NAME, p.type, p.expression, lineno=p.lineno)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
-        return IfStatement(p.expression, p.statements0, p.statements1 if p.statements1 else Statements([]))
+        return IfStatement(p.expression, p.statements0, p.statements1 if p.statements1 else Statements([]),
+                           lineno=p.lineno)
 
     @_('WHILE expression LBRACE statements RBRACE')
     def while_statement(self, p):
-        return WhileStatement(p.expression, p.statements)
+        return WhileStatement(p.expression, p.statements, lineno=p.lineno)
+
+    @_('BREAK SEMI')
+    def break_statement(self, p):
+        return BreakStatement(lineno=p.lineno)
+
+    @_('CONTINUE SEMI')
+    def continue_statement(self, p):
+        return ContinueStatement(lineno=p.lineno)
 
     @_('expression SEMI')
     def expression_statement(self, p):
-        return ExpressionStatement(p.expression)
+        return ExpressionStatement(p.expression, lineno=p.expression.lineno)
 
     @_('expression PLUS expression',
        'expression MINUS expression',
@@ -226,49 +239,51 @@ class WabbitParser(Parser):
         op = p[1]
         left = p.expression0
         right = p.expression1
-        return BinOp(op, left, right)
+        return BinOp(op, left, right, lineno=p.lineno)
 
     @_('PLUS expression %prec UNARY',  # Use the high precedence of the fake "UNARY" token
        'MINUS expression %prec UNARY',  # based on "yacc"  (yet another compiler compiler)
        'LNOT expression %prec UNARY')  # Rewrite the grammar to not have ambiguity.
     def expression(self, p):
-        return UnaryOp(p[0], p.expression)
+        return UnaryOp(p[0], p.expression, lineno=p.lineno)
 
     @_('LPAREN expression RPAREN')
     def expression(self, p):
-        return Grouping(p.expression)
+        return Grouping(p.expression, lineno=p.lineno)
 
     @_('LBRACE statements RBRACE')
     def expression(self, p):
-        return Compound(p.statements)
+        return Compound(p.statements, lineno=p.lineno)
 
     @_('location')
     def expression(self, p):
-        return LoadLocation(p.location)
+        return LoadLocation(p.location, lineno=p.location.lineno)
 
     @_('INTEGER')  # triggers
     def expression(self, p):
-        return Integer(int(p.INTEGER))
+        return Integer(int(p.INTEGER), lineno=p.lineno)
 
     @_('FLOAT')
     def expression(self, p):
-        return Float(float(p.FLOAT))
+        return Float(float(p.FLOAT), lineno=p.lineno)
 
     @_('CHAR')
     def expression(self, p):
-        return Char(p.CHAR)
+        # Could be better..... alternative: write a real parser for escape codes.
+        # Cheating: test programs only use normal characters and '\n'.
+        return Char(eval(p.CHAR), lineno=p.lineno)  # "'\n'" --> eval() --> '\n'
 
     @_('TRUE')
     def expression(self, p):
-        return Bool(True)
+        return Bool(True, lineno=p.lineno)
 
     @_('FALSE')
     def expression(self, p):
-        return Bool(False)
+        return Bool(False, lineno=p.lineno)
 
     @_('NAME')
     def location(self, p):
-        return NamedLocation(p.NAME)
+        return NamedLocation(p.NAME, lineno=p.lineno)
 
     @_('NAME')
     def type(self, p):

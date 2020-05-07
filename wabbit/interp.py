@@ -77,8 +77,23 @@ def interpret_float(node, env):
 def interpret_bool(node, env):
     return node.value
 
+@rule(Char)
+def interpret_char(node, env):
+    return node.value
+
 @rule(BinOp)
 def interpet_binop(node, env):
+    if node.op == '&&':
+        # Special evaluation for logical and
+        leftval = interpret(node.left, env)
+        if not leftval:
+            return False
+        return interpret(node.right, env)
+    if node.op == '||':
+        leftval = interpret(node.left, env)
+        if leftval:
+            return True
+        return interpret(node.right, env)
     leftval = interpret(node.left, env)     # Do the left
     rightval = interpret(node.right, env)   # Do the right
     # Do the operation
@@ -103,10 +118,6 @@ def interpet_binop(node, env):
         return leftval == rightval
     elif node.op == '!=':
         return leftval != rightval
-    elif node.op == '&&':
-        return leftval and rightval     # Leave for now. Short-circuit evaluation (later)
-    elif node.op == '||':
-        return leftval or rightval
     else:
         raise RuntimeError(f'Unsupported operator {node.op}')
 
@@ -137,7 +148,10 @@ def interpret_load_location(node, env):
 @rule(PrintStatement)
 def interpret_print_statement(node, env):
     value = interpret(node.expression, env)
-    print(value)
+    if isinstance(value, str):     # Wabbit 'char' -> Python str   (cheating a bit)
+        print(value, end='')
+    else:
+        print(value)
 
 @rule(ConstDefinition)
 def interpret_const_definition(node, env):
@@ -199,14 +213,46 @@ def interprete_if_statement(node, env):
     else:
         return interpret(node.alternative, env.new_child())
 
+class Break(Exception):
+    pass
+
+class Continue(Exception):
+    pass
+
 @rule(WhileStatement)
 def interpret_while_statement(node, env):
     while True:
         testval = interpret(node.test, env)
         if not testval:
             break
-        interpret(node.body, env.new_child())
+        try:
+            interpret(node.body, env.new_child())
+        except Break:
+            break
+        except Continue:
+            pass
+
+@rule(BreakStatement)
+def interpret_break_statement(node, env):
+    raise Break()
+
+@rule(ContinueStatement)
+def interpret_continue_statement(node, env):
+    raise Continue()
 
 @rule(ExpressionStatement)
 def interpret_expr_statement(node, env):
     return interpret(node.expression, env)
+
+# Live dangerously - parse and run!
+def main(filename):
+    from .parse import parse_source
+    with open(filename) as file:
+        source = file.read()
+    model = parse_source(source)
+    interpret_program(model)
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1])
+

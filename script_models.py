@@ -22,7 +22,7 @@
 
 from wabbit.model import *
 from wabbit.parse import parse_source
-#from wabbit.hardparse import parse_source
+from wabbit.hardparse import parse_source
 from wabbit.interp import interpret_program
 
 # ----------------------------------------------------------------------

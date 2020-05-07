@@ -48,7 +48,8 @@
 
 # Top-level class for all model elements/nodes
 class Node:
-    pass
+    def __init__(self, *, lineno=None):
+        self.lineno = lineno
 
 
 # These are abstract classes used to group nodes into different categories.
@@ -88,9 +89,10 @@ class Integer(Expression):
     Literal Integer: Example: 42
     '''
 
-    def __init__(self, value):
+    def __init__(self, value, **options):
         assert isinstance(value, int)
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Integer({self.value})'
@@ -101,9 +103,10 @@ class Float(Expression):
     Example: 4.2
     '''
 
-    def __init__(self, value):
+    def __init__(self, value, **options):
         assert isinstance(value, float)
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Float({self.value})'
@@ -114,12 +117,27 @@ class Bool(Expression):
     Literal Bool:  true, false
     '''
 
-    def __init__(self, value):
+    def __init__(self, value, **options):
         assert isinstance(value, bool)
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Bool({self.value})'
+
+
+class Char(Expression):
+    '''
+    Literal Char:
+    '''
+
+    def __init__(self, value, **options):
+        assert isinstance(value, str)
+        self.value = value
+        super().__init__(**options)
+
+    def __repr__(self):
+        return f'Char({self.value!r})'
 
 
 class BinOp(Expression):
@@ -127,12 +145,13 @@ class BinOp(Expression):
     Example: left + right
     '''
 
-    def __init__(self, op, left: Expression, right: Expression):
+    def __init__(self, op, left, right, **options):
         assert isinstance(left, Expression)
         assert isinstance(right, Expression)
         self.op = op
         self.left = left
         self.right = right
+        super().__init__(**options)
 
     def __repr__(self):
         return f'BinOp({self.op}, {self.left}, {self.right})'
@@ -143,11 +162,12 @@ class UnaryOp(Expression):
     Example: -operand
     '''
 
-    def __init__(self, op, operand):
+    def __init__(self, op, operand, **options):
         assert isinstance(op, str)
         assert isinstance(operand, Expression)
         self.op = op
         self.operand = operand
+        super().__init__(**options)
 
     def __repr__(self):
         return f'UnaryOp({self.op}, {self.operand})'
@@ -159,9 +179,10 @@ class Grouping(Expression):
     ( expression )      # Expression surrounded by parenthesis
     '''
 
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         assert isinstance(expression, Expression)
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Grouping({self.expression})'
@@ -172,9 +193,10 @@ class LoadLocation(Expression):
     Loading a value out of a location for use in an expression.
     '''
 
-    def __init__(self, location):
+    def __init__(self, location, **options):
         assert isinstance(location, Location)
         self.location = location
+        super().__init__(**options)
 
     def __repr__(self):
         return f'LoadLocation({self.location})'
@@ -185,9 +207,10 @@ class Compound(Expression):
     A series of statements serving as a single expression.
     '''
 
-    def __init__(self, statements):
+    def __init__(self, statements, **options):
         assert isinstance(statements, Statements)
         self.statements = statements
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Compound({self.statements})'
@@ -207,10 +230,11 @@ class Statements(Statement):
         ...
     '''
 
-    def __init__(self, statements):
+    def __init__(self, statements, **options):
         assert isinstance(statements, list)
         assert all(isinstance(stmt, Statement) for stmt in statements)
         self.statements = statements
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Statements({self.statements})'
@@ -223,11 +247,12 @@ class Statements(Statement):
 #  location = expression;
 
 class AssignmentStatement(Statement):
-    def __init__(self, location, expression):
+    def __init__(self, location, expression, **options):
         assert isinstance(location, Location)
         assert isinstance(expression, Expression)
         self.location = location
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f'AssignmentStatement({self.location}, {self.expression})'
@@ -238,13 +263,14 @@ class ConstDefinition(Definition):
     const name [type] = value;
     '''
 
-    def __init__(self, name, type, value):
+    def __init__(self, name, type, value, **options):
         assert isinstance(name, str)
         assert type is None or isinstance(type, str)
         assert isinstance(value, Expression)
         self.name = name
         self.type = type
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f'ConstDefinition({self.name}, {self.type}, {self.value})'
@@ -256,7 +282,7 @@ class VarDefinition(Definition):
     var bar float;
     '''
 
-    def __init__(self, name, type, value):
+    def __init__(self, name, type, value, **options):
         assert isinstance(name, str)
         assert type is None or isinstance(type, str)
         assert value is None or isinstance(value, Expression)
@@ -264,9 +290,10 @@ class VarDefinition(Definition):
         self.name = name
         self.type = type
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
-        return f'VarDefinition({self.name}, {self.type}, {self.value.to_source()})'
+        return f'VarDefinition({self.name}, {self.type}, {self.value})'
 
 
 class PrintStatement(Statement):
@@ -274,9 +301,10 @@ class PrintStatement(Statement):
     print expression ;
     '''
 
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         assert isinstance(expression, Expression)
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f'PrintStatement({self.expression})'
@@ -287,13 +315,14 @@ class IfStatement(Statement):
     if test { consequence } else { alternative }
     '''
 
-    def __init__(self, test, consequence, alternative):
+    def __init__(self, test, consequence, alternative, **options):
         assert isinstance(test, Expression)
         assert isinstance(consequence, Statements)
         assert isinstance(alternative, Statements)
         self.test = test
         self.consequence = consequence  # What are these????  (Don't care now. Will refine as we work on it)
         self.alternative = alternative
+        super().__init__(**options)
 
     def __repr__(self):
         return f'IfStatement({self.test}, {self.consequence}, {self.alternative})'
@@ -304,21 +333,41 @@ class WhileStatement(Statement):
     while test { body }
     '''
 
-    def __init__(self, test, body):
+    def __init__(self, test, body, **options):
         assert isinstance(test, Expression)
         assert isinstance(body, Statements)
         self.test = test
         self.body = body
+        super().__init__(**options)
 
     def __repr__(self):
         return f'WhileStatement({self.test}, {self.body})'
 
 
+class BreakStatement(Statement):
+    '''
+    break;
+    '''
+
+    def __init__(self, **options):
+        super().__init__(**options)
+
+
+class ContinueStatement(Statement):
+    '''
+    break;
+    '''
+
+    def __init__(self, **options):
+        super().__init__(**options)
+
+
 # Wrapper around a expression to indicate usage as a statement
 class ExpressionStatement(Statement):
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         assert isinstance(expression, Expression)
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f'ExpressionStatement({self.expression})'
@@ -329,9 +378,10 @@ class NamedLocation(Location):
     A location representing a simple variable name like "x"
     '''
 
-    def __init__(self, name):
+    def __init__(self, name, **options):
         assert isinstance(name, str)
         self.name = name
+        super().__init__(**options)
 
     def __repr__(self):
         return f'NamedLocation({self.name})'
@@ -494,6 +544,16 @@ def to_source_while_statement(node):
     return (f'while {to_source(node.test)}' + ' {\n' +
             to_source(node.body) + '\n}'
             )
+
+
+@rule(BreakStatement)
+def to_source_break(node):
+    return f'break;'
+
+
+@rule(ContinueStatement)
+def to_source_continue(node):
+    return f'continue;'
 
 
 @rule(ExpressionStatement)

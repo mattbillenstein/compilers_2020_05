@@ -100,7 +100,7 @@
 #    L3:
 #        return 0;
 #    }
-#         
+#
 # One thing to keep in mind... the goal is NOT to produce code for
 # humans to read.  Instead, it's to produce code that is minimal and
 # which can be reasoned about. There is very little actually happening
@@ -130,11 +130,99 @@
 # are fully correct with respect to their usage of types and names.
 
 from .model import *
+from collections import ChainMap
+
+
+# I think you want some kind of "C Function" object that gathers everything
+# that's being generated as output.
+
+class CFunction:
+    def __init__(self, name):
+        self.name = name
+        self.locals = ""  # Local variables
+        self.statements = ""  # Statements generated
+
+    def __str__(self):
+        return (f"int {self.name}()" + " {\n" + self.locals + self.statements + "}\n")
+
+    def tempname(self, node):
+        return f'_{id(node)}'
+
 
 # Top-level function to handle an entire program.
 def compile_program(model):
-    # ... you define ...
-    pass
+    env = ChainMap()  # Environment.  To keep track of definitions and things.
+    cfunc = CFunction('main')  # Function that code is going into
+    compile(model, env, cfunc)
+    return str(cfunc)
+
+
+# Discussion of how this is supposed to work.  env is an environment where we keep
+# track of definitions of things (variables, consts, etc.).   cfunc is an object
+# representing a C function--it is the source code that we're creating.  The
+# return value from compile() is going to be a typed value.
+
+@singledispatch
+def compile(node, env, cfunc):
+    raise RuntimeError(f"Can't compile {node}")
+
+
+rule = compile.register
+
+
+@rule(Statements)
+def compile_statements(node, env, cfunc):
+    for stmt in node.statements:
+        compile(stmt, env, cfunc)
+
+
+@rule(Integer)
+def compile_integer(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'int {lname};\n'
+    cfunc.statements += f'{lname} = {node.value};\n'
+
+
+@rule(Float)
+def compile_float(node, env, cfunc):
+    return ("float", str(node.value))
+
+
+@rule(BinOp)
+def compile_binop(node, env, cfunc):
+    compile(node.left, env, cfunc)
+    compile(node.right, env, cfunc)
+    lname = cfunc.tempname(node.left)
+    rname = cfunc.tempname(node.right)
+    myname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {myname};\n'
+    cfunc.statements += f'{myname} = {lname} {node.op} {rname};\n'
+
+
+@rule(PrintStatement)
+def compile_print_statement(node, env, cfunc):
+    compile(node.expression, env, cfunc)
+    cfunc.statements += f'printf("%i\\n", {cfunc.tempname(node.expression)});\n'
+
+
+@rule(VarDefinition)
+@rule(ConstDefinition)
+def compile_var_definition(node, env, cfunc):
+    # Still need to track var/const definitions for later use
+    # Need to emit a C variable declaration for this of some kind.
+    env[node.name] = node
+    cfunc.locals += f'{node.type} {node.name};\n'
+    if node.value:
+        compile(node.value, env, cfunc)
+        cfunc.statements += f'{node.name} = {cfunc.tempname(node.value)};\n'
+
+
+@rule(LoadLocation)
+def compile_load_location(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {lname};\n'
+    cfunc.statements += f'{lname} = {node.location.name};\n'  # messy.
+
 
 def main(filename):
     from .parse import parse_file
@@ -144,10 +232,72 @@ def main(filename):
     check_program(model)
     code = compile_program(model)
     with open('out.c', 'w') as file:
+        file.write("#include <stdio.h>\n")
         file.write(code)
     print('Wrote: out.c')
 
+
 if __name__ == '__main__':
     import sys
+
     main(sys.argv[1])
 
+# Sample conversions
+#
+#  Wabbit : print 2 + 3*4 + 6;
+#
+#  C:
+#
+#  int main() {
+#      int t1;     /* Temporaries */
+#      int t2;
+#      int t3;
+#      t1 = 3 * 4;    /* One operation at a time. Must store in a variable */
+#      t2 = 2 + t1;   /* Each is a "binop" */
+#      t3 = t2 + 6;
+#      printf("%i\n", t3);
+# }
+#
+#
+# Wabbit:
+#  var n int = 1;
+#  var value int = 1;
+#
+# while n < 10 {
+#    value = value * n;
+#    print value ;
+#    n = n + 1;
+# }
+#
+# C:
+#
+#  int n;       /* Global variables */
+#  int value;
+#
+#  int some_function(int x) {
+#     ...
+#  }
+#
+#  int main() {
+#      int t1;
+#      int t2;
+#      int t3;
+#      n = 1;      /* Initialize the variables */
+#      value = 1;
+#
+#      L1:      /* Label */
+#          t1 = n < 10;
+#          if (t1) goto L2;
+#          goto L3;     /* Get out of while */
+#      L2:
+#          t2 = value * n;
+#          value = t2;
+#          printf("%i\n", value);
+#          t3 = n + 1;
+#          n = t3;
+#          goto L1;
+#
+#      L3:
+#          return;
+# }
+#
