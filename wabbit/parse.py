@@ -96,7 +96,7 @@ class WabbitParser(Parser):
         "variable_definition",
         "const_definition",
         "expression_statement",
-        # "func_definition",
+        "func_definition",
         # "struct_definition",
         # "enum_definition",
         # "if_statement",
@@ -136,10 +136,11 @@ class WabbitParser(Parser):
     def const_definition(self, p):
         return Const(p.NAME, p.type, p.expression)
 
-    # func_definition : FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE
-    @_("FUNC NAME LPAREN [ parameters ] RPAREN NAME LBRACE statements RBRACE")
+    # func_definition : FUNC NAME LPAREN [ exprlist ] RPAREN type LBRACE statements RBRACE
+    @_("FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE")
     def func_definition(self, p):
-        return FunctionDefinition(p.NAME0, parameters, p.NAME1, statements)
+        print("func definition", p[0])
+        return FunctionDefinition(p.NAME, p.parameters, p.type, p.statements)
 
     @_("expression SEMI",)
     def expression_statement(self, p):

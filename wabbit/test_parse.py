@@ -255,6 +255,49 @@ def test_var_definition():
     assert parser.parse(tokens) == Statements([Var("amount", "Currency", None)])
 
 
+def test_function_definition():
+    parser = WabbitParser()
+
+    source = "func max () int { 2 + 3; }"
+    tokens = tokenize(source)
+
+    assert parser.parse(tokens) == Statements(
+        [
+            FunctionDefinition(
+                "max", None, "int", Statements([BinOp("+", Integer(2), Integer(3))])
+            )
+        ]
+    )
+
+    source = "func min (a bool, b float) int { 2 + 3; }"
+    tokens = tokenize(source)
+
+    assert parser.parse(tokens) == Statements(
+        [
+            FunctionDefinition(
+                "min",
+                Arguments(Argument("a", "bool"), Argument("b", "float")),
+                "int",
+                Statements([BinOp("+", Integer(2), Integer(3))]),
+            )
+        ]
+    )
+
+    source = "func average () int { 2 + 3; }"
+    tokens = tokenize(source)
+
+    assert parser.parse(tokens) == Statements(
+        [
+            FunctionDefinition(
+                "average",
+                None,
+                "int",
+                Statements([BinOp("+", Integer(2), Integer(3))]),
+            )
+        ]
+    )
+
+
 def test_script_models():
     parser = WabbitParser()
 

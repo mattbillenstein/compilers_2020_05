@@ -267,6 +267,11 @@ class Argument(Definition):
     def __repr__(self):
         return f"Argument({self.name}, {self.type})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.name == other.name and self.type == other.type
+
 
 class Arguments(Expression):
     """
@@ -278,6 +283,11 @@ class Arguments(Expression):
 
     def __repr__(self):
         return f"Arguments({self.args})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.args == other.args
 
 
 class FunctionCall(Expression):
@@ -311,6 +321,16 @@ class FunctionDefinition(Definition):
 
     def __repr__(self):
         return f"FunctionDefinition({self.name}, {self.args}, {self.return_type}, {self.body})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return (
+            self.name == other.name
+            and self.args == other.args
+            and self.return_type == other.return_type
+            and self.body == other.body
+        )
 
 
 class Grouping(Expression):
