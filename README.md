@@ -119,4 +119,5 @@ Video recordings of live sessions will be posted here.
 * [Project 4, Parsing in Practice](https://vimeo.com/415631778/b3b3d1c157) (67 min)
 * [Project 4, Parsing, errors, precedence](https://vimeo.com/415636966/f82ce24e02) (38 min)
 * [Project 5, Type Checking](https://vimeo.com/415678414/d87a14cb3f) (32 min)
+* [Error Handling](https://vimeo.com/415917112/03bf76a938) (45 min)
 
