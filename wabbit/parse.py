@@ -110,11 +110,11 @@ class Parser(BaseParser):
 
         statement = (
             self.print()
-            or self.assign()
             or self.vardef()
             or self.constdef()
             or self.if_()
             or self.expression()
+            or self.assign()
         )
 
         if statement:
