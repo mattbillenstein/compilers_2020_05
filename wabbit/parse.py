@@ -104,7 +104,6 @@ pattern   : NAME
 
 type      : NAME
 """
-
 from dataclasses import dataclass
 from typing import Optional
 
@@ -172,7 +171,6 @@ class BaseParser:
             self.lookahead = None
             return tok
         # print(blue("    -> reject"))
-        return None
 
 
 class Parser(BaseParser):
@@ -394,7 +392,6 @@ def parse_source_debug(source):
     from utils import print_source, print_diff
     from .format_source import format_source
 
-    print = _print
     print_source(source)
 
     # Tokenize
