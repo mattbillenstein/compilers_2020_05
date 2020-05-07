@@ -67,8 +67,10 @@ def tokenize(text: str) -> TokenStream:
         # Comments
         if text[:2] == "//":
             text = text[text.find("\n") :]  # noqa
+            continue
         if text[:2] == "/*":
-            text = text[text.find("*/") :]  # noqa
+            text = text[text.find("*/") + len("*/") :]  # noqa
+            continue
 
         for type_, *regexp in TOKEN_TYPES:
             # The tuple may specify the capture group as an optional third element.
@@ -135,6 +137,7 @@ def test_tokenizer():
                 ("SEMICOLON", ";"),
             ],
         ),
+        ("/* COMMENT */+", [("ADD", "+")]),
     ]
     for source, expected_tokens in test_cases:
         actual_tokens = list(tokenize(source))
