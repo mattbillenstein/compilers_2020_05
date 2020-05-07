@@ -262,6 +262,10 @@ class WabbitParser(Parser):
     def expression(self, p):
         return Bool(False)
 
+    @_('NAME')
+    def expression(self, p):
+        return Name(p.NAME)
+
     # Custom error handler for syntax error
     def error(self, p):
         print(f"You have a syntax error at line {p.lineno} and index {p.index}")
