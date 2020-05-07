@@ -132,7 +132,7 @@ class Parser(BaseParser):
 
         self.lookahead = None
         assert (test := self.expression())
-        then = self.block()
+        assert (then := self.block())
         else_ = self._else()
         return If(test, then.statements, else_.statements if else_ else None)
 
@@ -140,7 +140,8 @@ class Parser(BaseParser):
         if not self.accept("ELSE"):
             return None
         self.lookahead = None
-        return self.block()
+        assert (block := self.block())
+        return block
 
     def while_(self) -> Optional[Statement]:
         if not self.accept("WHILE"):
@@ -148,13 +149,13 @@ class Parser(BaseParser):
 
         self.lookahead = None
         assert (test := self.expression())
-        then = self.block()
+        assert (then := self.block())
         return While(test, then.statements)
 
-    def block(self) -> Block:
-        # TODO: this demands a block, whereas most methods return Optional[Node]
-        self.expect("LBRACE")
-        statements = self.statements()  # TODO: how does termination work?!
+    def block(self) -> Optional[Block]:
+        if not self.accept("LBRACE"):
+            return None
+        statements = self.statements()
         self.expect("RBRACE")
         return Block(statements)
 
@@ -289,7 +290,7 @@ class Parser(BaseParser):
         return left
 
     def _additive_term(self) -> Optional[Expression]:
-        return self._literal() or self.name() or self._unary_op()
+        return self._literal() or self.name() or self._unary_op() or self.block()
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB"):
