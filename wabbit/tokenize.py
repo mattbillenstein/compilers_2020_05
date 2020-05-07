@@ -90,7 +90,7 @@ class WabbitLexer(sly.Lexer):
     _kw = {
         CONST, VAR, PRINT, BREAK,
         CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
-        FUNC, RETURN,
+        FUNC, RETURN, STRUCT
     }
 
     tokens = {
@@ -134,6 +134,7 @@ class WabbitLexer(sly.Lexer):
     NAME['false'] = FALSE
     NAME['func'] = FUNC
     NAME['return'] = RETURN
+    NAME['struct'] = STRUCT
 
     # Special symbols - multiple characters first!
     LE = r'<='

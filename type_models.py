@@ -14,6 +14,7 @@
 
 from wabbit.interp import interpret
 from wabbit.model import *
+from wabbit.parse import parse
 from wabbit.source_visitor import compare_source
 
 # -----------------------------------------------------------------------------
@@ -97,6 +98,7 @@ model7 = Block([
 compare_source(model7, source7)
 x, env, stdout = interpret(model7)
 assert stdout == [3, 32, 0, 8, 7, 8, 1, 2], (x, env, stdout)
+compare_model(parse(source7), model7)
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.

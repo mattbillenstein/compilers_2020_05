@@ -216,6 +216,18 @@ class WabbitParser(sly.Parser):
     def node(self, p):
         return Assign(p.name, p.node)
 
+    @_('name DOT NAME')
+    def name(self, p):
+        return Attribute(p.name, p.NAME)
+
+    @_('STRUCT NAME LBRACE field SEMI { field SEMI } RBRACE')
+    def node(self, p):
+        return Struct(Name(p.NAME), [p.field0] + p.field1)
+
+    @_('name type')
+    def field(self, p):
+        return Field(p.name, p.type)
+
     @_('INTEGER')
     def node(self, p):
         return Integer(int(p.INTEGER))
