@@ -11,7 +11,7 @@
 # (useful if making a new language).  Finally, in getting
 # your compiler to actually "work", there may be certain runtime
 # elements that are quite hard to implement or debug directly with machine
-# instructions. Therefore, it might be easier to implement things in C 
+# instructions. Therefore, it might be easier to implement things in C
 # as a first step.
 #
 # As a preliminary step, please read the short C tutorial at
@@ -19,11 +19,11 @@
 #  https://github.com/dabeaz/compilers_2020_05/wiki/C-Programming-Tutorial
 #
 # Come back here when you've looked it over.  Our goal is to produce
-# low-level C code where you are ONLY allowed to use the 
+# low-level C code where you are ONLY allowed to use the
 # the following C features:
 #
 # 1. You can only declare uninitialized variables.  For example:
-# 
+#
 #         int x;
 #         float y;
 #         int z = 2 + 3;     // NO!!!!!!!!
@@ -42,7 +42,7 @@
 #         _i1 = 3 * 4;
 #         _i2 = 2 + i1;
 #
-# 3. The only allowed control flow constucts are the following two 
+# 3. The only allowed control flow constucts are the following two
 #    statements:
 #
 #        goto Label;
@@ -51,8 +51,8 @@
 #        Label:
 #           ... code ...
 #
-#    No, you don't get "else". And you also don't get code blocks 
-#    enclosed in braces { }. 
+#    No, you don't get "else". And you also don't get code blocks
+#    enclosed in braces { }.
 #
 # 4. You may print things with printf().
 #
@@ -76,7 +76,7 @@
 #
 #    #include <stdio.h>
 #
-#    int result;       
+#    int result;
 #    int n;
 #
 #    int main() {
@@ -100,7 +100,7 @@
 #    L3:
 #        return 0;
 #    }
-#         
+#
 # One thing to keep in mind... the goal is NOT to produce code for
 # humans to read.  Instead, it's to produce code that is minimal and
 # which can be reasoned about. There is very little actually happening
@@ -129,12 +129,203 @@
 # problem related to incorrect programs. Assume that all programs
 # are fully correct with respect to their usage of types and names.
 
+from functools import singledispatch
 from .model import *
+
+class S(str):
+    def setType(self, varType):
+        self.varType = varType
+    def getType(self):
+        return self.varType
+
+def add_var(env, varName, varType): # TODO OOOOO scope???
+    key = 'dict_of_vars'
+    if key not in env:
+        env[key] = {}
+    if varName not in env[key]:
+        env[key][varName] = { 'type': varType }
+    if varType is not None and env[key][varName]['type'] is None:
+        env[key][varName]['type'] = varType
+
+def get_var_type(env, varName):
+    key = 'dict_of_vars'
+    if key not in env:
+        raise Exception(f'get_var_type: env {key} is uninitialized')
+    if varName not in env[key]:
+        raise Exception(f'get_var_type: env {varName} is uninitialized')
+    return env[key][varName]['type']
+
+def make_variable_declarations(env): # TODO OOOOO scope???
+    declarations = []
+    key = 'dict_of_vars'
+    if key in env:
+        for varName in env[key]:
+            varType = env[key][varName]['type']
+            if varType is not None:
+                declarations.append(f'{varType} {varName};')
+    return '\n'.join(declarations)
+
+@singledispatch
+def ccompile(node, env):
+    raise RuntimeError(f"Can't compile {node}")
+
+@ccompile.register(Statements)
+def _(node, env):
+    compiled = []
+    for node in node.children:
+        compiledNode = ccompile(node, env)
+        if compiledNode is not None:
+            compiled.append(compiledNode + ';') # TODO if, while, this should prob be in Statement, which... doesn't exist
+
+    return '\n'.join(compiled)
+
+@ccompile.register(BinOp)
+def _(node, env):
+    left = ccompile(node.left, env)
+    right = ccompile(node.right, env)
+    def returnWithType(s):
+        s1 = S(s)
+        if hasattr(s, 'getType'):
+            s.setType(left.getType())
+        return s
+    if node.op == '+':
+        returnWithType(f'{left} + {right}')
+    elif node.op == '*':
+        returnWithType(f'{left} * {right}')
+    elif node.op == '/':
+        returnWithType(f'{left} / {right}')
+    elif node.op == '-':
+        returnWithType(f'{left} - {right}')
+    elif node.op == '<':
+        returnWithType(f'{left} < {right}')
+    else:
+        raise RuntimeError(f'unsupported op: {node.op}')
+
+@ccompile.register(Integer)
+def _(node, env):
+    s = S(f'{node.value}')
+    s.setType('int')
+    return s
+
+@ccompile.register(Float)
+def _(node, env):
+    s = S(f'{node.value}')
+    s.setType('int')
+    return s
+
+@ccompile.register(Var)
+def _(node, env):
+    # put the name and type (if any) into the env
+    add_var(env, node.name, node.myType)
+
+@ccompile.register(Assign)
+def _(node, env):
+    left = ccompile(node.name, env)
+    right = ccompile(node.value, env)
+    # NOW! wabbit allows typeless vars and you can assign to them, so let's maybe infer type
+    # remember we can assume correctness because of the typechecker (haw haw) so let's not even
+    # check if there's already a type or anything, and heck let's not even worry about if it was
+    # a var or a const.
+    if hasattr(right, 'getType'):
+        add_var(env, left, right.getType())
+    else:
+        raise Exception(f'whoops, doing an assign and dunno the type left:{left} right:{right}')
+    return f'{left} = {right}'
+
+@ccompile.register(Variable) # TODO implement location?
+def _(node, env):
+    return f'{node.name}'
+
+@ccompile.register(Const)
+def _(node, env):
+    left = node.name
+    if isinstance(node.value, Integer):
+        add_var(env, left, 'int')
+    elif isinstance(node.value, Float):
+        add_var(env, left, 'float')
+    else:
+        raise RuntimeError(f'unsupported type const: {type(right)}')
+    # TODO so I guess we're not making this an S with a type because it's only a statement, not part
+    # of an expression?
+    return f'{node.name} = {ccompile(node.value, env)}'
+
+@ccompile.register(PrintStatement)
+def _(node, env):
+    child = ccompile(node.child, env)
+    print(node.child, child)
+    type_child = None
+    if isinstance(node.child, Variable):
+        type_child = get_var_type(env, node.child.name)
+    else:
+        type_child = child.getType()
+    type_s = None
+    if type_child == 'int':
+        type_s = '%i\\n'
+    elif type_child == 'float':
+        type_s = '%lf\\n'
+    elif type_child == 'char':
+        type_s = '%c'
+    else:
+        raise RuntimeError(f'unsupported type print: {child}, {type_child}')
+    return f'printf("{type_s}", {child})'
+
+@ccompile.register(While)
+def _(node, env):
+    """
+     TODO this needs to be gotos, how does that work?
+     wellllllllllllllllll so it's labels
+     before
+     while (blah) {
+        body
+     }
+     after
+
+    becomes
+
+    before
+    goto Lcondition
+
+    L1:
+      body
+
+    Lcondition:
+        if (blah) goto L1
+
+    after
+    """
+    condition = ccompile(node.condition, env)
+    body = ccompile(node.body, env)
+    # TODO these labels need to be unique for multiple whiles
+    return f'''
+goto Lcondition
+
+L1:
+{body}
+LCondition:
+{condition}
+'''
+
+
+
+
 
 # Top-level function to handle an entire program.
 def compile_program(model):
-    # ... you define ...
-    pass
+    env = { }
+    # TODO to handle scope we either want to declare variables at the top of their scope _OR_ come up
+    # with unique variable names at compile Var time (and when we look them up we have to know scope)
+    ccode = ccompile(model, env)
+    variable_declarations = make_variable_declarations(env)
+    return f'''
+/* TODO_NAME.c */
+#include <stdio.h>
+
+int main() {{
+    {variable_declarations}
+    {ccode}
+    return 0;
+}}
+    '''
 
 def main(filename):
     from .parse import parse_file
