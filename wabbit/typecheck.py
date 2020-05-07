@@ -31,12 +31,13 @@ from .model import *
 from collections import ChainMap
 
 # Dedicated error handler.  Easier to redefine. Expand later.
-def error(msg):
-    print(msg)
 
-# Future expansion
-def warning(msg):
-    print(msg)
+have_errors = False
+
+def error(lineno, msg):
+    global have_errors
+    print(f'{lineno}:{msg}')
+    have_errors = True
 
 # Code almost identical to interpreter
 
@@ -123,7 +124,7 @@ def check_binop(node, env):
     # Can I do the operation?  If so, what's the result type?
     result_type = _bin_ops.get((node.op, lefttype, righttype))      # float + char --> Error. (not in table)
     if result_type is None:
-        error(lineno, f"type error. Can't do {lefttype} {node.op} {righttype}")
+        error(node.lineno, f"Unsupported operation. {lefttype}{node.op}{righttype}")
     return result_type
 
 _unary_ops = {
@@ -139,7 +140,7 @@ def check_unary_op(node, env):
     optype = check(node.operand, env)
     resulttype = _unary_ops.get((node.op, optype))
     if not resulttype:
-        print(f"type error. Can't do {node.op}{optype}")
+        error(node.lineno, f"Unsupported operation. {node.op}{optype}")
     return resulttype
 
 @rule(Grouping)
@@ -154,6 +155,7 @@ def check_compound(node, env):
 def check_load_location(node, env):
     # Feels wrong. Having to look inside location to get a name.
     loc = check(node.location, env)
+    print("LOC:", loc)
     if loc:
         return loc.type
 
@@ -165,7 +167,7 @@ def check_print_statement(node, env):
 def check_const_definition(node, env):
     value_type = check(node.value, env)
     if node.type and node.type != value_type:
-        print(f"Error: {node.name} is not declared as {value_type}")
+        error(node.lineno, f"Type error {node.type} = {value_type}")
     env[node.name] = node     # Put the ConstDefinition itself node in the environment
 
 @rule(VarDefinition)
@@ -173,7 +175,7 @@ def check_var_definition(node, env):
     if node.value:
         value_type = check(node.value, env)
         if node.type and node.type != value_type:
-            print(f"Error: {node.name} not declared as {value_type}")
+            error(node.lineno, f"Type error {node.type} = {value_type}")
     env[node.name] = node    # Put the VarDefinition node in environment
 
 @rule(AssignmentStatement)
@@ -183,21 +185,19 @@ def check_assignment(node, env):
     '''
     expr_type = check(node.expression, env)     # Right side
     defn = check(node.location, env)
-    if defn is None:
-        print("Error: undefined location!")
 
     if isinstance(defn, ConstDefinition):
-        print("Error: Can't assign to const")
+        error(node.lineno, "Can't assign to const")
     
     if expr_type != defn.type:
-        print("Error. Incompatible types in assignment")
+        error(node.lineno, "Type error. {defn.type} = {expr_type}")
 
 @rule(IfStatement)
 def check_if_statement(node, env):
     # if test { consequence }
     testtype = check(node.test, env)     # Figure out the type of the test expression
     if testtype != 'bool':
-        print("Expected a bool for test")
+        error(node.lineno, "Expected a bool for test")
     check(node.consequence, env.new_child())   # Create a nested environment (new_child)
     check(node.alternative, env.new_child())
 
@@ -205,8 +205,8 @@ def check_if_statement(node, env):
 def check_while_statement(node, env):
     testtype = check(node.test, env)
     if testtype != 'bool':
-        print("Error")
-    check(nody.body, env.new_child())
+        error(node.lineno, "Expected a bool for test")
+    check(node.body, env.new_child())
 
 @rule(ExpressionStatement)
 def check_expr_statement(node, env):
@@ -216,7 +216,7 @@ def check_expr_statement(node, env):
 def check_location(node, env):
     defn = env.get(node.name)
     if not defn:
-        print(f"{node.name} not defined!")
+        error(node.lineno, "{node.name} not defined!")
     return defn
 
 # Sample main program

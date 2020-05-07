@@ -364,9 +364,10 @@ def parse_factor(tokens):
         expr = parse_expression(tokens)
         tokens.expect('RPAREN')
         return Grouping(expr)
+    # Unary operator.... 
     tok = tokens.accept('PLUS','MINUS','LNOT')
     if tok:
-        expr = parse_factor(tokens)
+        expr = parse_factor(tokens)     #<<<<< -2 + 3  << (-2) + 3
         return UnaryOp(tok.value, expr)
         
     tok = tokens.accept('LBRACE')

@@ -136,6 +136,10 @@ def compile_program(model):
     # ... you define ...
     pass
 
+
+
+
+
 def main(filename):
     from .parse import parse_file
     from .typecheck import check_program
@@ -151,3 +155,63 @@ if __name__ == '__main__':
     import sys
     main(sys.argv[1])
 
+
+# Sample conversions
+#
+#  Wabbit : print 2 + 3*4 + 6;
+#
+#  C:
+#
+#  int main() {
+#      int t1;     /* Temporaries */
+#      int t2;
+#      int t3;
+#      t1 = 3 * 4;    /* One operation at a time. Must store in a variable */
+#      t2 = 2 + t1;   /* Each is a "binop" */
+#      t3 = t2 + 6;
+#      printf("%i\n", t3);
+# }
+#
+#
+# Wabbit:
+#  var n int = 1;
+#  var value int = 1;
+# 
+# while n < 10 {
+#    value = value * n;
+#    print value ;
+#    n = n + 1;
+# }
+#
+# C:
+#   
+#  int n;       /* Global variables */
+#  int value; 
+#
+#  int some_function(int x) {
+#     ...
+#  } 
+#
+#  int main() {
+#      int t1;
+#      int t2;
+#      int t3;
+#      n = 1;      /* Initialize the variables */
+#      value = 1;
+#      
+#      L1:      /* Label */
+#          t1 = n < 10;
+#          if (t1) goto L2;
+#          goto L3;     /* Get out of while */
+#      L2:
+#          t2 = value * n;
+#          value = t2;
+#          printf("%i\n", value);
+#          t3 = n + 1;
+#          n = t3;
+#          goto L1;
+#      
+#      L3:
+#          return;
+# }
+# 

@@ -141,7 +141,7 @@ def interpret_load_location(node, env):
 @rule(PrintStatement)
 def interpret_print_statement(node, env):
     value = interpret(node.expression, env)
-    if isinstance(value, str):
+    if isinstance(value, str):     # Wabbit 'char' -> Python str   (cheating a bit)
         print(value, end='')
     else:
         print(value)
@@ -206,14 +206,24 @@ def interprete_if_statement(node, env):
     else:
         return interpret(node.alternative, env.new_child())
 
+class Break(Exception):
+    pass
+
 @rule(WhileStatement)
 def interpret_while_statement(node, env):
     while True:
         testval = interpret(node.test, env)
         if not testval:
             break
-        interpret(node.body, env.new_child())
+        try:
+            interpret(node.body, env.new_child())
+        except Break:
+            break
 
+@rule(BreakStatement)
+def interpret_break_statement(node, env):
+    raise Break()
+    
 @rule(ExpressionStatement)
 def interpret_expr_statement(node, env):
     return interpret(node.expression, env)
