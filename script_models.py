@@ -20,6 +20,7 @@ from wabbit.model import (
     While,
     Statements,
 )
+from wabbit.parse import Parser
 from wabbit.tokenize import tokenize
 
 
@@ -229,8 +230,16 @@ if __name__ == "__main__":
         print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
         utils.print_source(source)
-        tokens = list(tokenize(source))
         check(source, model)
+
+        print("Expected model\n")
+        print(model)
+        print("\n\n")
+        parsed_model = Parser(tokenize(source)).statements()
+        print("Parsed\n")
+        print(parsed_model)
+
+        check(source, parsed_model)
         dump_json(model, i)
         print("Interpreter output:\n")
         interpret_program(model)

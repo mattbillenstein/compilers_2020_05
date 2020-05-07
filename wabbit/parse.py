@@ -30,6 +30,10 @@ blue = lambda s: __import__("clint").textui.colored.blue(s, always=True, bold=Tr
 green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=True)  # noqa
 
 
+# def print(*args):
+#     pass
+
+
 @dataclass
 class BaseParser:
     tokens: TokenStream
@@ -67,7 +71,7 @@ class Parser(BaseParser):
         self.expect("EOF")  # TODO
         node = statements
 
-        print(green(f"Parsed {node}"))
+        print(green(f"parsed Program: {node}"))
         return node
 
     # statements : { statement }
@@ -98,10 +102,17 @@ class Parser(BaseParser):
     def statement(self) -> Optional[Statement]:
         print(blue(f"statement(): next = {self.peek()}"))
 
-        statement = self.print() or self.assign() or self.vardef() or self.constdef() or self.if_()
+        statement = (
+            self.print()
+            or self.assign()
+            or self.vardef()
+            or self.constdef()
+            or self.if_()
+            or self.expression()
+        )
 
         if statement:
-            print(green(f"    Parsed {statement}"))
+            print(green(f"    parsed Statement: {statement}"))
         return statement
 
     # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
@@ -120,6 +131,15 @@ class Parser(BaseParser):
             return None
         self.lookahead = None
         return self.block()
+
+    def while_(self) -> Optional[Statement]:
+        if self.accept("WHILE"):
+            self.lookahead = None
+        else:
+            return None
+        test = self.expression()
+        then = self.block()
+        return While(test, then.statements)
 
     def block(self) -> Block:
         # TODO: this demands a block, whereas most methods return Optional[Node]
@@ -142,7 +162,7 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
         node = Print(expression)
 
-        print(green(f"    Parsed {node}"))
+        print(green(f"    parsed Print: {node}"))
         return node
 
     # assignment_statement : LOCATION = EXPRESSION SEMICOLON
@@ -162,7 +182,7 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
         node = Assign(location, expression)
 
-        print(green(f"    Parsed {node}"))
+        print(green(f"    Parsed Assign: {node}"))
         return node
 
     # variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
@@ -193,7 +213,7 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
 
-        print(green(f"    Parsed {node}"))
+        print(green(f"    parsed VarDef {node}"))
         return node
 
     # const_definition : CONST NAME [ type ] ASSIGN expr SEMI
@@ -220,7 +240,7 @@ class Parser(BaseParser):
 
         node = ConstDef(name, type_, value)
 
-        print(green(f"    Parsed {node}"))
+        print(green(f"    parsed ConstDef {node}"))
         return node
 
     # expr : expr PLUS expr        (+)
@@ -257,7 +277,7 @@ class Parser(BaseParser):
             assert right, "Expected right"
             left = BinOp(tok.token, left, right)  # type: ignore
 
-        print(green(f"    Parsed {left}"))
+        print(green(f"    parsed Expression {left}"))
         return left
 
     def name(self) -> Optional[Name]:
