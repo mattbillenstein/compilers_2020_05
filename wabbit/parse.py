@@ -118,12 +118,8 @@ from .model import *
 from .tokenize import tokenize, WabbitLexer
 from sly import Parser
 
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 # Grammar for Wabbit  (Specificiation of syntax)
 #
-logging.basicConfig(level=logging.DEBUG)
 
 class WabbitParser(Parser):
     debugfile = 'parser.out'
@@ -211,7 +207,7 @@ class WabbitParser(Parser):
 
     @_("LBRACE statements RBRACE")
     def clause(self, p):
-        return Clause(*p.statements)
+        return Clause(*p.statements.statements)
 
     @_(
         "PLUS expression %prec UNARY",
@@ -238,7 +234,6 @@ class WabbitParser(Parser):
 
     @_("WHILE expression clause")
     def while_statement(self, p):
-        print("HELP")
         return WhileLoop(condition=p.expression, body=p.clause)
 
     @_(
@@ -271,6 +266,10 @@ class WabbitParser(Parser):
 
     @_("NAME")
     def location(self, p):
+        return Identifier(name=p.NAME)
+
+    @_("NAME")
+    def expression(self, p):
         return Identifier(name=p.NAME)
 
     @_("NAME")

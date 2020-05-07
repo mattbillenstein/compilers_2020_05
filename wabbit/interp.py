@@ -50,8 +50,11 @@ from contextlib import contextmanager
 from typing import NamedTuple
 from collections import namedtuple
 from typing import TypeVar
+import sys
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -233,9 +236,11 @@ def interpret_compare_node(compare_node: Compare, env: Environment) -> bool:
 
 @interpret.register(Assignment)
 def interpret_assignment_node(assignment_node: Assignment, env: Environment):
+    logger.debug('Interpreting assignment statement')
     name = assignment_node.location.name  # will probably have to change for structs
     value_expr = assignment_node.value
     value = interpret(value_expr, env)
+    logger.debug(f'Assigning name {name} with value {value}')
     env[name] = value
 
 
@@ -321,10 +326,9 @@ def interpret_clause_node(clause_node, env: Environment):
 
 @interpret.register(WhileLoop)
 def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
-    logger.debug(f"Interpreting while loop {repr(while_loop_node)}")
+    logger.debug(f"Interpreting while loop {id(while_loop_node)}")
     condition = while_loop_node.condition
     body = while_loop_node.body
-
     while True:
         condition_result = interpret(condition, env)
         if not isinstance(condition_result, bool):
@@ -332,7 +336,7 @@ def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
                 f"Expected bool from Condition result. Got {type(condition_result)}"
             )
         if condition_result is True:
-            logger.debug(f"Condition evaluated True, executing body: {repr(body)}")
+            logger.debug(f"Condition evaluated True, executing body: {id(while_loop_node)}")
             interpret(body, env)
         else:
             logger.debug("Condition evaluated false, exiting while loop")
@@ -450,6 +454,7 @@ def interpret_struct_instantiation_node(struct_inst_node, env):
 
 
 if __name__ == "__main__":
+    print('-'*80)
     import sys
     from .parse import parse_file
     if len(sys.argv) != 2:
@@ -457,3 +462,5 @@ if __name__ == "__main__":
     model = parse_file(sys.argv[1])
     print(repr(model))
     print(model)
+    interpret_program(model)
+    print('-'*80)
