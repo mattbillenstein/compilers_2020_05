@@ -112,28 +112,49 @@ def test_parser_arithmetic():
     )
 
 
-def test_parser_name():
+def test_parser_assignment_and_location():
     parser = WabbitParser()
 
-    #     source = "myObj;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Variable("myObj")])
+    source = "a = 2;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Assignment(Variable("a"), Integer(2))])
 
-    #     source = "var x = 3;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Var("x", None, Integer(3))])
+    source = "a = 2 * 3;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Assignment(Variable("a"), BinOp("*", Integer(2), Integer(3)))]
+    )
 
-    #     source = "var y int = 3;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Var("y", "int", Integer(3))])
+    source = "obj.b = 2 * 3;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Assignment(
+                DottedLocation(Variable("obj"), "b"), BinOp("*", Integer(2), Integer(3))
+            )
+        ]
+    )
 
-    #     source = "const a = 3.1;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Const("a", None, Float(3.1))])
+    source = "myObj;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Variable("myObj")])
 
-    #     source = "const b float = 3.1;"
-    #     tokens = tokenize(source)
-    #     assert parser.parse(tokens) == Statements([Const("b", "float", Float(3.1))])
+    source = "yourObj.foo;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [DottedLocation(Variable("yourObj"), "foo")]
+    )
+
+    source = "(x + y * z).value;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            DottedLocation(
+                BinOp("+", Variable("x"), BinOp("*", Variable("y"), Variable("z"))),
+                "value",
+            )
+        ]
+    )
 
 
 def test_script_models():

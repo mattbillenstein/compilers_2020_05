@@ -92,6 +92,11 @@ class DottedLocation(Location):
     def __repr__(self):
         return f"DottedLocation({self.location}, {self.name})"
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.location == other.location and self.name == other.name
+
 
 class Truthy(Expression):
     pass
@@ -399,6 +404,11 @@ class Assignment(Statement):
 
     def __repr__(self):
         return f"Assignment({self.location}, {self.expression})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.location == other.location and self.expression == other.expression
 
 
 class Print(Statement):

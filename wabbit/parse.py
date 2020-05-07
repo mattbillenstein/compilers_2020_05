@@ -92,7 +92,7 @@ class WabbitParser(Parser):
     #           | expression SEMI
     @_(
         "print_statement",
-        # "assignment_statement",
+        "assignment_statement",
         # "variable_definition",
         # "const_definition",
         "expression_statement",
@@ -305,7 +305,6 @@ class WabbitParser(Parser):
 
     @_("expression DOT NAME")
     def location(self, p):
-        print("dotted location")
         return DottedLocation(p.expression, p.NAME)
 
     # enum_value : NAME DCOLON NAME
