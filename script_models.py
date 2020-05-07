@@ -283,6 +283,19 @@ class ScriptModels(unittest.TestCase):
         \tprint fact;
         \tx = x + 1;
         }''')
+        minc = dedent('''\
+        const n int = 10;
+        var x int = 1;
+        var fact int = 1;
+        t1 = x < n;
+        while (t1) {
+        t2 = fact * x;
+        fact = t2;
+        printf("%i\\n", fact);
+        t3 = x + 1;
+        x = t3;
+        t1 = x < n;
+        }''')
         stdout = ['1', '2', '6', '24', '120', '720', '5040', '40320', '362880']
         errors = []
         tokens = [
@@ -339,7 +352,6 @@ class ScriptModels(unittest.TestCase):
                     ])
                 ),
             ])
-        minc = ''
         llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 

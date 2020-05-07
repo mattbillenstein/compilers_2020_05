@@ -43,11 +43,14 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def __init__(self):
         self.csrc = []
         self.ctr = 0
-        self.stack = []
+        self.tmpvars = {}
 
-    def next_cvar(self):
+    def tmpvar(self, value_csrc):
         self.ctr += 1
-        return 't' + str(self.ctr)
+        tmpvarname = 't' + str(self.ctr)
+        self.tmpvars[tmpvarname] = value_csrc
+        self.csrc.append(tmpvarname + ' = ' + value_csrc + ';')
+        return tmpvarname
 
     def visit_StorageIdentifier(self, node, ctx):
         # gimme the key for this name in this context
@@ -128,12 +131,12 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return (None, None)
     
     def visit_ConditionalLoopStatement(self, node, ctx):
-        ret = []
-        ret.append('while ' + node.cond.visit(self, ctx) + ' {')
-        for line in node.block.visit(self, ctx):
-            ret.append("\t" + line)
-        ret.append('}')
-        return ret
+        condtype, tmpvar = node.cond.visit(self, ctx)
+        self.csrc.append('while (' + tmpvar + ') {')
+        node.block.visit(self, ctx)
+        self.csrc.append(tmpvar + ' = ' + self.tmpvars[tmpvar] + ';')
+        self.csrc.append('}')
+        return (None, None)
     
     def visit_ContinueLoopStatement(self, node, ctx):
         return None
@@ -152,16 +155,14 @@ class MinCCompiler(ScopeAwareModelVisitor):
         lefttype, leftexpr = node.left.visit(self, ctx)
         righttype, rightexpr = node.right.visit(self, ctx)
         result_type = binop_typemap[(node.op, lefttype, righttype)]
-        cvar = self.next_cvar()
-        self.csrc.append(''.join([cvar, ' = ', leftexpr, ' ', node.op, ' ', rightexpr, ';']))
-        return (result_type, cvar)
+        tmpvar = self.tmpvar(leftexpr + ' ' + node.op + ' ' + rightexpr)
+        return (result_type, tmpvar)
     
     def visit_UnOp(self, node, ctx):
         righttype, rightexpr = node.right.visit(self, ctx)
         result_type = unop_typemap[(node.op, righttype)]
-        cvar = self.next_cvar()
-        self.csrc.append(''.join([cvar, ' = ', node.op, ' ', rightexpr, ';']))
-        return (result_type, cvar)
+        tmpvar = self.tmpvar(node.op, ' ', rightexpr)
+        return (result_type, tmpvar)
     
     def visit_BlockExpression(self, node, ctx):
         return '{ ' + ' '.join(node.block.visit(self, ctx)) + ' }'
