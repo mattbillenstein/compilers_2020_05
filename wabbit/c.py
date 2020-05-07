@@ -129,25 +129,165 @@
 # problem related to incorrect programs. Assume that all programs
 # are fully correct with respect to their usage of types and names.
 
+import os.path
+import sys
+
 from .model import *
+from .parse import parse
 
-# Top-level function to handle an entire program.
-def compile_program(model):
-    # ... you define ...
-    pass
 
-def main(filename):
-    from .parse import parse_file
-    from .typecheck import check_program
+class TypeVisitor:
+    typemap = {
+        int: int,
+        float: float,
+        bool: bool,
+        str: str,
+    }
 
-    model = parse_file(filename)
-    check_program(model)
-    code = compile_program(model)
-    with open('out.c', 'w') as file:
-        file.write(code)
-    print('Wrote: out.c')
+    def __init__(self, node):
+        self.types = {}
+        self.visit(node)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.types})'
+
+    def __iter__(self):
+        return iter(self.types.values())
+
+    def set(self, node, type):
+        if type is not None:
+            type = self.typemap.get(type, type)
+            self.types[id(node)] = (node, type)
+
+    def get(self, node):
+        return self.types.get(id(node), (None, None))[1]
+
+    def visit(self, node):
+        m = getattr(self, f'visit_{node.__class__.__name__}')
+        m(node)
+
+    def visit_Block(self, node):
+        type = None
+        for n in node.statements:
+            self.visit(n)
+
+            # first return wins?
+            if type is None and isinstance(n, Return):
+                type = self.get(n)
+
+        # otherwise, type of last statement
+        if type is None:
+            type = self.get(n)
+
+        self.set(node, type)
+
+    def visit_BinOp(self, node):
+        self.visit(node.left)
+        self.visit(node.right)
+
+        type = ltype = self.get(node.left)
+        rtype = self.get(node.right)
+        assert ltype == rtype
+
+        if node.op in ('||', '&&'):
+            type = bool
+
+        self.set(node, type)
+
+    def visit_Integer(self, node):
+        self.set(node, int)
+
+    def visit_Float(self, node):
+        self.set(node, float)
+
+    def visit_Char(self, node):
+        self.set(node, str)
+
+    def visit_Bool(self, node):
+        self.set(node, bool)
+
+    def visit_Print(self, node):
+        self.visit(node.arg)
+
+class CTypeVisitor(TypeVisitor):
+    typemap = {
+        int: 'int',
+        float: 'double',
+        str: 'char',
+        bool: 'bool'
+    }
+
+class CCompilerVisitor:
+
+    def var(self, node):
+        return f'v{node.__class__.__name__}_{hex(id(node))[2:]}'
+
+    def get(self, node):
+        # get type
+        return self.types.get(node)
+
+    def compile_c(self, node):
+        self.types = CTypeVisitor(node)
+        variables = ''.join(f'{t} {self.var(n)};\n' for n, t in self.types)
+        code = self.visit(node)
+        return '#include <stdio.h>\n#include <stdbool.h>\nint main() {\n' + variables + code + '\nreturn 0;\n}'
+
+    def visit(self, node):
+        m = getattr(self, f'visit_{node.__class__.__name__}')
+        return m(node)
+
+    def visit_Block(self, node):
+        s = ''
+        for n in node.statements:
+            s += self.visit(n)
+        return s
+
+    def visit_BinOp(self, node):
+        return f'''
+{self.var(node.left)} = {self.visit(node.left)};
+{self.var(node.right)} = {self.visit(node.right)};
+{self.var(node)} = {self.var(node.left)} {node.op} {self.var(node.right)};
+'''
+
+    def visit_Integer(self, node):
+        return str(node.value)
+
+    def visit_Print(self, node):
+        s = self.visit(node.arg)
+
+        type = self.get(node.arg)
+        format = {
+            'int': '%d',
+            'double': '%f',
+            'char': '%c',
+            'bool': '%d',
+        }[type]
+
+        s += f'printf("{format}", {self.var(node.arg)});'
+
+        return s
+
+def compile_c(text_or_node):
+    node = text_or_node
+    if not isinstance(text_or_node, Node):
+        node = parse(text_or_node)
+    return CCompilerVisitor().compile_c(node)
+
+def main(args):
+    if args:
+        if os.path.isfile(args[0]):
+            with open(args[0]) as file:
+                text = file.read()
+
+            output = compile_c(text)
+            with open(args[0] + '.c', 'w') as f:
+                f.write(output)
+        else:
+            text = args[0]
+            print(compile_c(text))
+    else:
+        text = sys.stdin.read()
+        print(compile_ch(text))
 
 if __name__ == '__main__':
-    import sys
-    main(sys.argv[1])
-
+    main(sys.argv[1:])

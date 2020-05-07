@@ -133,3 +133,6 @@ dmypy.json
 
 # debug
 parser.txt
+
+# gcc
+a.out
