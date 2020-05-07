@@ -43,6 +43,7 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def __init__(self):
         self.csrc = []
         self.ctr = 0
+        self.stack = []
 
     def next_cvar(self):
         self.ctr += 1
@@ -63,11 +64,22 @@ class MinCCompiler(ScopeAwareModelVisitor):
         name = node.identifier.name
         if name in ctx:
             raise
-        self.setStash(ctx, name, Storage(node._type, node.const))
+        if node._type is None and node.value is None:
+            raise
+        type = node._type
+        value = None
+        if node.value is not None:
+            type, value = node.value.visit(self, ctx)
+            if node._type is not None and node._type != type:
+                raise
+        self.setStash(ctx, name, Storage(type, node.const))
         ret = 'const' if node.const else 'var'
         ret += ' ' + name
-        ret += ' ' + str(node._type)
-        self.csrc.append(ret)
+        ret += ' ' + str(type) 
+        if value is not None:
+            self.csrc.append(ret + ' = ' + value + ';')
+        else:
+            self.csrc.append(ret + ';')
         return (node._type, node.identifier.name)
 
     def visit_FuncCall(self, node, ctx):
@@ -89,7 +101,6 @@ class MinCCompiler(ScopeAwareModelVisitor):
         loctype, locname = node.location.visit(self, ctx)
         if node.value is not None:
             exprtype, exprval = node.value.visit(self, ctx)
-            print(locname, exprtype, exprval)
             self.csrc.append(locname + ' = ' + exprval + ';')
         return (None, None)
     
@@ -108,15 +119,13 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return (None, None)
     
     def visit_ConditionalStatement(self, node, ctx):
-        ret = []
-        ret.append('if ' + node.cond.visit(self, ctx) + ' {')
-        for line in node.blockT.visit(self, ctx):
-            ret.append("\t" + line)
-        ret.append('} else {')
-        for line in node.blockF.visit(self, ctx):
-            ret.append("\t" + line)
-        ret.append('}')
-        return ret
+        condtype, condval = node.cond.visit(self, ctx)
+        self.csrc.append('if (' + condval + ') {')
+        node.blockT.visit(self, ctx)
+        self.csrc.append('} else {')
+        node.blockF.visit(self, ctx)
+        self.csrc.append('}')
+        return (None, None)
     
     def visit_ConditionalLoopStatement(self, node, ctx):
         ret = []
@@ -133,7 +142,7 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return None
     
     def visit_ExpressionStatement(self, node, ctx):
-        exprtype, exprval = node.statement.visit(self, ctx);
+        exprtype, exprval = node.statement.visit(self, ctx)
         self.csrc.append(exprval + ';')
     
     def visit_ReturnStatement(self, node, ctx):
@@ -142,7 +151,6 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def visit_BinOp(self, node, ctx):
         lefttype, leftexpr = node.left.visit(self, ctx)
         righttype, rightexpr = node.right.visit(self, ctx)
-        print(righttype, rightexpr)
         result_type = binop_typemap[(node.op, lefttype, righttype)]
         cvar = self.next_cvar()
         self.csrc.append(''.join([cvar, ' = ', leftexpr, ' ', node.op, ' ', rightexpr, ';']))
@@ -162,7 +170,7 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return ('int', str(node.value))
     
     def visit_Char(self, node, ctx):
-        return ('char', str(node.value))
+        return ('char', str(ord(node.value)))
     
     def visit_Float(self, node, ctx):
         return ('float', str(node.value))

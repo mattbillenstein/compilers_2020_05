@@ -23,7 +23,10 @@ class WabbitDecompiler(ModelVisitor):
         ret += ' ' + node.identifier.name
         if node._type:
             ret += ' ' + str(node._type)
-        return ret
+        if node.value:
+            value = node.value.visit(self, ctx)
+            ret += ' = ' + value
+        return ret + ';'
 
     def visit_Int(self, node, ctx):
         return repr(node.value)

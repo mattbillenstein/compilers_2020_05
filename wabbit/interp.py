@@ -27,10 +27,10 @@ UNDEF = object()
 
 
 class Storage():
-    def __init__(self, _type, const):
+    def __init__(self, _type, const, value):
         self._type = _type
         self.const = const
-        self.value = UNDEF
+        self.value = value
 
     def is_unset(self):
         return self.value == UNDEF
@@ -68,7 +68,10 @@ class Interpreter(ScopeAwareModelVisitor):
         name = node.identifier.visit(self, ctx)
         if name in ctx:
             raise
-        self.setStash(ctx, name, Storage(node._type, node.const))
+        value = UNDEF
+        if node.value is not None:
+            value = node.value.visit(self, ctx)
+        self.setStash(ctx, name, Storage(node._type, node.const, value))
         return name
     
     def visit_FuncCall(self, node, ctx):

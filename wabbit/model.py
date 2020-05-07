@@ -53,6 +53,7 @@ class DeclStorageLocation(StorageLocation):
     identifier: StorageIdentifier
     _type: str = None
     const: bool = False
+    value: ExpressionNode = None
 
 # Functions
 

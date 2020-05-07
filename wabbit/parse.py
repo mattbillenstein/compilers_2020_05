@@ -53,11 +53,11 @@ class WabbitParser(Parser):
     def variable_definition(self, p):
         if not p.type and not p.expr:
             raise SyntaxError()
-        return AssignStatement(DeclStorageLocation(p.location, p.type, False), p.expr)
+        return DeclStorageLocation(p.location, p.type, False, p.expr)
 
     @_('CONST location [ type ] ASSIGN expr SEMI')
     def variable_definition(self, p):
-        return AssignStatement(DeclStorageLocation(p.location, p.type, True), p.expr)
+        return DeclStorageLocation(p.location, p.type, True, p.expr)
 
     @_('IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):

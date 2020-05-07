@@ -27,7 +27,6 @@ from wabbit.tokenize import to_tokens, Token
 from wabbit.check import check_statements
 from wabbit.interp import interpret_program
 from wabbit.minc import to_minc
-from wabbit.wasm import to_wasm
 from wabbit.llvm import to_llvm
 from textwrap import dedent
 import unittest
@@ -40,7 +39,7 @@ class ScriptModels(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
 
-    def programs_match(self, wabbit, tokens, statements, stdout, errors, minc, wasm, llvm):
+    def programs_match(self, wabbit, tokens, statements, stdout, errors, minc, llvm):
         self.assertEqual(list(to_tokens(wabbit)), tokens)
         self.assertEqual(to_model(iter(tokens)), statements)
         # XXX skip this test for now as the checker's implementation is paused
@@ -48,7 +47,6 @@ class ScriptModels(unittest.TestCase):
         self.assertEqual(interpret_program(Program(statements)), stdout)
         self.assertEqual('\n'.join(to_wabbit(statements)), wabbit)
         self.assertEqual('\n'.join(to_minc(Program(statements))), minc)
-#        self.assertEqual('\n'.join(to_wasm(Program(statements)), wasm)
 #        self.assertEqual('\n'.join(to_llvm(Program(statements)), llvm)
 
     def test_simple(self):
@@ -61,7 +59,6 @@ class ScriptModels(unittest.TestCase):
         t1 = 3 * 4;
         t2 = 2 + t1;
         t2;""")
-        wasm = ''
         llvm = ''
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
@@ -74,7 +71,7 @@ class ScriptModels(unittest.TestCase):
         model = Statements([ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))])
         stdout = []
         errors = []
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
     def test_print(self):
         
@@ -106,7 +103,6 @@ class ScriptModels(unittest.TestCase):
         t10 = - 4;
         t11 = t9 + t10;
         printf("%i\\n", t11);""")
-        wasm = ''
         llvm = ''
         errors = []
         stdout = ['-10', '2.75', '1', '2']
@@ -151,7 +147,7 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
             ])
         
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
     def test_var(self):
         # ----------------------------------------------------------------------
@@ -165,6 +161,12 @@ class ScriptModels(unittest.TestCase):
         var tau float;
         tau = 2.0 * pi;
         print tau;""")
+        minc = dedent("""\
+        const pi float = 3.14159;
+        var tau float;
+        t1 = 2.0 * pi;
+        tau = t1;
+        printf("%f\\n", tau);""")
         stdout = ['6.28318']
         errors = []
         
@@ -189,16 +191,14 @@ class ScriptModels(unittest.TestCase):
             Token(type='SEMI', value=';', lineno=1, index=60)
         ]
         model = Statements([
-            AssignStatement(DeclStorageLocation(StorageIdentifier('pi'), None, True), Float(3.14159)),
-            AssignStatement(DeclStorageLocation(StorageIdentifier('tau'), 'float', False), value=None),
+            DeclStorageLocation(StorageIdentifier('pi'), None, True, Float(3.14159)),
+            DeclStorageLocation(StorageIdentifier('tau'), 'float', False),
             AssignStatement(StorageIdentifier('tau'), BinOp('*', Float(2.0),
                 StorageLocation(StorageIdentifier('pi')))),
             PrintStatement(StorageLocation(StorageIdentifier('tau')))
         ])
-        minc = ''
-        wasm = ''
         llvm = ''
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
     def test_conditional(self):
         # ----------------------------------------------------------------------
@@ -212,6 +212,15 @@ class ScriptModels(unittest.TestCase):
         \tprint a;
         } else {
         \tprint b;
+        }''')
+        minc = dedent('''\
+        var a int = 2;
+        var b int = 3;
+        t1 = a < b;
+        if (t1) {
+        printf("%i\\n", a);
+        } else {
+        printf("%i\\n", b);
         }''')
         stdout = ['2']
         errors = []
@@ -247,8 +256,8 @@ class ScriptModels(unittest.TestCase):
         ]
 
         model = Statements([
-            AssignStatement(DeclStorageLocation(StorageIdentifier('a'), 'int', False), Int(2)),
-            AssignStatement(DeclStorageLocation(StorageIdentifier('b'), 'int', False), Int(3)),
+            DeclStorageLocation(StorageIdentifier('a'), 'int', False, Int(2)),
+            DeclStorageLocation(StorageIdentifier('b'), 'int', False, Int(3)),
             ConditionalStatement(BinOp('<', StorageLocation(StorageIdentifier('a')),
                 StorageLocation(StorageIdentifier('b'))), Statements([
                     PrintStatement(StorageLocation(StorageIdentifier('a')))
@@ -257,10 +266,8 @@ class ScriptModels(unittest.TestCase):
                 ])
             ),
             ])
-        minc = ''
-        wasm = ''
         llvm = ''
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
     def test_loop(self):
         # ----------------------------------------------------------------------
@@ -320,9 +327,9 @@ class ScriptModels(unittest.TestCase):
         ]
         
         model = Statements([
-                AssignStatement(DeclStorageLocation(StorageIdentifier('n'), None, True), Int(10)),
-                AssignStatement(DeclStorageLocation(StorageIdentifier('x'), 'int', False), Int(1)),
-                AssignStatement(DeclStorageLocation(StorageIdentifier('fact'), 'int', False), Int(1)),
+                DeclStorageLocation(StorageIdentifier('n'), None, True, Int(10)),
+                DeclStorageLocation(StorageIdentifier('x'), 'int', False, Int(1)),
+                DeclStorageLocation(StorageIdentifier('fact'), 'int', False, Int(1)),
                 ConditionalLoopStatement(
                     BinOp('<', StorageLocation(StorageIdentifier('x')), StorageLocation(StorageIdentifier('n'))),
                     Statements([
@@ -333,9 +340,8 @@ class ScriptModels(unittest.TestCase):
                 ),
             ])
         minc = ''
-        wasm = ''
         llvm = ''
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
     def test_compexpr(self):
         # ----------------------------------------------------------------------
@@ -388,10 +394,10 @@ class ScriptModels(unittest.TestCase):
         ]
         
         model = Statements([
-            AssignStatement(DeclStorageLocation(StorageIdentifier('x')), Int(37)),
-            AssignStatement(DeclStorageLocation(StorageIdentifier('y')), Int(42)),
+            DeclStorageLocation(StorageIdentifier('x'), Int(37)),
+            DeclStorageLocation(StorageIdentifier('y'), Int(42)),
             AssignStatement(StorageIdentifier('x'), BlockExpression(Statements([
-                AssignStatement(DeclStorageLocation(StorageIdentifier('t')), StorageLocation(StorageIdentifier('y'))),
+                DeclStorageLocation(StorageIdentifier('t'), None, False, StorageLocation(StorageIdentifier('y'))),
                 AssignStatement(StorageIdentifier('y'), StorageLocation(StorageIdentifier('x'))),
                 ExpressionStatement(StorageLocation(StorageIdentifier('t'))),
                 ]))),
@@ -399,9 +405,8 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(StorageLocation(StorageIdentifier('y'))),
             ])
         minc = ''
-        wasm = ''
         llvm = ''
-        self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
+        self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
 
 class FuncModels(unittest.TestCase):
@@ -458,14 +463,14 @@ class FuncModels(unittest.TestCase):
                     ]),
                 ]),
                 FuncDeclStatement('print_factorials', [['last', 'int']], 'int', [
-                    AssignStatement(DeclStorageLocation('x', False), Int(0)),
+                    DeclStorageLocation('x', False, Int(0)),
                     ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('last')), [
                         PrintStatement(FuncCall('factorial', [StorageLocation('x')])),
                         AssignStatement(StorageLocation('x'), FuncCall('add', [StorageLocation('x'), Int(1)]))
                     ])
                 ]),
                 FuncDeclStatement('main', [], 'int', [
-                    AssignStatement(DeclStorageLocation('result', False), FuncCall('print_factorials', [Int(10)])),
+                    DeclStorageLocation('result', False, FuncCall('print_factorials', [Int(10)])),
                     ReturnStatement(Int(0))
                 ]),
         ]
