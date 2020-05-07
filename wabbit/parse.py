@@ -130,15 +130,6 @@ from .model import (  # noqa
 )
 from .tokenize import tokenize, Token, TokenStream
 
-blue = lambda s: __import__("clint").textui.colored.blue(s, always=True, bold=True)  # noqa
-green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=True)  # noqa
-
-_print = print
-
-
-def print(*args):
-    pass
-
 
 @dataclass
 class BaseParser:
@@ -151,26 +142,20 @@ class BaseParser:
         return self.lookahead
 
     def expect(self, type_) -> Token:
-        print(blue(f"expect({type_}) next = {self.peek()}"))
         tok = self.peek()
         assert tok.type_ == type_, f"Expected {type_}, got {tok}"
-
-        print(green(f"    -> {tok}"))
         self.lookahead = None
         return tok
 
     def accept(self, *types_) -> Optional[Token]:
-        # print(blue(f"accept({types_}) next = {self.peek()}"))
         try:
             tok = self.peek()
         except StopIteration:
             return None
 
         if tok.type_ in types_:
-            print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
-        # print(blue("    -> reject"))
 
 
 class Parser(BaseParser):
@@ -178,8 +163,6 @@ class Parser(BaseParser):
         statements = self.statements()
         self.expect("EOF")  # TODO
         node = statements
-
-        print(green(f"parsed Program: {node}"))
         return node
 
     def statements(self) -> Statements:
@@ -193,12 +176,9 @@ class Parser(BaseParser):
                 break
             statements.append(statement)
 
-        print(green(f"    parsed Statements: {statements}"))
         return Statements(statements)
 
     def statement(self) -> Optional[Statement]:
-        print(blue(f"statement(): next = {self.peek()}"))
-
         statement = (
             self.print_()
             or self.vardef()
@@ -210,13 +190,10 @@ class Parser(BaseParser):
         )
 
         if statement:
-            print(green(f"    parsed Statement: {statement}"))
             self.accept("SEMICOLON")
             return statement
 
     def if_(self) -> Optional[Statement]:
-        print(blue(f"if(): next = {self.peek()}"))
-
         if not self.accept("IF"):
             return None
 
@@ -224,7 +201,6 @@ class Parser(BaseParser):
         assert (then := self.block())
         else_ = self._else()
         node = If(test, then.statements, else_.statements if else_ else None)
-        print(green(f"    parsed If: {node}"))
         return node
 
     def _else(self) -> Optional[Block]:
@@ -234,15 +210,12 @@ class Parser(BaseParser):
         return block
 
     def while_(self) -> Optional[Statement]:
-        print(blue(f"while(): next = {self.peek()}"))
-
         if not self.accept("WHILE"):
             return None
 
         assert (test := self.expression())
         assert (then := self.block())
         node = While(test, then.statements)
-        print(green(f"    parsed While: {node}"))
         return node
 
     def block(self) -> Optional[Block]:
@@ -253,8 +226,6 @@ class Parser(BaseParser):
         return Block(statements)
 
     def print_(self) -> Optional[Statement]:
-        print(blue(f"print(): next = {self.peek()}"))
-
         if not self.accept("PRINT"):
             return None
 
@@ -262,28 +233,19 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
         node = Print(expression)
 
-        print(green(f"    parsed Print: {node}"))
         return node
 
     def assign(self) -> Optional[Statement]:
-        print(blue(f"assign(): next = {self.peek()}"))
-
         if not (tok := self.accept("NAME")):  # TODO: location
             return None
         location = Location(tok.token)
-
         self.expect("ASSIGN")
-
         assert (expression := self.expression())
         self.expect("SEMICOLON")
         node = Assign(location, expression)
-
-        print(green(f"    Parsed Assign: {node}"))
         return node
 
     def vardef(self) -> Optional[VarDef]:
-        print(blue(f"vardef(): next = {self.peek()}"))
-
         if not self.accept("VAR"):
             return None
 
@@ -303,13 +265,9 @@ class Parser(BaseParser):
 
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
-
-        print(green(f"    parsed VarDef {node}"))
         return node
 
     def constdef(self) -> Optional[ConstDef]:
-        print(blue(f"constdef(): next = {self.peek()}"))
-
         if not self.accept("CONST"):
             return None
 
@@ -326,8 +284,6 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
 
         node = ConstDef(name, type_, value)
-
-        print(green(f"    parsed ConstDef {node}"))
         return node
 
     def expression(self) -> Optional[Expression]:
@@ -343,12 +299,10 @@ class Parser(BaseParser):
 
     def _make_expression_parser(self, operators, child_parser):
         def parser(self) -> Optional[Expression]:
-            print(blue(f"expression({operators}): next = {self.peek()}"))
             left = child_parser(self)
             while tok := self.accept(*operators):
                 assert (right := child_parser(self))
                 left = BinOp(tok.token, left, right)
-            print(green(f"    parsed {left}"))
             return left
 
         return parser
