@@ -94,7 +94,11 @@ class Interpreter:
 
     @typechecked
     def interpret_Print(self, node: Print, env):
-        sys.stdout.write(str(self.interpret(node.expression, env)) + "\n")
+        value = self.interpret(node.expression, env)
+        if isinstance(node.expression, Char):
+            sys.stdout.write(value)
+        else:
+            sys.stdout.write(f"{value}\n")
         sys.stdout.flush()
 
     @typechecked
