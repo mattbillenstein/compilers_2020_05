@@ -347,6 +347,7 @@ class Parser(BaseParser):
 
     @staticmethod
     def _factor(self):
+        # TODO: LPAREN
         return self._literal() or self.name() or self._unary_op() or self.block()
 
     def _make_expression_parser(self, operators, child_parser):
@@ -362,7 +363,7 @@ class Parser(BaseParser):
         return parser
 
     def _unary_op(self) -> Optional[UnaryOp]:
-        if tok := self.accept("ADD", "SUB"):
+        if tok := self.accept("ADD", "SUB", "LNOT"):
             assert (expr := self._factor(self))
             return UnaryOp(tok.token, expr)
 
