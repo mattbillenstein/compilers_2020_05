@@ -27,7 +27,7 @@ from wabbit.model import *
 
 
 def test_wasm_basic():
-    model = Statements([Float("2.3")])
+    model = Statements([BinOp("*", Float("9.3"), Float("2.3"))])
 
     mod = generate_program(model)
     # Write to a file

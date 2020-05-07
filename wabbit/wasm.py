@@ -94,6 +94,9 @@ class WasmFunction:
     def imul(self):
         self.code += b"\x6c"
 
+    def fmul(self):
+        self.code += b"\xa2"
+
     def ret(self):
         self.code += b"\x0f"
 
@@ -173,7 +176,13 @@ def generate_Float(node, func):
 
 @rule(BinOp)
 def generate_BinOp(node, func):
-    func.fadd()
+    generate(node.left, func)
+    generate(node.right, func)
+
+    if node.op == "+":
+        func.fadd()
+    if node.op == "*":
+        func.fmul()
 
 
 def main(filename):
