@@ -8,6 +8,10 @@ def to_wabbit(node):
 
 
 class WabbitDecompiler(ModelVisitor):
+    '''
+    This decompiler is implemented as a ModelVisitor which evaluates wabbit, and attempts to reproduce the source
+    code that may have created it.
+    '''
     def __init__(self):
         return
 

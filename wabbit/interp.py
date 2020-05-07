@@ -38,6 +38,10 @@ class Storage():
 
 
 class Interpreter(ScopeAwareModelVisitor):
+    '''
+    This interpreter is implemented as a ScopeAwareModelVisitor which evaluates wabbit, executing it, and propagates
+    return values of each node to assist.
+    '''
     def __init__(self, stdout):
         self.stdout = stdout
 

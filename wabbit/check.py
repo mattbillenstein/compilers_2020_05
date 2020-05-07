@@ -42,6 +42,10 @@ def check_program(program):
 
 
 class Checker(ScopeAwareModelVisitor):
+    '''
+    This checker is implemented as a ScopeAwareModelVisitor which evaluates wabbit, verifying it, and propagates
+    return type of each node to assist.
+    '''
     def __init__(self):
         self.env = ChainMap()
     
