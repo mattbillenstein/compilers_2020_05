@@ -54,7 +54,7 @@ import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-#logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -408,6 +408,16 @@ def interpret_return_statement(return_statement_node, env):
     )
 
 
+@interpret.register(Parameter)
+def interpret_param_node(param_node, env):
+    Param = namedtuple('Param', ['name', 'type'])
+    return Param(param_node.name, param_node.type)
+
+
+@interpret.register(FunctionDefinition)
+def interpret_function_definition_node(func_def_node: FunctionDefinition, env):
+    env[func_def_node.name] = func_def_node
+
 
 @interpret.register(FunctionCall)
 def interpret_function_call_node(function_call_node, env):
@@ -461,19 +471,23 @@ def interpret_struct_instantiation_node(struct_inst_node, env):
     for arg_expr in arguments:
         arg_values.append(interpret(arg_expr, env))
 
+
 @interpret.register(CompoundExpr)
 def interpret_compound_expr(compound_expr_node, env):
-    return interpret(compound_expr_node, env)
+    return interpret(compound_expr_node.clause, env)
+
 
 @interpret.register(Unit)
 def interpret_unit_node(unit_node, env):
     return None #WabbitUnit()
+
 
 @interpret.register(Bool)
 def interpret_bool_node(bool_node, env):
     return bool_node.value
 
 if __name__ == "__main__":
+    #logging.basicConfig(level=logging.DEBUG)
     print('-'*80)
     import sys
     from .parse import parse_file
@@ -484,3 +498,4 @@ if __name__ == "__main__":
     print(model)
     interpret_program(model)
     print('-'*80)
+

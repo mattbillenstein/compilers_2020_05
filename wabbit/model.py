@@ -317,12 +317,13 @@ class Clause(Node):
         return f"{{ \n\t{statment_sources} \n}}"
 
 
-class CompoundExpr(Clause, Expression):  # Not sure if this is totally correct
-    def __init__(self, *statements):
-        super().__init__(*statements)
+class CompoundExpr(Expression):  # Not sure if this is totally correct
+    def __init__(self, clause):
+        assert isinstance(clause, Clause)
+        super().__init__(clause=clause)
 
     def to_source(self):
-        return "{" + " ".join(str(stmt) for stmt in self.statements) + "}"
+        return "{" + " ".join(str(stmt) for stmt in self.clause.statements) + "}"
 
 
 class PrintStatement(Statement):

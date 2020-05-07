@@ -256,9 +256,9 @@ class WabbitParser(Parser):
         right = p.expression1
         return BinOp(op=op, left=left, right=right)
 
-    @_("clause SEMI")
+    @_("clause")
     def expression(self, p):
-        return CompoundExpr(*p.clause.statements)
+        return CompoundExpr(p[0])
 
     @_("INTEGER")
     def expression(self, p):
@@ -304,7 +304,6 @@ class WabbitParser(Parser):
     def struct_field(self, p):
         return StructField(name=p.NAME, type=p.type)
 
-
     @_("STRUCT NAME LBRACE { struct_field } RBRACE")
     def struct_definition(self, p):
         return StructDefinition(name=p.NAME, *p.struct_field)
@@ -320,6 +319,21 @@ class WabbitParser(Parser):
     @_("FUNC NAME LPAREN [ parameters ] RPAREN type clause")
     def function_definition(self, p):
         return FunctionDefinition(name=p.NAME, parameters=p.parameters, rtype=p.type, body=p.clause)
+
+    @_("expression")
+    def argument(self, p):
+        return p[0]
+
+
+    @_("argument { COMMA argument }")
+    def arguments(self, p):
+        return [p.argument0, *p.argument1]
+
+    @_("NAME LPAREN [ arguments ] RPAREN")
+    def expression(self, p):
+        arguments = p.arguments
+        funcname = p[0]
+        return FunctionCall(name=funcname, arguments=arguments)
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()
