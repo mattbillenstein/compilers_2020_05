@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -u
+set -o pipefail
+
+for infile in tests/Script/*.wb; do
+    expected_outfile="${infile%%.wb}.out"
+    [[ -e "$infile" ]] && [[ -e "$expected_outfile" ]] || {
+        echo "Missing files: $infile" 1>&2
+        exit 1
+    }
+    actual_output="$(python -m wabbit.interp $infile 2>/dev/null)"
+    if ! diff -qu "$expected_outfile" - <<<"$actual_output" > /dev/null; then
+        echo "FAILURE $(wc -l $infile)"
+    else
+        echo "SUCCESS $(wc -l $infile)"
+    fi
+done
