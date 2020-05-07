@@ -50,8 +50,10 @@
 # Base types
 
 class Node:
-	pass
-	
+	def __init__(self, *, lineno = -1, nodename = None, valtype = None):
+		self.lineno = lineno				# point in the source code where the node originated
+		self.nodename  = nodename			# used for identifying specific nodes by "name"
+		self.valtype = valtype 				# used for tracking the type associated with a node in the model
 	
 class Statement(Node):
 	'''
@@ -100,9 +102,11 @@ class Integer(Literal):
 	'''
 	Example: 42
 	'''
-	def __init__(self, value):
+	def __init__(self, value, **kwargs):
 		assert isinstance(value, int)
 		self.value = value
+		kwargs['valtype'] = "int"
+		super().__init__(**kwargs)
 
 	def __repr__(self):
 		return f'Integer({self.value})'
@@ -115,10 +119,12 @@ class Float(Literal):
 	'''
 	Example: 42.0
 	'''
-	def __init__(self, value):
+	def __init__(self, value, **kwargs):
 		assert isinstance(value, float)
+		kwargs['valtype'] = "float"
 		self.value = value
-
+		super().__init__(**kwargs)
+		
 	def __repr__(self):
 		return f'Float({self.value})'
 
@@ -130,10 +136,12 @@ class Char(Literal):
 	'''
 	Example: 'a'
 	'''
-	def __init__(self, value):
+	def __init__(self, value, **kwargs):
 		assert isinstance(value, str)
+		kwargs['valtype'] = "char"
 		self.value = value
-
+		super().__init__(**kwargs)
+				
 	def __repr__(self):
 		return f'Char({self.value})'
 
@@ -144,9 +152,11 @@ class Bool(Literal):
 	'''
 	Example: true
 	'''
-	def __init__(self, value):
+	def __init__(self, value, **kwargs):
 		assert isinstance(value, bool)
+		kwargs['valtype'] = "bool"
 		self.value = value
+		super().__init__(**kwargs)
 
 	def __repr__(self):
 		return f'Bool({self.value})'
@@ -160,8 +170,10 @@ class Unit(Literal):
 	Example: ()
 	'''
 	
-	def __init__(self):
+	def __init__(self, **kwargs):
+		kwargs['valtype'] = "unit"
 		self.value = None
+		super().__init__(**kwargs)
 		
 	def __repr__(self):
 		return f'Unit()'
@@ -178,7 +190,8 @@ class BinOp(Expression):
 	'''
 	Example: left + right
 	'''
-	def __init__(self, op, left, right):
+	def __init__(self, op, left, right, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(left, Expression)
 		assert isinstance(right, Expression)
 		self.op = op
@@ -195,7 +208,8 @@ class UnaryOp(Expression):
 	'''
 	Example: left + right
 	'''
-	def __init__(self, op, right):
+	def __init__(self, op, right, **kwargs):
+		super().__init__(**kwargs)
 		self.op = op
 		self.right = right
 
@@ -210,7 +224,8 @@ class LocationLookup(Expression):
 	converts a location (expression) to a statement
 	'''
 	
-	def __init__(self, var):
+	def __init__(self, var, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(var, Location)
 		self.var = var
 		
@@ -224,7 +239,8 @@ class Compound(Expression):
 	'''
 	A series of statements serving as a single expression.
 	'''
-	def __init__(self, stmts):
+	def __init__(self, stmts, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(stmts, Statements)
 		self.stmts = stmts
 
@@ -238,7 +254,8 @@ class Grouping(Expression):
 	'''
 	( expression )      # Expression surrounded by parenthesis
 	'''
-	def __init__(self, expr):
+	def __init__(self, expr, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(expr, Expression)
 		self.expr = expr
 
@@ -255,7 +272,8 @@ class Grouping(Expression):
 
 
 class Var(Location):
-	def __init__(self, name):
+	def __init__(self, name, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(name, str)
 		self.name = name
 		
@@ -275,13 +293,14 @@ class Statements(Statement):
 	Container for statements
 	'''
 	
-	def __init__(self, *args):
+	def __init__(self, *args, **kwargs):
+		super().__init__(**kwargs)
 		stmts = [x for x in args]
 		assert all(isinstance(x, Statement) for x in stmts)
 		self.stmts = stmts
 		
 	def __repr__(self):
-		return "Statements(" + ",".join([repr(x) for x in self.stmts]) + ")"
+		return r"Statements([id={self.nodename}]" + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
 		return "\n".join([x.to_source() for x in self.stmts])
@@ -292,7 +311,8 @@ class Assignment(Statement):
 	Example: a = 1 + 2
 	'''
 	
-	def __init__(self, left, right):
+	def __init__(self, left, right, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(left, Location)
 		assert isinstance(right, Expression)
 		self.left = left
@@ -306,14 +326,15 @@ class Assignment(Statement):
 		
 		
 class PrintStatement(Statement):
-	def __init__(self, literal):
-		self.literal = literal
+	def __init__(self, expr, **kwargs):
+		super().__init__(**kwargs)
+		self.expr = expr
 		
 	def __repr__(self):
-		return f'PrintStatement({self.literal})'
+		return f'PrintStatement({self.expr})'
 		
 	def to_source(self):
-		return f"print {self.literal.to_source()};"
+		return f"print {self.expr.to_source()};"
 
 
 class Block(Statement):	
@@ -321,7 +342,8 @@ class Block(Statement):
 	block of code
 	'''
 	
-	def __init__(self, *args):
+	def __init__(self, *args, **kwargs):
+		super().__init__(**kwargs)
 		stmts = [x for x in args]
 		assert all(isinstance(x, Statement) for x in stmts)
 		self.stmts = stmts
@@ -338,7 +360,8 @@ class ConstDef(Statement):
 	const a
 	'''
 	
-	def __init__(self, name, vartype, value):
+	def __init__(self, name, vartype, value, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(name, str)
 		assert vartype is None or isinstance(vartype, str)
 		assert isinstance(value, Expression)
@@ -356,7 +379,8 @@ class ConstDef(Statement):
 
 
 class VarDef(Statement):
-	def __init__(self, name, vartype, value = None):
+	def __init__(self, name, vartype, value = None, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(name, str)
 		assert vartype is None or isinstance(vartype, str)
 		assert value is None or isinstance(value, Expression)
@@ -379,7 +403,8 @@ class VarDef(Statement):
 
 
 class IfConditional(Statement):
-	def __init__(self, condition, istrue, isfalse = None):
+	def __init__(self, condition, istrue, isfalse = None, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(condition, Expression)
 		assert isinstance(istrue, Statement)
 		assert isfalse is None or isinstance(isfalse, Statement)
@@ -400,7 +425,8 @@ class IfConditional(Statement):
 		
 
 class While(Statement):
-	def __init__(self, condition, todo):
+	def __init__(self, condition, todo, **kwargs):
+		super().__init__(**kwargs)
 		assert isinstance(condition, Expression)
 		assert isinstance(todo, Statement)
 		self.condition = condition
@@ -413,9 +439,31 @@ class While(Statement):
 		return f"while {self.condition.to_source()} {self.todo.to_source()}"
 		
 		
+class BreakStatement(Statement):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		
+	def __repr__(self):
+		return f"Break()"
+		
+	def to_source(self):
+		return f"break;"
+		
+class ContinueStatement(Statement):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		
+	def __repr__(self):
+		return f"ContinueStatement()"
+		
+	def to_source(self):
+		return f"continue;"
+		
+		
 class ExpressionStatement(Statement):
-	def __init__(self, expr):
-		print(expr)
+	def __init__(self, expr, **kwargs):
+		super().__init__(**kwargs)
+		#print(expr)
 		assert isinstance(expr, Expression)
 		self.expr = expr
 	

@@ -5,7 +5,7 @@
 print 2 + 2.5;        // Type error (int + float)
 print -'c';           // Type error (- char)
 
-var x;                // Must have a type
+//var x;                // Must have a type
 var x int = 2.5;      // Type mismatch in initialization
 var y int;
 var y int;            // Duplicate definition of y

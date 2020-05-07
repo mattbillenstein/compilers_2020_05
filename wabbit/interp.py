@@ -72,7 +72,7 @@ class Environment:
 				return self.consts[i][name]
 		
 		# if you get down here, you didnt find the variable
-		raise RuntimeError(f"{name} not defined before use")
+		raise RuntimeError(f'{name} not defined before use')
 		
 	def setValue(self, name, value):
 		constLevel = -1		# if this stays at -1, then we dont have a const defined with the name
@@ -129,6 +129,12 @@ class Environment:
 		if self.scopeLevel < 0:
 			raise RuntimeError(f"Invalid scope! scopeLevel = {self.scopeLevel}")
 		
+# generate custom exceptions to handle the continue/break conditions
+class BreakException(Exception):
+	pass
+	
+class ContinueException(Exception):
+	pass
 
 		
 class Interpreter:
@@ -166,6 +172,9 @@ class Interpreter:
 	
 	def interpret_Bool(self, node):
 		return node.value
+		
+	def interpret_Unit(self, node):
+		return "()\n"
 
 
 	###
@@ -173,6 +182,19 @@ class Interpreter:
 	###
 	
 	def interpret_BinOp(self, node):
+		
+		# special case for eval short circuiting
+		if node.op == "&&":
+			leftval = self.interpret(node.left)
+			if not leftval:
+				return False
+			return self.interpret(node.right)	
+		if node.op == "||":
+			leftval = self.interpret(node.left)
+			if leftval:
+				return True
+			return self.interpret(node.right)
+			
 		leftval = self.interpret(node.left)
 		rightval = self.interpret(node.right)
 		
@@ -184,7 +206,10 @@ class Interpreter:
 		elif node.op == "*":
 			return leftval * rightval
 		elif node.op == "/":
-			return leftval / rightval
+			val = leftval / rightval
+			if isinstance(leftval, int):
+				val = int(val)
+			return val
 		elif node.op == '<':
 			return leftval < rightval
 		elif node.op == '<=':
@@ -196,7 +221,7 @@ class Interpreter:
 		elif node.op == '==':
 			return leftval == rightval
 		elif node.op == '!=':
-			return leftval != rightval			
+			return leftval != rightval	
 			
 		raise RuntimeError(f"Unknown op {node.op}")
 		
@@ -205,8 +230,10 @@ class Interpreter:
 			return self.interpret(node.right)
 		elif node.op == "-":
 			return -self.interpret(node.right)
+		elif node.op == "!":
+			return not self.interpret(node.right)
 		else:
-			raise RuntimeError("Invalid UnaryOp: %s" % node.op)
+			raise RuntimeError(f"Invalid UnaryOp: {node.op}")
 
 	
 	def interpret_LocationLookup(self, node):
@@ -214,7 +241,7 @@ class Interpreter:
 		
 	
 	def interpret_Grouping(self, node):
-		return self.interpret(node.exprs)
+		return self.interpret(node.expr)
 		
 		
 	def interpret_Compound(self, node):
@@ -246,7 +273,11 @@ class Interpreter:
 
 		
 	def interpret_PrintStatement(self, node):
-		print(f"{self.interpret(node.literal)}")
+		value = self.interpret(node.expr)
+		if isinstance(value, str):
+			print(value, end = '')
+		else:
+			print(value)
 
 
 	def interpret_Statements(self, node):
@@ -289,15 +320,25 @@ class Interpreter:
 				self.env.decreaseScope()
 
 
+
 	def interpret_While(self, node):
 		condition = self.interpret(node.condition)
 		while condition:
-			self.env.increaseScope()
-			self.interpret(node.todo)
-			self.env.decreaseScope()
+			try:			
+				self.env.increaseScope()
+				self.interpret(node.todo)
+				self.env.decreaseScope()
+			except BreakException:
+				break
+			except ContinueException:
+				continue
 			condition = self.interpret(node.condition)
 		
+	def interpret_BreakStatement(self, node):
+		raise BreakException()
 		
+	def interpret_ContinueStatement(self, node):
+		raise ContinueException()
 		
 	###
 	### The meta container ... Program
@@ -305,3 +346,11 @@ class Interpreter:
 	
 	def interpret_Program(self, node):
 		self.interpret_Statements(node.stmts)
+		
+		
+if __name__ == "__main__":
+	from wabbit.parse import parse_file
+	import sys
+	
+	model = parse_file(sys.argv[1])
+	Interpreter().interpret(model)

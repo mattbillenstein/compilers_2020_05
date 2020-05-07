@@ -110,13 +110,13 @@
 
 # Hints:
 # ------
-# In the interpreter, you wrote code that just "did the operation"
+# In the compileer, you wrote code that just "did the operation"
 # right there.  You used Python as the runtime environment.  In the
 # type-checker, you wrote code that merely "checked the operation" to
 # see if there were any errors.  In this project, you have to do a bit
 # of both.  For each object in your model, you're going to write a
 # function that *creates* the code for carrying out the operation.
-# This will be very similar to the interpreter.  However, in order to
+# This will be very similar to the compileer.  However, in order to
 # create this code, you've got to know a few things about types. So,
 # that information has to be tracked as well.  In addition, there's
 # going to be a bit of extra bookkeeping related to the environment.
@@ -131,10 +131,237 @@
 
 from .model import *
 
+
+class CFunction:
+	
+	def __init__(self, name):
+		self.name = name
+		self.locals = ""			# local variables
+		self.statements = ""		# statements 
+
+
+	def __str__(self):
+		return (f"int {self.name}()" + "{\n" + self.locals + "\n" + self.statements + "}\n")
+		
+	
+	
+class WabbitToC:
+
+	def __init__(self, env):
+		self.env = env	
+		self.out = CFunction("main")
+		
+	def compile(self, node):
+		methname = f'compile_{node.__class__.__name__}'   
+		fn = getattr(self, methname)
+
+        # if we dont have a method... 
+		if fn is None:
+			raise RuntimeError(f"Can't compile {node}") 
+			
+		# dispatch
+		return fn(node)
+		
+	def compile_(self, node):
+		print("How the hell did you get here?!?!?!")
+		pass	
+
+	###
+	### Literals
+	###
+			
+	def compile_Integer(self, node):
+		return node.value
+		
+	def compile_Float(self, node):
+		return node.value
+		
+	def compile_Char(self, node):
+		return node.value
+	
+	def compile_Bool(self, node):
+		return node.value
+		
+	def compile_Unit(self, node):
+		return "()\n"
+
+
+	###
+	### Expressions
+	###
+	
+	def compile_BinOp(self, node):
+		
+		# special case for eval short circuiting
+		if node.op == "&&":
+			leftval = self.compile(node.left)
+			if not leftval:
+				return False
+			return self.compile(node.right)	
+		if node.op == "||":
+			leftval = self.compile(node.left)
+			if leftval:
+				return True
+			return self.compile(node.right)
+			
+		leftval = self.compile(node.left)
+		rightval = self.compile(node.right)
+		
+		# Do the operation
+		if node.op == "+":
+			return leftval + rightval
+		elif node.op == "-":
+			return leftval - rightval
+		elif node.op == "*":
+			return leftval * rightval
+		elif node.op == "/":
+			val = leftval / rightval
+			if isinstance(leftval, int):
+				val = int(val)
+			return val
+		elif node.op == '<':
+			return leftval < rightval
+		elif node.op == '<=':
+			return leftval <= rightval
+		elif node.op == '>':
+			return leftval > rightval
+		elif node.op == '>=':
+			return leftval >= rightval
+		elif node.op == '==':
+			return leftval == rightval
+		elif node.op == '!=':
+			return leftval != rightval	
+			
+		raise RuntimeError(f"Unknown op {node.op}")
+		
+	def compile_UnaryOp(self, node):
+		if node.op == "+":
+			return self.compile(node.right)
+		elif node.op == "-":
+			return -self.compile(node.right)
+		elif node.op == "!":
+			return not self.compile(node.right)
+		else:
+			raise RuntimeError(f"Invalid UnaryOp: {node.op}")
+
+	
+	def compile_LocationLookup(self, node):
+		return self.env.get(node.var.name)
+		
+	
+	def compile_Grouping(self, node):
+		return self.compile(node.expr)
+		
+		
+	def compile_Compound(self, node):
+		retval = None
+		self.env.increaseScope()
+		retval = self.compile(node.stmts)
+		self.env.decreaseScope()
+		return retval
+					
+	
+	###
+	### Locations
+	###
+	
+	def compile_Var(self, node):
+		print(f"How did you get to a Var node? {node.name}")
+	
+	
+	###
+	### Statements
+	###
+	
+	def compile_ExpressionStatement(self, node):
+		return self.compile(node.expr)
+		
+		
+	def compile_Assignment(self, node):
+		self.env.setValue(node.left.name, self.compile(node.right))
+
+		
+	def compile_PrintStatement(self, node):
+		value = self.compile(node.expr)
+		if isinstance(value, str):
+			print(value, end = '')
+		else:
+			print(value)
+
+
+	def compile_Statements(self, node):
+		result = None
+		for stmt in node.stmts:
+			result = self.compile(stmt)
+		return result
+		
+	def compile_Block(self, node):
+		result = None
+		self.env.increaseScope()
+		for stmt in node.stmts:
+			result = self.compile(stmt)
+		self.env.decreaseScope()
+		return result
+	
+
+	def compile_ConstDef(self, node):
+		self.env.addConst(node.name, self.compile(node.value))
+		
+		
+	def compile_VarDef(self, node):
+		value = 0
+		if node.value is not None:
+			value = self.compile(node.value)
+		self.env.addValue(node.name, value)
+		
+
+	def compile_IfConditional(self, node):
+		condition = self.compile(node.condition)
+		if condition:
+			self.env.increaseScope()
+			self.compile(node.istrue)
+			self.env.decreaseScope()
+
+		else:
+			if node.isfalse is not None:
+				self.env.increaseScope()
+				self.compile(node.isfalse)
+				self.env.decreaseScope()
+
+
+
+	def compile_While(self, node):
+		condition = self.compile(node.condition)
+		while condition:
+			try:			
+				self.env.increaseScope()
+				self.compile(node.todo)
+				self.env.decreaseScope()
+			except BreakException:
+				break
+			except ContinueException:
+				continue
+			condition = self.compile(node.condition)
+		
+	def compile_BreakStatement(self, node):
+		self.statements += "break;\n"
+		
+	def compile_ContinueStatement(self, node):
+		self.statements += 
+		
+	###
+	### The meta container ... Program
+	###
+	
+	def compile_Program(self, node):
+		self.compile_Statements(node.stmts)	
+		
 # Top-level function to handle an entire program.
 def compile_program(model):
-    # ... you define ...
-    pass
+	compiler = WabbitToC()
+	output = compiler.compile(model)
+	return output
+    
 
 def main(filename):
     from .parse import parse_file
