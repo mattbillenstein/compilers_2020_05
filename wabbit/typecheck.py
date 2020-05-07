@@ -148,11 +148,13 @@ def check_unary_op(node, env):
 
 @rule(Grouping)
 def check_group(node, env):
-    return check(node.expression, env)
+    node.type = check(node.expression, env)
+    return node.type
 
 @rule(Compound)
 def check_compound(node, env):
-    return check(node.statements, env.new_child())
+    node.type = check(node.statements, env.new_child())
+    return node.type
 
 @rule(LoadLocation)
 def check_load_location(node, env):
@@ -164,7 +166,8 @@ def check_load_location(node, env):
 
 @rule(PrintStatement)
 def check_print_statement(node, env):
-    check(node.expression, env)
+    etype = check(node.expression, env)
+    node.expression.type = etype
 
 @rule(ConstDefinition)
 def check_const_definition(node, env):

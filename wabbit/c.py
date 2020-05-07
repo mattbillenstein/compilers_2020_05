@@ -142,10 +142,16 @@ class CFunction:
         self.statements = ""  # Statements generated
 
     def __str__(self):
-        return (f"int {self.name}()" + " {\n" + self.locals + self.statements + "}\n")
+        return (f"int {self.name}()" + " {\n" + self.locals + self.statements + "return 0; }\n")
     
     def tempname(self, node):
         return f'_{id(node)}'
+
+_label_num = 0
+def new_label():
+    global _label_num
+    _label_num += 1
+    return f'L{_label_num}'
 
 # Top-level function to handle an entire program.
 def compile_program(model):
@@ -176,9 +182,23 @@ def compile_integer(node, env, cfunc):
     cfunc.locals += f'int {lname};\n'
     cfunc.statements += f'{lname} = {node.value};\n'
 
+@rule(Char)
+def compile_char(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'char {lname};\n'
+    cfunc.statements += f'{lname} = {ord(node.value)};\n'
+
 @rule(Float)
 def compile_float(node, env, cfunc):
-    return ("float", str(node.value))
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'float {lname};\n'
+    cfunc.statements += f'{lname} = {node.value};\n'
+
+@rule(Bool)
+def compile_bool(node, env, cfunc):
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'bool {lname};\n'
+    cfunc.statements += f'{lname} = {int(node.value)};\n'
 
 @rule(BinOp)
 def compile_binop(node, env, cfunc):
@@ -190,10 +210,22 @@ def compile_binop(node, env, cfunc):
     cfunc.locals += f'{node.type} {myname};\n'
     cfunc.statements += f'{myname} = {lname} {node.op} {rname};\n'
 
+@rule(UnaryOp)
+def compile_unaryop(node, env, cfunc):
+    compile(node.operand, env, cfunc)
+    myname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {myname};\n'
+    cfunc.statements += f'{myname} = {node.op} {cfunc.tempname(node.operand)};\n'
+
 @rule(PrintStatement)
 def compile_print_statement(node, env, cfunc):
     compile(node.expression, env, cfunc)
-    cfunc.statements += f'printf("%i\\n", {cfunc.tempname(node.expression)});\n'
+    if node.expression.type == 'int':
+        cfunc.statements += f'printf("%i\\n", {cfunc.tempname(node.expression)});\n'
+    elif node.expression.type == 'float':
+        cfunc.statements += f'printf("%lf\\n", {cfunc.tempname(node.expression)});\n'
+    elif node.expression.type == 'char':
+        cfunc.statements += f'printf("%c", {cfunc.tempname(node.expression)});\n'
 
 @rule(VarDefinition)
 @rule(ConstDefinition)
@@ -206,11 +238,60 @@ def compile_var_definition(node, env, cfunc):
         compile(node.value, env, cfunc)
         cfunc.statements += f'{node.name} = {cfunc.tempname(node.value)};\n'
 
+@rule(AssignmentStatement)
+def compile_assignment_statement(node, env, cfunc):
+    compile(node.expression, env, cfunc)
+    cfunc.statements += f'{node.location.name} = {cfunc.tempname(node.expression)};\n'
+
 @rule(LoadLocation)
 def compile_load_location(node, env, cfunc):
     lname = cfunc.tempname(node)
     cfunc.locals += f'{node.type} {lname};\n'
     cfunc.statements += f'{lname} = {node.location.name};\n'   # messy.
+
+@rule(Grouping)
+def compile_grouping(node, env, cfunc):
+    compile(node.expression, env, cfunc)
+    lname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {lname};\n'
+    cfunc.statements += f'{lname} = {cfunc.tempname(node.expression)};\n'
+
+@rule(Compound)
+def compile_compound(node, env, cfunc):
+    compile(node.statements, env, cfunc)
+    lname = cfunc.tempname(node)
+    cfunc.locals += '{node.type} {lname};\n'
+    cfunc.statements += f'{lname} = {cfunc.tempname(node.statements)};\n'
+
+@rule(IfStatement)
+def compile_if_statement(node, env, cfunc):
+    compile(node.test, env, cfunc)
+    true_label = new_label()
+    false_label = new_label()
+    merge_label = new_label()
+    cfunc.statements += f'if ({cfunc.tempname(node.test)}) goto {true_label};\n'
+    cfunc.statements += f'goto {false_label};\n'
+    cfunc.statements += f'{true_label}:\n'
+    compile(node.consequence, env.new_child(), cfunc)
+    cfunc.statements += f'goto {merge_label};\n'
+    cfunc.statements += f'{false_label}:\n'
+    compile(node.alternative, env.new_child(), cfunc)
+    cfunc.statements += f'goto {merge_label};\n'
+    cfunc.statements += f'{merge_label}:\n'
+
+@rule(WhileStatement)
+def compile_while_statement(node, env, cfunc):
+    test_label = new_label()
+    body_label = new_label()
+    exit_label = new_label()
+    cfunc.statements += f'{test_label}:\n'
+    compile(node.test, env, cfunc)
+    cfunc.statements += f'if ({cfunc.tempname(node.test)}) goto {body_label};\n'
+    cfunc.statements += f'goto {exit_label};\n'
+    cfunc.statements += f'{body_label}:\n'
+    compile(node.body, env.new_child(), cfunc)
+    cfunc.statements += f'goto {test_label};\n'
+    cfunc.statements += f'{exit_label}:\n'
 
 def main(filename):
     from .parse import parse_file
@@ -221,6 +302,7 @@ def main(filename):
     code = compile_program(model)
     with open('out.c', 'w') as file:
         file.write("#include <stdio.h>\n")
+        file.write("typedef int bool;\n")
         file.write(code)
     print('Wrote: out.c')
 
