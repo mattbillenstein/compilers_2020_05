@@ -28,16 +28,212 @@
 # The directory tests/Errors has Wabbit programs with various errors.
 
 from .model import *
+from collections import ChainMap
 
-# Top-level function used to check programs
+
+# Code almost identical to interpreter
+
 def check_program(model):
-    env = { }
-    check(model, env)
-    # Maybe return True/False if there are errors
+    # Make the initial environment (a dict)
+    env = ChainMap()  # Use instead of dict
+    return check(model, env)
 
-# Internal function used to check nodes with an environment
+
+@singledispatch
 def check(node, env):
-    pass
+    raise RuntimeError(f"Can't check {node}")
+
+
+rule = check.register  # Decorator shortcut
+
+
+@rule(Statements)
+def check_statements(node, env):
+    resulttype = None
+    for stmt in node.statements:
+        resulttype = check(stmt, env)
+    return resulttype if resulttype else "unit"
+
+
+@rule(Integer)
+def check_integer(node, env):
+    # Return the type that results from doing the operation.
+    return "int"
+
+
+@rule(Float)
+def check_float(node, env):
+    return "float"
+
+
+@rule(Bool)
+def check_bool(node, env):
+    return "bool"
+
+
+@rule(Char)
+def check_char(node, env):
+    return "char"
+
+
+# Capability/type table
+_bin_ops = {
+    # Integer operations
+    ('+', 'int', 'int'): 'int',
+    ('-', 'int', 'int'): 'int',
+    ('*', 'int', 'int'): 'int',
+    ('/', 'int', 'int'): 'int',
+    ('<', 'int', 'int'): 'bool',
+    ('<=', 'int', 'int'): 'bool',
+    ('>', 'int', 'int'): 'bool',
+    ('>=', 'int', 'int'): 'bool',
+    ('==', 'int', 'int'): 'bool',
+    ('!=', 'int', 'int'): 'bool',
+
+    # Float operations
+    ('+', 'float', 'float'): 'float',
+    ('-', 'float', 'float'): 'float',
+    ('*', 'float', 'float'): 'float',
+    ('/', 'float', 'float'): 'float',
+    ('<', 'float', 'float'): 'bool',
+    ('<=', 'float', 'float'): 'bool',
+    ('>', 'float', 'float'): 'bool',
+    ('>=', 'float', 'float'): 'bool',
+    ('==', 'float', 'float'): 'bool',
+    ('!=', 'float', 'float'): 'bool',
+
+    # Char operations
+    ('<', 'char', 'char'): 'bool',
+    ('<=', 'char', 'char'): 'bool',
+    ('>', 'char', 'char'): 'bool',
+    ('>=', 'char', 'char'): 'bool',
+    ('==', 'char', 'char'): 'bool',
+    ('!=', 'char', 'char'): 'bool',
+
+    # Bool operations
+    ('==', 'bool', 'bool'): 'bool',
+    ('!=', 'bool', 'bool'): 'bool',
+    ('&&', 'bool', 'bool'): 'bool',
+    ('||', 'bool', 'bool'): 'bool',
+}
+
+
+@rule(BinOp)
+def check_binop(node, env):
+    lefttype = check(node.left, env)  # Type of doing the left
+    righttype = check(node.right, env)  # Type of doing the right
+    # Can I do the operation?  If so, what's the result type?
+    result_type = _bin_ops.get((node.op, lefttype, righttype))  # float + char --> Error. (not in table)
+    if result_type is None:
+        print(f"type error. Can't do {lefttype} {node.op} {righttype}")
+    return result_type
+
+
+_unary_ops = {
+    ('+', 'int'): 'int',
+    ('-', 'int'): 'int',
+    ('+', 'float'): 'float',
+    ('-', 'float'): 'float',
+    ('!', 'bool'): 'bool',
+}
+
+
+@rule(UnaryOp)
+def check_unary_op(node, env):
+    optype = check(node.operand, env)
+    resulttype = _unary_ops.get((node.op, optype))
+    if not resulttype:
+        print(f"type error. Can't do {node.op}{optype}")
+    return resulttype
+
+
+@rule(Grouping)
+def check_group(node, env):
+    return check(node.expression, env)
+
+
+@rule(Compound)
+def check_compound(node, env):
+    return check(node.statements, env.new_child())
+
+
+@rule(LoadLocation)
+def check_load_location(node, env):
+    # Feels wrong. Having to look inside location to get a name.
+    loc = check(node.location, env)
+    if loc:
+        return loc.type
+
+
+@rule(PrintStatement)
+def check_print_statement(node, env):
+    check(node.expression, env)
+
+
+@rule(ConstDefinition)
+def check_const_definition(node, env):
+    value_type = check(node.value, env)
+    if node.type and node.type != value_type:
+        print(f"Error: {node.name} is not declared as {value_type}")
+    env[node.name] = node  # Put the ConstDefinition itself node in the environment
+
+
+@rule(VarDefinition)
+def check_var_definition(node, env):
+    if node.value:
+        value_type = check(node.value, env)
+        if node.type and node.type != value_type:
+            print(f"Error: {node.name} not declared as {value_type}")
+    env[node.name] = node  # Put the VarDefinition node in environment
+
+
+@rule(AssignmentStatement)
+def check_assignment(node, env):
+    '''
+    location = expression;
+    '''
+    expr_type = check(node.expression, env)  # Right side
+    defn = check(node.location, env)
+    if defn is None:
+        print("Error: undefined location!")
+
+    if isinstance(defn, ConstDefinition):
+        print("Error: Can't assign to const")
+
+    if expr_type != defn.type:
+        print("Error. Incompatible types in assignment")
+
+
+@rule(IfStatement)
+def check_if_statement(node, env):
+    # if test { consequence }
+    testtype = check(node.test, env)  # Figure out the type of the test expression
+    if testtype != 'bool':
+        print("Expected a bool for test")
+    check(node.consequence, env.new_child())  # Create a nested environment (new_child)
+    check(node.alternative, env.new_child())
+
+
+@rule(WhileStatement)
+def check_while_statement(node, env):
+    testtype = check(node.test, env)
+    if testtype != 'bool':
+        print("Error")
+    check(nody.body, env.new_child())
+
+
+@rule(ExpressionStatement)
+def check_expr_statement(node, env):
+    return check(node.expression, env)
+
+
+@rule(NamedLocation)
+def check_location(node, env):
+    defn = env.get(node.name)
+    if not defn:
+        print(f"{node.name} not defined!")
+    return defn
+
 
 # Sample main program
 def main(filename):
@@ -45,13 +241,8 @@ def main(filename):
     model = parse_file(filename)
     check_program(model)
 
+
 if __name__ == '__main__':
     import sys
+
     main(sys.argv[1])
-
-
-
-        
-
-
-        
