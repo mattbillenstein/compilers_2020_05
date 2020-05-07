@@ -114,9 +114,6 @@ class Interpreter:
     def visit_Name(self, node):
         return self.env.get(node.value)
 
-    def visit_Attribute(self, node):
-        return f'{self.visit(node.name)}.{self.visit(node.attr)}'
-
     def visit_Type(self, node):
         return {
             'int': int,
@@ -181,6 +178,7 @@ class Interpreter:
     def visit_Const(self, node):
         name = node.name.value
         self.current_scope()[name] = v = self.visit(node.arg)
+
         if node.type is not None:
             t = self.visit(node.type)
             assert isinstance(v, t), (v, t)
@@ -213,8 +211,7 @@ class Interpreter:
 
     def visit_While(self, node):
         while self.visit(node.cond):
-            ret = self.visit(node.block)
-        return ret
+            self.visit(node.block)
 
     def visit_Func(self, node):
         # just store the function node into the current scope, see Call for
@@ -236,6 +233,7 @@ class Interpreter:
             return d
 
         # visit args and put them into a scope
+        assert len(func.args) == len(node.args)
         args = {}
         for farg, arg in zip(func.args, node.args):
             args[farg.name.value] = self.visit(arg)
@@ -243,13 +241,22 @@ class Interpreter:
         # visit block, args get injected into the block scope there
         return self.visit_Block(func.block, args)
 
+    # TODO: struct stuff
+
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
         # instances...
         self.env[node.name.value] = node
 
     def visit_Field(self, node):
+        duh
         return node.name.value, self.visit(node.type)
+
+    def visit_Attribute(self, node):
+        duh
+        return f'{self.visit(node.name)}.{self.visit(node.attr)}'
+
+    # TODO: enum stuff
 
     def visit_Enum(self, node):
         duh
