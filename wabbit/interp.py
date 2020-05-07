@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -m
 
 # interp.py
 #
@@ -47,8 +47,8 @@ import sys
 from collections import ChainMap
 from functools import wraps
 
-from model import *
-from parse import parse
+from .model import *
+from .parse import parse
 
 class DeepChainMap(ChainMap):
     'Variant of ChainMap that allows direct updates to inner scopes'
@@ -66,11 +66,6 @@ class DeepChainMap(ChainMap):
                 del mapping[key]
                 return
         raise KeyError(key)
-
-# TODO
-# - Program node, so Block doesn't need to return
-# - Scope only if var/const in a block?
-# - look at scoping more - make sure we set things in the proper scope
 
 def new_scope(func):
     '''Call function with new scope, remove it after the function exits'''
@@ -93,6 +88,10 @@ def new_scope(func):
 
 
 class Interpreter:
+    # TODO
+    # - Program node, so Block doesn't need to return
+    # - Scope only if var/const in a block?
+
     def __init__(self):
         self.env = None
         self.stdout = []

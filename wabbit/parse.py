@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -m
 
 # parse.py
 #
@@ -118,10 +118,11 @@
 
 import os.path
 
-from model import *
-from tokenize import tokenize, WabbitLexer
-
 import sly
+
+from .model import *
+from .tokenize import tokenize, WabbitLexer
+
 
 class WabbitParser(sly.Parser):
     debugfile = 'parser.txt'
