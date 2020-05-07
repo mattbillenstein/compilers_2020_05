@@ -61,7 +61,18 @@ class MinCCompiler(ScopeAwareModelVisitor):
         return node.location.visit(self, ctx) + (' = ' + node.value.visit(self, ctx) if node.value is not None else '') + ';'
     
     def visit_PrintStatement(self, node, ctx):
-        return 'print ' + node.expr.visit(self, ctx) + ';'
+        exprtype, exprval = node.expr.visit(self, ctx)
+        fmt = exprtype
+        if exprtype == 'int':
+            fmt = '%i'
+        elif exprtype == 'float':
+            fmt = '%f'
+        elif exprtype == 'char':
+            fmt = '%f'
+        else:
+            raise Exception('idk', exprtype)
+        self.csrc.append('printf("' + fmt + '\\n", ' + exprval + ');')
+        return (None, None)
     
     def visit_ConditionalStatement(self, node, ctx):
         ret = []
@@ -98,13 +109,17 @@ class MinCCompiler(ScopeAwareModelVisitor):
     def visit_BinOp(self, node, ctx):
         lefttype, leftexpr = node.left.visit(self, ctx)
         righttype, rightexpr = node.right.visit(self, ctx)
-        result_type = None
+        result_type = 'int'
         cvar = self.next_cvar()
         self.csrc.append(''.join([cvar, ' = ', leftexpr, ' ', node.op, ' ', rightexpr, ';']))
         return (result_type, cvar)
     
     def visit_UnOp(self, node, ctx):
-        return node.op + node.right.visit(self, ctx)
+        righttype, rightexpr = node.right.visit(self, ctx)
+        result_type = 'int'
+        cvar = self.next_cvar()
+        self.csrc.append(''.join([cvar, ' = ', node.op, ' ', rightexpr, ';']))
+        return (result_type, cvar)
     
     def visit_BlockExpression(self, node, ctx):
         return '{ ' + ' '.join(node.block.visit(self, ctx)) + ' }'

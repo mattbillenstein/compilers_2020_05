@@ -91,18 +91,21 @@ class ScriptModels(unittest.TestCase):
         print -2 + 3;
         print 2 * 3 + -4;""")
         minc = dedent("""\
-        t1 = 3 * -4;
-        t2 = 2 * t1;
-        printf("%i\n", t2)
-        t3 = 3.0 / -4.0;
-        t4 = 2.0 - t3;
-        printf("%f\n", t4)
-        t5 = -2 + 3;
-        printf("%i\n", t5)
-        t6 = 3 + -4;
-        t7 = 2 * t6;
-        printf("%i\n", t7)
-        """)
+        t1 = - 4;
+        t2 = 3 * t1;
+        t3 = 2 + t2;
+        printf("%i\\n", t3);
+        t4 = - 4.0;
+        t5 = 3.0 / t4;
+        t6 = 2.0 - t5;
+        printf("%f\\n", t6);
+        t7 = - 2;
+        t8 = t7 + 3;
+        printf("%i\\n", t8);
+        t9 = 2 * 3;
+        t10 = - 4;
+        t11 = t9 + t10;
+        printf("%i\\n", t11);""")
         wasm = ''
         llvm = ''
         errors = []
