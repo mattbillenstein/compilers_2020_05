@@ -109,7 +109,7 @@ class BinOp(Expression):
         self.op = op
         self.left = left
         self.right = right
-        self.is_valid()
+        # self.is_valid()
 
     def __repr__(self):
         return f"BinOp('{self.op}', {self.left}, {self.right})"
@@ -296,7 +296,7 @@ class UnaryOp(Expression):
     def __init__(self, op, value):
         self.op = op
         self.value = value
-        self.is_valid()
+        # self.is_valid()
 
     def __repr__(self):
         return f"UnaryOp('{self.op}', {self.value})"

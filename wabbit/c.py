@@ -135,29 +135,42 @@ from functools import singledispatch
 from .model import *
 from .parse import parse_source
 
-c_print = 'printf("%i\\n", {});'
+c_print = '    printf("%i\\n", {});'
 
 c_wrap = """
 #include <stdio.h>
 
 int main() {{
-   {code}
+
+{var_names}
+
+{code}
    return 0;
 }}
 """
+
+def emit_variable_name():
+    n = 0
+    while True:
+        yield "t_%d" % n
+        n += 1
+
+var_name = emit_variable_name()
 
 
 # Top-level function to handle an entire program.
 def compile_program(model):
     env = ChainMap()  # is this needed?
     lines = []
-    convert(model, env, lines)
+    all_vars = []
+    convert(model, env, lines, all_vars)
     code = "\n".join(lines)
-    return c_wrap.format(code=code)
+    all_vars = "\n".join(all_vars)
+    return c_wrap.format(code=code, var_names=all_vars)
 
 
 @singledispatch
-def convert(node, env, lines):
+def convert(node, env, lines, all_vars):
     raise RuntimeError(f"Can't convert {node}")
 
 add = convert.register
@@ -165,8 +178,8 @@ add = convert.register
 # Order alphabetically so that they are easier to find
 
 @add(Assignment)
-def convert_Assignment(node, env, lines):
-    value = convert(node.expression, env, lines)
+def convert_Assignment(node, env, lines, all_vars):
+    value = convert(node.expression, env, lines, all_vars)
     name = node.location.name
     # find the nearest environment in which this variable is known.
     for e in env.maps:
@@ -175,9 +188,15 @@ def convert_Assignment(node, env, lines):
             return
 
 @add(BinOp)
-def convert_BinOp(node, env, lines):
-    left = convert(node.left, env, lines)
-    right = convert(node.right, env, lines)
+def convert_BinOp(node, env, lines, all_vars):
+    left = convert(node.left, env, lines, all_vars)
+    right = convert(node.right, env, lines, all_vars)
+    var = next(var_name)
+    all_vars.append("    int {};".format(var))
+    lines.append("    {} = {} {} {};".format(var, left, node.op, right))
+    return var
+
+    right_var = emit_variable_name()
     if node.op == "+":
         return left + right
     elif node.op == "-":
@@ -205,76 +224,76 @@ def convert_BinOp(node, env, lines):
         raise RuntimeError(f"Unsupported operator {node.op}")
 
 @add(Const)
-def convert_Const(node, env, lines):
+def convert_Const(node, env, lines, all_vars):
     name = node.name
-    value = convert(node.value, env, lines)
+    value = convert(node.value, env, lines, all_vars)
     env[name] = value
 
 @add(Compound)
-def convert_Compound(node, env, lines):
+def convert_Compound(node, env, lines, all_vars):
     new_env = env.new_child()
     for s in node.statements:
-        result = convert(s, new_env, lines)
+        result = convert(s, new_env, lines, all_vars)
     return result
 
 @add(ExpressionStatement)
-def convert_ExpressionStatement(node, env, lines):
-    return convert(node.expression, env, lines)
+def convert_ExpressionStatement(node, env, lines, all_vars):
+    return convert(node.expression, env, lines, all_vars)
 
 @add(Float)
-def convert_Float(node, env, lines):
+def convert_Float(node, env, lines, all_vars):
     return node.value
 
 @add(If)
-def convert_If(node, env, lines):
-    condition = convert(node.condition, env, lines)
+def convert_If(node, env, lines, all_vars):
+    condition = convert(node.condition, env, lines, all_vars)
     if condition:
         convert(node.result, env.new_child())
     elif node.alternative is not None:
         convert(node.alternative, env.new_child())
 
 @add(Integer)
-def convert_Integer(node, env, lines):
+def convert_Integer(node, env, lines, all_vars):
     return node.value
 
 @add(Group)
-def convert_Group(node, env, lines):
-    return convert(node.expression, env, lines)
+def convert_Group(node, env, lines, all_vars):
+    return convert(node.expression, env, lines, all_vars)
 
 @add(Name)
-def convert_Name(node, env, lines):
+def convert_Name(node, env, lines, all_vars):
     return env[node.name]
 
 @add(Print)
-def convert_Print(node, env, lines):
-    expr = convert(node.expression, env, lines)
+def convert_Print(node, env, lines, all_vars):
+    expr = convert(node.expression, env, lines, all_vars)
     lines.append(c_print.format(expr))
 
 
 @add(Statements)
-def convert_Statements(node, env, lines):
+def convert_Statements(node, env, lines, all_vars):
     for s in node.statements:
-        convert(s, env, lines)
+        convert(s, env, lines, all_vars)
 
 @add(Type)
-def convert_Type(node, env, lines):
+def convert_Type(node, env, lines, all_vars):
     return node.type
 
 @add(UnaryOp)
-def convert_UnaryOp(node, env, lines):
-    value = convert(node.value, env, lines)
+def convert_UnaryOp(node, env, lines, all_vars):
+    value = convert(node.value, env, lines, all_vars)
     if node.op == "-":
         return -value
     else:
         return value
 
 @add(Var)
-def convert_Var(node, env, lines):
+def convert_Var(node, env, lines, all_vars):
     # Assign default values of 0 if none are given
     # This is not defined in the specs.
     type = node.type
     if node.value:
-        value = convert(node.value, env, lines)
+        value = convert(node.value, env, lines, all_vars)
     elif type == 'float':
         value = 0.0
     else:
@@ -283,9 +302,9 @@ def convert_Var(node, env, lines):
 
 
 @add(While)
-def convert_While(node, env, lines):
+def convert_While(node, env, lines, all_vars):
     while True:
-        condition = convert(node.condition, env, lines)
+        condition = convert(node.condition, env, lines, all_vars)
         if condition:
             convert(node.statements, env.new_child())
         else:
