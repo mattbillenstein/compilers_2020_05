@@ -225,6 +225,10 @@ class WabbitParser(sly.Parser):
     def node(self, p):
         return Float(float(p.FLOAT))
 
+    @_('CHAR')
+    def node(self, p):
+        return Char(p.CHAR)
+
     @_('name')
     def node(self, p):
         return p.name

@@ -118,6 +118,11 @@ class WabbitLexer(sly.Lexer):
     INTEGER = r'\d+'
     CHAR = r"'(\\'|.)*?'"
 
+    def CHAR(self, t):
+        # emit escaped without quotes so we can reconstruct in to_source
+        t.value = t.value[1:-1]
+        return t
+
     # keywords
     NAME['const'] = CONST
     NAME['var'] = VAR
@@ -154,7 +159,7 @@ class WabbitLexer(sly.Lexer):
     LBRACE = r'\{'
     RBRACE = r'\}'
     DOT = r'\.'
-    COMMA = r','  # FIXME
+    COMMA = r','
 
     def error(self, t):
         print("Illegal character '%s'" % t.value[0])

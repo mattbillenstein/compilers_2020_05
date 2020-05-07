@@ -70,6 +70,17 @@ class Type(Node):
     def __repr__(self):
         return f'Type({self.type})'
 
+class Char(Node):
+    def __init__(self, value):
+        assert isinstance(value, str)
+        self.value = value
+
+    def unescape(self):
+        return self.value.encode('utf8').decode('unicode_escape')
+
+    def __repr__(self):
+        return f"Char('{self.value}')"
+
 class Integer(Node):
     '''
     Example: 42

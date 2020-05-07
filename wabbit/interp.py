@@ -124,6 +124,10 @@ class Interpreter:
     def visit_Float(self, node):
         return node.value
 
+    def visit_Char(self, node):
+        # only during execution, return the unescaped char
+        return node.unescape()
+
     def visit_BinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)

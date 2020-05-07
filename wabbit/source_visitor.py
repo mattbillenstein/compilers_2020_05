@@ -27,6 +27,9 @@ class SourceVisitor:
     def visit_Float(self, node):
         return f'{node.value}'
 
+    def visit_Char(self, node):
+        return f"'{node.value}'"
+
     def visit_BinOp(self, node):
         return f'{self.visit(node.left)} {node.op} {self.visit(node.right)}'
 

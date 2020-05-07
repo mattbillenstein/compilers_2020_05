@@ -172,6 +172,10 @@ source5 = '''
     x = { var t = y; y = x; t; };
     print x;
     print y;
+    print 'a';
+    print '\\n';
+    print '\\\'';
+    print '\\x61';
 '''
 
 model5 = Block([
@@ -185,11 +189,15 @@ model5 = Block([
     ),
     Print(Name('x')),
     Print(Name('y')),
+    Print(Char('a')),
+    Print(Char('\\n')),
+    Print(Char('\\\'')),
+    Print(Char('\\x61')),
 ], indent=' '*4)
 
 compare_source(model5, source5)
 x, env, stdout = interpret(model5)
-assert stdout == [42, 37], (x, env, stdout)
+assert stdout == [42, 37, 'a', '\n', '\'', '\x61'], (x, env, stdout)
 compare_model(parse(source5), model5)
 
 # ----------------------------------------------------------------------
