@@ -78,9 +78,9 @@ OPERATIONS = {
     "==": operator.eq,
     "!=": operator.ne,
     ">": operator.gt,
-    "<": operator.le,
-    ">=": lambda a, b: operator.eq(a, b) or operator.gt(a, b),
-    "<=": lambda a, b: operator.eq(a, b) or operator.lt(a, b),
+    "<": operator.lt,
+    ">=": operator.ge,
+    "<=": operator.le,
 }
 
 
