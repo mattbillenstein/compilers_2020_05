@@ -205,6 +205,56 @@ def test_const_definition():
     )
 
 
+def test_var_definition():
+    parser = WabbitParser()
+
+    source = "var maxSeen = 2 + x * 7;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Var(
+                "maxSeen",
+                None,
+                BinOp("+", Integer(2), BinOp("*", Variable("x"), Integer(7))),
+            )
+        ]
+    )
+
+    source = "var lastSeen = x;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Var("lastSeen", None, Variable("x"),)])
+
+    source = "var lastSeen = 23.9;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Var("lastSeen", None, Float("23.9"))])
+
+    source = "var maxSeen int = 2 + x * 7;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [
+            Var(
+                "maxSeen",
+                "int",
+                BinOp("+", Integer(2), BinOp("*", Variable("x"), Integer(7))),
+            )
+        ]
+    )
+
+    source = "var lastSeen Point = x;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Var("lastSeen", "Point", Variable("x"),)]
+    )
+
+    source = "var lastSeen Line = 23.9;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Var("lastSeen", "Line", Float("23.9"))])
+
+    source = "var amount Currency;"
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Var("amount", "Currency", None)])
+
+
 def test_script_models():
     parser = WabbitParser()
 

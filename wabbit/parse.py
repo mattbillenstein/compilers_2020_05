@@ -93,7 +93,7 @@ class WabbitParser(Parser):
     @_(
         "print_statement",
         "assignment_statement",
-        # "variable_definition",
+        "variable_definition",
         "const_definition",
         "expression_statement",
         # "func_definition",
