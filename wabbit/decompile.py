@@ -4,68 +4,68 @@ from typing import List
 
 def to_wabbit(node):
     decompiler = WabbitDecompiler()
-    return node.visit(decompiler)
+    return node.visit(decompiler, {})
 
 
 class WabbitDecompiler(ModelVisitor):
     def __init__(self):
         return
 
-    def visit_StorageLocation(self, node):
-        return node.identifier.visit(self)
+    def visit_StorageLocation(self, node, ctx):
+        return node.identifier.visit(self, ctx)
 
-    def visit_DeclStorageLocation(self, node):
+    def visit_DeclStorageLocation(self, node, ctx):
         ret = 'const' if node.const else 'var'
         ret += ' ' + node.identifier.name
         if node._type:
             ret += ' ' + str(node._type)
         return ret
 
-    def visit_ScalarNode(self, node):
+    def visit_ScalarNode(self, node, ctx):
         return repr(node.value)
 
-    def visit_AssignStatement(self, node):
-        return node.location.visit(self) + (' = ' + node.value.visit(self) if node.value is not None else '') + ';'
+    def visit_AssignStatement(self, node, ctx):
+        return node.location.visit(self, ctx) + (' = ' + node.value.visit(self, ctx) if node.value is not None else '') + ';'
 
-    def visit_BinOp(self, node):
-        return ' '.join([node.left.visit(self), node.op, node.right.visit(self)])
+    def visit_BinOp(self, node, ctx):
+        return ' '.join([node.left.visit(self, ctx), node.op, node.right.visit(self, ctx)])
 
-    def visit_UnOp(self, node):
-        return node.op + node.right.visit(self)
+    def visit_UnOp(self, node, ctx):
+        return node.op + node.right.visit(self, ctx)
 
-    def visit_PrintStatement(self, node):
-        return 'print ' + node.expr.visit(self) + ';'
+    def visit_PrintStatement(self, node, ctx):
+        return 'print ' + node.expr.visit(self, ctx) + ';'
 
-    def visit_ConditionalStatement(self, node):
+    def visit_ConditionalStatement(self, node, ctx):
         ret = []
-        ret.append('if ' + node.cond.visit(self) + ' {')
-        for line in node.blockT.visit(self):
+        ret.append('if ' + node.cond.visit(self, ctx) + ' {')
+        for line in node.blockT.visit(self, ctx):
             ret.append("\t" + line)
         ret.append('} else {')
-        for line in node.blockF.visit(self):
+        for line in node.blockF.visit(self, ctx):
             ret.append("\t" + line)
         ret.append('}')
         return ret
 
-    def visit_ConditionalLoopStatement(self, node):
+    def visit_ConditionalLoopStatement(self, node, ctx):
         ret = []
-        ret.append('while ' + node.cond.visit(self) + ' {')
-        for line in node.block.visit(self):
+        ret.append('while ' + node.cond.visit(self, ctx) + ' {')
+        for line in node.block.visit(self, ctx):
             ret.append("\t" + line)
         ret.append('}')
         return ret
 
-    def visit_BlockExpression(self, node):
-        return '{ ' + ' '.join(node.block.visit(self)) + ' }'
+    def visit_BlockExpression(self, node, ctx):
+        return '{ ' + ' '.join(node.block.visit(self, ctx)) + ' }'
 
-    def visit_ExpressionStatement(self, node):
-        return node.statement.visit(self) + ';'
+    def visit_ExpressionStatement(self, node, ctx):
+        return node.statement.visit(self, ctx) + ';'
 
-    def visit_FuncCall(self, node):
-        args = ', '.join(arg.visit(self) for arg in node.args)
+    def visit_FuncCall(self, node, ctx):
+        args = ', '.join(arg.visit(self, ctx) for arg in node.args)
         return node.name + '(' + args + ')'
 
-    def visit_FuncDeclStatement(self, node):
+    def visit_FuncDeclStatement(self, node, ctx):
         ret = []
         args = []
         for arg in node.args:
@@ -76,24 +76,24 @@ class WabbitDecompiler(ModelVisitor):
         ret.append('}')
         return ret
 
-    def visit_ReturnStatement(self, node):
-        return 'return ' + node.retval.visit(self) + ';'
+    def visit_ReturnStatement(self, node, ctx):
+        return 'return ' + node.retval.visit(self, ctx) + ';'
 
-    def visit_Statements(self, node, inner=False):
+    def visit_Statements(self, node, ctx):
         ret = []
         for stmt in node.statements:
-            code = stmt.visit(self)
+            code = stmt.visit(self, ctx)
             if isinstance(code, list):
                 ret.extend(code)
             else:
                 ret.append(code)
         return ret
 
-    def visit_Program(self, node): 
-        return '\n'.join(node.statements.visit(self))
+    def visit_Program(self, node, ctx): 
+        return '\n'.join(node.statements.visit(self, ctx))
 
-    def visit_Grouping(self, node):
-        return '(' + node.expr.visit(self) + ')'
+    def visit_Grouping(self, node, ctx):
+        return '(' + node.expr.visit(self, ctx) + ')'
 
-    def visit_StorageIdentifier(self, node):
+    def visit_StorageIdentifier(self, node, ctx):
         return str(node.name)

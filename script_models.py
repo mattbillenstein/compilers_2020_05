@@ -24,7 +24,7 @@ from wabbit.model import *
 from wabbit.decompile import to_wabbit
 from wabbit.parse import to_model
 from wabbit.tokenize import to_tokens, Token
-from wabbit.check import check_program
+from wabbit.check import check_statements
 from wabbit.interp import interpret_program
 from textwrap import dedent
 import unittest
@@ -38,12 +38,12 @@ class ScriptModels(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
 
-    def programs_match(self, wabbit, tokens, model, stdout):
+    def programs_match(self, wabbit, tokens, statements, stdout):
         self.assertEqual(list(to_tokens(wabbit)), tokens)
-        self.assertEqual(to_model(iter(tokens)), model)
-        self.assertTrue(check_program(model))
-        self.assertEqual(interpret_program(model), stdout)
-        self.assertEqual('\n'.join(to_wabbit(model)), wabbit)
+        self.assertEqual(to_model(iter(tokens)), statements)
+        self.assertTrue(check_statements(statements))
+        self.assertEqual(interpret_program(Program(statements)), stdout)
+        self.assertEqual('\n'.join(to_wabbit(statements)), wabbit)
 
     def test_simple(self):
         # ----------------------------------------------------------------------
@@ -305,7 +305,7 @@ class ScriptModels(unittest.TestCase):
         x = { var t = y; y = x; t; };
         print x;
         print y;''')
-        stdout = ['42', '42']
+        stdout = ['42', '37']
 
         tokens = [
             Token(type='VAR', value='var', lineno=1, index=0),

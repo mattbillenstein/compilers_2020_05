@@ -6,12 +6,12 @@ class Node():
     def __repr__(self):
         return "{}.{}<{}>({})".format(self.__class__.__module__, self.__class__.__name__, id(self), self.__dict__)
 
-    def visit(self, visitor):
+    def visit(self, visitor, ctx):
         methname = 'visit_' + type(self).__name__
         meth = getattr(visitor, methname, None)
         if meth is None:
             raise NotImplementedError
-        return meth(self)
+        return meth(self, ctx)
 
 
 class ExpressionNode(Node):
@@ -33,9 +33,6 @@ class Statements(Node):
 class Program(Node):
     statements: Statements
 
-
-class BlockNode(Node):
-    lines: List[StatementNode]
 
 # Variables
 
@@ -144,8 +141,8 @@ class BlockExpression(ExpressionNode):
 
 @dataclass
 class ScalarNode(ExpressionNode):
-    def visit(self, visitor):
-        return visitor.visit_ScalarNode(self)
+    def visit(self, visitor, ctx):
+        return visitor.visit_ScalarNode(self, ctx)
 
 
 @dataclass
@@ -167,71 +164,68 @@ class ModelVisitor:
     def __init__(self):
         raise NotImplementedError
     
-    def visit_Statements(self, node):
+    def visit_Statements(self, node, parent_ctx):
         raise NotImplementedError
     
-    def visit_Program(self, node):
+    def visit_Program(self, node, env):
         raise NotImplementedError
     
-    def visit_BlockNode(self, node):
+    def visit_StorageIdentifier(self, node, ctx):
         raise NotImplementedError
     
-    def visit_StorageIdentifier(self, node):
+    def visit_StorageLocation(self, node, ctx):
         raise NotImplementedError
     
-    def visit_StorageLocation(self, node):
+    def visit_DeclStorageLocation(self, node, ctx):
         raise NotImplementedError
     
-    def visit_DeclStorageLocation(self, node):
+    def visit_FuncCall(self, node, ctx):
         raise NotImplementedError
     
-    def visit_FuncCall(self, node):
+    def visit_FuncDeclStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_FuncDeclStatement(self, node):
+    def visit_AssignStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_AssignStatement(self, node):
+    def visit_PrintStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_PrintStatement(self, node):
+    def visit_ConditionalStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ConditionalStatement(self, node):
+    def visit_ConditionalLoopStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ConditionalLoopStatement(self, node):
+    def visit_ContinueLoopStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ContinueLoopStatement(self, node):
+    def visit_BreakLoopStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_BreakLoopStatement(self, node):
+    def visit_ExpressionStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ExpressionStatement(self, node):
+    def visit_ReturnStatement(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ReturnStatement(self, node):
+    def visit_BinOp(self, node, ctx):
         raise NotImplementedError
     
-    def visit_BinOp(self, node):
+    def visit_UnOp(self, node, ctx):
         raise NotImplementedError
     
-    def visit_UnOp(self, node):
+    def visit_BlockExpression(self, node, ctx):
         raise NotImplementedError
     
-    def visit_BlockExpression(self, node):
+    def visit_ScalarNode(self, node, ctx):
         raise NotImplementedError
     
-    def visit_ScalarNode(self, node):
+    def visit_Int(self, node, ctx):
         raise NotImplementedError
     
-    def visit_Int(self, node):
+    def visit_Char(self, node, ctx):
         raise NotImplementedError
     
-    def visit_Char(self, node):
-        raise NotImplementedError
-    
-    def visit_Float(self, node):
+    def visit_Float(self, node, ctx):
         raise NotImplementedError

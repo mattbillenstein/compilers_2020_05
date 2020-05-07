@@ -29,10 +29,14 @@
 
 from .model import *
 
+def check_program(program):
+    return True
+
+
 # Top-level function used to check programs
-def check_program(model):
+def check_statements(statements):
     env = { }
-    return check(model, env)
+    return check(statements, env)
     # Maybe return True/False if there are errors
 
 # Internal function used to check nodes with an environment
