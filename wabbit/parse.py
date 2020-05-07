@@ -210,8 +210,8 @@ class Parser(BaseParser):
             or self.vardef()
             or self.constdef()
             or self.if_()
-            or self.expression()
             or self.assign()
+            or self.expression()
         )
 
         if statement:
