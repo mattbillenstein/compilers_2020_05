@@ -54,13 +54,17 @@ class BaseParser:
         return tok
 
     def accept(self, *types_) -> Optional[Token]:
-        print(blue(f"accept({types_}) next = {self.peek()}"))
-        tok = self.peek()
+        # print(blue(f"accept({types_}) next = {self.peek()}"))
+        try:
+            tok = self.peek()
+        except StopIteration:
+            return None
+
         if tok.type_ in types_:
             print(green(f"    -> {tok}"))
             self.lookahead = None
             return tok
-        print(blue("    -> reject"))
+        # print(blue("    -> reject"))
         return None
 
 
@@ -86,6 +90,8 @@ class Parser(BaseParser):
             if not statement:
                 break
             statements.append(statement)
+
+        print(green(f"    parsed Statements: {statements}"))
         return Statements(statements)
 
     # statement : print_statement
@@ -113,7 +119,11 @@ class Parser(BaseParser):
 
         if statement:
             print(green(f"    parsed Statement: {statement}"))
-        return statement
+
+            if self.accept("SEMICOLON"):  # ?
+                self.lookahead = None
+
+            return statement
 
     # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     def if_(self) -> Optional[Statement]:
@@ -274,9 +284,6 @@ class Parser(BaseParser):
             right = self._additive_term()
             assert right, "Expected right"
             left = BinOp(tok.token, left, right)  # type: ignore
-
-        if self.accept("SEMICOLON"):  # ?
-            self.lookahead = None
 
         print(green(f"    parsed Expression {left}"))
         return left
