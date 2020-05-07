@@ -252,7 +252,12 @@ class Struct(Definition):
         self.args = args
 
     def __repr__(self):
-        return f"Struct({self.name}, {repr(*self.args)})"
+        return f"Struct({self.name}, {self.args})"
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.name == other.name and self.args == other.args
 
 
 class Argument(Definition):

@@ -350,3 +350,24 @@ def test_parser_basics():
     assert parser.parse(tokens) == Statements(
         [BinOp("+", Integer(2), BinOp("/", Integer(3), Integer(7)))]
     )
+
+
+def test_parser_struct():
+    parser = WabbitParser()
+
+    source = """struct Point {
+        x int;
+        y float;
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements(
+        [Struct("Point", Argument("x", "int"), Argument("y", "float"))]
+    )
+
+    source = """struct Fraction {
+    }
+    """
+    tokens = tokenize(source)
+    assert parser.parse(tokens) == Statements([Struct("Fraction")])
+

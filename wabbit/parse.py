@@ -97,7 +97,7 @@ class WabbitParser(Parser):
         "const_definition",
         "expression_statement",
         "func_definition",
-        # "struct_definition",
+        "struct_definition",
         # "enum_definition",
         # "if_statement",
         # "if_let_statement",
