@@ -57,6 +57,12 @@ class ScriptModels(unittest.TestCase):
         #
         
         wabbit = "2 + 3 * 4;"
+        minc = dedent("""\
+        t1 = 3 * 4;
+        t2 = 2 + t1;
+        t2;""")
+        wasm = ''
+        llvm = ''
         tokens = [
             Token(type='INTEGER', value='2', lineno=1, index=0),
             Token(type='PLUS', value='+', lineno=1, index=2),
@@ -68,9 +74,6 @@ class ScriptModels(unittest.TestCase):
         model = Statements([ExpressionStatement(BinOp('+', Int(2), BinOp('*', Int(3), Int(4))))])
         stdout = []
         errors = []
-        minc = ''
-        wasm = ''
-        llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_print(self):
@@ -87,6 +90,22 @@ class ScriptModels(unittest.TestCase):
         print 2.0 - 3.0 / -4.0;
         print -2 + 3;
         print 2 * 3 + -4;""")
+        minc = dedent("""\
+        t1 = 3 * -4;
+        t2 = 2 * t1;
+        printf("%i\n", t2)
+        t3 = 3.0 / -4.0;
+        t4 = 2.0 - t3;
+        printf("%f\n", t4)
+        t5 = -2 + 3;
+        printf("%i\n", t5)
+        t6 = 3 + -4;
+        t7 = 2 * t6;
+        printf("%i\n", t7)
+        """)
+        wasm = ''
+        llvm = ''
+        errors = []
         stdout = ['-10', '2.75', '1', '2']
 
         tokens = [
@@ -129,10 +148,6 @@ class ScriptModels(unittest.TestCase):
             PrintStatement(BinOp('+', BinOp('*', Int(2), Int(3)), UnOp('-', Int(4)))),
             ])
         
-        errors = []
-        minc = ''
-        wasm = ''
-        llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, wasm, llvm)
 
     def test_var(self):
