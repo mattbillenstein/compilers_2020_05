@@ -118,8 +118,8 @@
 
 import os.path
 
-from .model import *
-from .tokenize import tokenize, WabbitLexer
+from model import *
+from tokenize import tokenize, WabbitLexer
 
 import sly
 
