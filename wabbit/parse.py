@@ -1,4 +1,112 @@
+"""
+program : statements EOF
+
+statements : { statement }
+
+statement : print_statement
+          | assignment_statement
+          | variable_definition
+          | const_definition
+          | func_definition
+          | struct_definition
+          | enum_definition
+          | if_statement
+          | if_let_statement
+          | while_statement
+          | while_let_statement
+          | break_statement
+          | continue_statement
+          | return_statement
+          | expression SEMI
+
+print_statement : PRINT expression SEMI
+
+assignment_statement : location ASSIGN expression SEMI
+
+variable_definition : VAR NAME [ type ] ASSIGN expression SEMI
+                    | VAR NAME type [ ASSIGN expression ] SEMI
+
+const_definition : CONST NAME [ type ] ASSIGN expression SEMI
+
+func_definition : FUNC NAME LPAREN [ parameters ] RPAREN type LBRACE statements RBRACE
+
+parameters : parameter { COMMA parameter }
+           | empty
+
+parameter  : NAME type
+
+struct_definition : STRUCT NAME LBRACE { struct_field } RBRACE
+
+struct_field : NAME type SEMI
+
+enum_definition : ENUM NAME LBRACE { enum_choice } RBRACE
+
+enum_choice : NAME SEMI
+            | NAME LPAREN type RPAREN
+
+if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
+
+if_let_statement : IF LET pattern ASSIGN expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]  # noqa
+
+while_statement : WHILE expr LBRACE statements RBRACE
+
+while_let_statement : WHILE LET pattern ASSIGN expression LBRACE statements RBRACE
+
+break_statement : BREAK SEMI
+
+continue_statement : CONTINUE SEMI
+
+return_statement : RETURN expression SEMI
+
+expression : orterm { LOR ortem }
+
+orterm : andterm { LAND andterm }
+
+andterm : sumterm { LT|LE|GT|GE|EQ|NE sumterm }
+
+sumterm : multerm { PLUS|MINUS multerm }
+
+multerm : factor { TIMES|DIVIDE factor }
+
+factor : literal
+       | location
+       | enum_value
+       | match
+       | LPAREN expression RPAREN
+       | PLUS expression
+       | MINUS expression
+       | LNOT expression
+       | NAME LPAREN exprlist RPAREN
+       | LBRACE statements RBRACE
+
+literal : INTEGER
+        | FLOAT
+        | CHAR
+        | TRUE
+        | FALSE
+        | LPAREN RPAREN
+
+exprlist : expression { COMMA expression }
+         | empty
+
+location : NAME
+         | expression DOT NAME
+
+enum_value : NAME DCOLON NAME
+           | NAME DCOLON NAME LPAREN expression RPAREN
+
+match : MATCH expression LBRACE { matchcase } RBRACE
+
+matchcase : pattern ARROW expression SEMI
+
+pattern   : NAME
+          | NAME LPAREN NAME RPAREN
+
+type      : NAME
+"""
+
 from dataclasses import dataclass
+from typing import Callable
 from typing import Optional
 
 from utils import print_source, print_diff
@@ -62,14 +170,15 @@ class BaseParser:
 
         if tok.type_ in types_:
             print(green(f"    -> {tok}"))
-            self.lookahead = None
+            self.lookahead = (
+                None  # TODO: we don't need to set lookahead = None below if we're doing it here
+            )
             return tok
         # print(blue("    -> reject"))
         return None
 
 
 class Parser(BaseParser):
-    # program : statements EOF
     def program(self) -> Statements:
         statements = self.statements()
         self.expect("EOF")  # TODO
@@ -78,8 +187,6 @@ class Parser(BaseParser):
         print(green(f"parsed Program: {node}"))
         return node
 
-    # statements : { statement }
-    #
     def statements(self) -> Statements:
         statements = []
         while True:
@@ -94,22 +201,11 @@ class Parser(BaseParser):
         print(green(f"    parsed Statements: {statements}"))
         return Statements(statements)
 
-    # statement : print_statement
-    #           | assignment_statement
-    #           | variable_definition
-    #           | const_definition
-    #           | if_statement
-    #           | while_statement
-    #           | break_statement
-    #           | continue_statement
-    #           | expr
-    #
-
     def statement(self) -> Optional[Statement]:
         print(blue(f"statement(): next = {self.peek()}"))
 
         statement = (
-            self.print()
+            self.print_()
             or self.vardef()
             or self.constdef()
             or self.if_()
@@ -125,7 +221,6 @@ class Parser(BaseParser):
 
             return statement
 
-    # if_statement : IF expr LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]
     def if_(self) -> Optional[Statement]:
         if not self.accept("IF"):
             return None
@@ -159,9 +254,7 @@ class Parser(BaseParser):
         self.expect("RBRACE")
         return Block(statements)
 
-    # print_statement : PRINT expr SEMICOLON
-    #
-    def print(self) -> Optional[Statement]:
+    def print_(self) -> Optional[Statement]:
         print(blue(f"print(): next = {self.peek()}"))
 
         if not self.accept("PRINT"):
@@ -176,8 +269,6 @@ class Parser(BaseParser):
         print(green(f"    parsed Print: {node}"))
         return node
 
-    # assignment_statement : LOCATION = EXPRESSION SEMICOLON
-    #
     def assign(self) -> Optional[Statement]:
         print(blue(f"assign(): next = {self.peek()}"))
 
@@ -196,8 +287,6 @@ class Parser(BaseParser):
         print(green(f"    Parsed Assign: {node}"))
         return node
 
-    # variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
-    #                     | VAR NAME type [ ASSIGN expr ] SEMI
     def vardef(self) -> Optional[VarDef]:
         print(blue(f"vardef(): next = {self.peek()}"))
 
@@ -227,7 +316,6 @@ class Parser(BaseParser):
         print(green(f"    parsed VarDef {node}"))
         return node
 
-    # const_definition : CONST NAME [ type ] ASSIGN expr SEMI
     def constdef(self) -> Optional[ConstDef]:
         print(blue(f"constdef(): next = {self.peek()}"))
 
@@ -253,25 +341,6 @@ class Parser(BaseParser):
         print(green(f"    parsed ConstDef {node}"))
         return node
 
-    # expr : expr PLUS expr        (+)
-    #      | expr MINUS expr       (-)
-    #      | expr TIMES expr       (*)
-    #      | expr DIVIDE expr      (/)
-    #      | expr LT expr          (<)
-    #      | expr LE expr          (<=)
-    #      | expr GT expr          (>)
-    #      | expr GE expr          (>=)
-    #      | expr EQ expr          (==)
-    #      | expr NE expr          (!=)
-    #      | expr LAND expr        (&&)
-    #      | expr LOR expr         (||)
-    #      | PLUS expr
-    #      | MINUS expr
-    #      | LNOT expr              (!)
-    #      | LPAREN expr RPAREN
-    #      | location
-    #      | literal
-    #      | LBRACE statements RBRACE
     def expression(self) -> Optional[Expression]:
         return self._additive_term()
 
@@ -307,12 +376,6 @@ class Parser(BaseParser):
             self.lookahead = None
             return Name(tok.token)
 
-    # literal : INTEGER
-    #         | FLOAT
-    #         | CHAR
-    #         | TRUE
-    #         | FALSE
-    #         | LPAREN RPAREN
     def _literal(self) -> Literal:
         return self.bool() or self.char() or self.integer() or self.float()
 
@@ -337,7 +400,6 @@ class Parser(BaseParser):
             return Char(tok.token)
 
 
-# Top-level function that runs everything
 def parse_source(source):
     print_source(source)
 
@@ -361,7 +423,6 @@ def parse_source(source):
     return model
 
 
-# Example of a main program
 def parse_file(filename):
     with open(filename) as file:
         text = file.read()
