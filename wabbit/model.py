@@ -254,6 +254,10 @@ class ScopeAwareModelVisitor(ModelVisitor):
         ctx[name] = storage
         return None
 
+    def chkStash(self, ctx, name):
+        print(name, ctx, name in ctx)
+        return name in ctx
+
     def newStash(self, ctx):
         return ctx.new_child()
 

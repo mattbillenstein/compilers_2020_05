@@ -25,7 +25,13 @@ class WabbitDecompiler(ModelVisitor):
             ret += ' ' + str(node._type)
         return ret
 
-    def visit_ScalarNode(self, node, ctx):
+    def visit_Int(self, node, ctx):
+        return repr(node.value)
+
+    def visit_Char(self, node, ctx):
+        return repr(node.value)
+
+    def visit_Float(self, node, ctx):
         return repr(node.value)
 
     def visit_AssignStatement(self, node, ctx):

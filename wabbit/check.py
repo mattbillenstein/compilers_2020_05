@@ -39,6 +39,7 @@ def check_program(program):
     ctx = {}
     checker = Checker()
     program.visit(checker, ctx)
+    return checker.errors
 
 
 class Checker(ScopeAwareModelVisitor):
@@ -48,6 +49,10 @@ class Checker(ScopeAwareModelVisitor):
     '''
     def __init__(self):
         self.env = ChainMap()
+        self.errors = []
+
+    def log_error(self, error):
+        self.errors.append(error)
     
     def visit_StorageIdentifier(self, node, ctx):
         # gimme the key for this name in this context
@@ -56,26 +61,30 @@ class Checker(ScopeAwareModelVisitor):
     def visit_StorageLocation(self, node, ctx):
         # gimme the type for the key in this context
         name = node.identifier.visit(self, ctx)
-        storage = self.getStorage(ctx, name)
+        storage = self.getStash(ctx, name)
         return storage._type
     
     def visit_DeclStorageLocation(self, node, ctx):
         # I'll store values in this name in this context with this key and this type
+        return None
         raise NotImplementedError
-    
+
     def visit_FuncCall(self, node, ctx):
+        return None
         raise NotImplementedError
-    
+
     def visit_FuncDeclStatement(self, node, ctx):
+        return None
         raise NotImplementedError
     
     def visit_AssignStatement(self, node, ctx):
         # Store a value in the locaiton with this name
         name = node.location.visit(self, ctx)
-        if name not in ctx:
+        if not self.chkStash(ctx, name):
             self.log_error("Can't assign to undeclared location")
+            return None
 
-        storage = ctx[name]
+        storage = self.getStash(ctx, name)
         if storage.is_const():
             self.log_error("Can't assign to a constant variable")
 
@@ -103,12 +112,15 @@ class Checker(ScopeAwareModelVisitor):
         return node.statement.visit(self, ctx)
     
     def visit_ReturnStatement(self, node, ctx):
+        return True
         raise NotImplementedError
     
     def visit_BinOp(self, node, ctx):
+        return True
         raise NotImplementedError
     
     def visit_UnOp(self, node, ctx):
+        return True
         raise NotImplementedError
     
     def visit_BlockExpression(self, node, ctx):
@@ -126,6 +138,3 @@ class Checker(ScopeAwareModelVisitor):
     
     def visit_Float(self, node, ctx):
         return 'float'
-
-    def newScope(self, ctx):
-        return ctx.new_child()

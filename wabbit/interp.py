@@ -15,6 +15,14 @@ def interpret_statements(statements):
     return interpret_program(Program(statements))
 
 
+class ContinueException(Exception):
+    pass
+
+
+class BreakException(Exception):
+    pass
+
+
 UNDEF = object()
 
 
@@ -90,14 +98,19 @@ class Interpreter(ScopeAwareModelVisitor):
 
     def visit_ConditionalLoopStatement(self, node, ctx):
         while node.cond.visit(self, ctx):
-            node.block.visit(self, ctx)
+            try: 
+                node.block.visit(self, ctx)
+            except BreakException as brk:
+                pass  # XXX
+            except ContinueException as cnt:
+                pass  # XXX
         return None
 
     def visit_ContinueLoopStatement(self, node, ctx):
-        raise NotImplementedError
+        raise ContinueException()
 
     def visit_BreakLoopStatement(self, node, ctx):
-        raise NotImplementedError
+        raise BreakException()
 
     def visit_ExpressionStatement(self, node, ctx):
         return node.statement.visit(self, ctx)
@@ -146,6 +159,11 @@ class Interpreter(ScopeAwareModelVisitor):
         else:
             raise
 
-    def visit_ScalarNode(self, node, ctx):
+    def visit_Int(self, node, ctx):
         return node.value
 
+    def visit_Char(self, node, ctx):
+        return node.value
+
+    def visit_Float(self, node, ctx):
+        return node.value
