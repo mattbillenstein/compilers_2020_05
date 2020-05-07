@@ -11,7 +11,7 @@
 # (useful if making a new language).  Finally, in getting
 # your compiler to actually "work", there may be certain runtime
 # elements that are quite hard to implement or debug directly with machine
-# instructions. Therefore, it might be easier to implement things in C 
+# instructions. Therefore, it might be easier to implement things in C
 # as a first step.
 #
 # As a preliminary step, please read the short C tutorial at
@@ -19,11 +19,11 @@
 #  https://github.com/dabeaz/compilers_2020_05/wiki/C-Programming-Tutorial
 #
 # Come back here when you've looked it over.  Our goal is to produce
-# low-level C code where you are ONLY allowed to use the 
+# low-level C code where you are ONLY allowed to use the
 # the following C features:
 #
 # 1. You can only declare uninitialized variables.  For example:
-# 
+#
 #         int x;
 #         float y;
 #         int z = 2 + 3;     // NO!!!!!!!!
@@ -42,7 +42,7 @@
 #         _i1 = 3 * 4;
 #         _i2 = 2 + i1;
 #
-# 3. The only allowed control flow constucts are the following two 
+# 3. The only allowed control flow constucts are the following two
 #    statements:
 #
 #        goto Label;
@@ -51,8 +51,8 @@
 #        Label:
 #           ... code ...
 #
-#    No, you don't get "else". And you also don't get code blocks 
-#    enclosed in braces { }. 
+#    No, you don't get "else". And you also don't get code blocks
+#    enclosed in braces { }.
 #
 # 4. You may print things with printf().
 #
@@ -76,7 +76,7 @@
 #
 #    #include <stdio.h>
 #
-#    int result;       
+#    int result;
 #    int n;
 #
 #    int main() {
@@ -100,7 +100,7 @@
 #    L3:
 #        return 0;
 #    }
-#         
+#
 # One thing to keep in mind... the goal is NOT to produce code for
 # humans to read.  Instead, it's to produce code that is minimal and
 # which can be reasoned about. There is very little actually happening
@@ -129,12 +129,62 @@
 # problem related to incorrect programs. Assume that all programs
 # are fully correct with respect to their usage of types and names.
 
+
+from functools import singledispatch
+from collections import ChainMap
 from .model import *
+
+
+class CFunction:
+    def __init__(self, name):
+        self.name = name
+        self.locals = ""  # Local variables
+        self.statements = ""  # Statements generated
+
+    def __str__(self):
+        return f"int {self.name}()" + " {\n" + self.locals + self.statements + "\n}"
+
 
 # Top-level function to handle an entire program.
 def compile_program(model):
-    # ... you define ...
-    pass
+    env = ChainMap()  # Environment. To keep track of definitions and things
+    cfunc = CFunction("main")  # Function that code is going into
+
+    compile(model, env, cfunc)
+    return cfunc
+
+
+@singledispatch
+def compile(node, env, cfunc):
+    raise RuntimeError(f"Can't compile {node}")
+
+
+rule = compile.register
+
+
+@rule(Statements)
+def compile_Statements(node, env, cfunc):
+    for statement in node.statements:
+        compile(statement, env, cfunc)
+        cfunc.statements += ";"
+
+
+@rule(Float)
+def compile_Float(node, env, cfunc):
+    cfunc.statements += f"{node.value}"
+
+
+@rule(Integer)
+def compile_Integer(node, env, cfunc):
+    cfunc.statements += f"{node.value}"
+
+
+@rule(BinOp)
+def compile_BinOp(node, env, cfunc):
+    left = compile(node.left, env, cfunc)
+    cfunc.statements += f" {node.op} "
+    right = compile(node.right, env, cfunc)
+
 
 def main(filename):
     from .parse import parse_file
@@ -143,11 +193,13 @@ def main(filename):
     model = parse_file(filename)
     check_program(model)
     code = compile_program(model)
-    with open('out.c', 'w') as file:
+    with open("out.c", "w") as file:
         file.write(code)
-    print('Wrote: out.c')
+    print("Wrote: out.c")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     main(sys.argv[1])
 
