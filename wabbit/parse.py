@@ -124,6 +124,16 @@ class WabbitParser(Parser):
     debugfile = 'parser.out'
     tokens = WabbitLexer.tokens      # Token names
 
+    precedence = [
+        ('left', LOR),       # a || b
+        ('left', LAND),      # a && b
+        ('left', LT, LE, GT, GE, EQ, NE),     #  2 + 3 < 4 + 5   -> (2 + 3) <  (4 + 5)
+        ('left', PLUS, MINUS),       # Lower precedence      2 + 3 + 4 --> (2+3) + 4
+        ('left', TIMES, DIVIDE),     # Higher precedence     2 + 3 * 4 --> 2 + (3 * 4)  (preference for the TIMES)
+
+        # Unary -x.   -> Super high precedence    2 * -x.
+        ('right', UNARY),    # 'UNARY' is a fake token (does not exist in tokenizer)
+        ]
     # program : statements
     @_('statements')
     def program(self, p):
@@ -176,7 +186,7 @@ class WabbitParser(Parser):
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
-        if p.ELSE:
+        if p.statements1:
             return If(p.expression, p.statements0, p.statements1)
         else:
             return If(p.expression, p.statements0)
@@ -186,105 +196,182 @@ class WabbitParser(Parser):
     def while_statement(self, p):
         return While(p.expression, p.statements)
 
-    @_('orterm [ LOR orterm ]')
+
+    @_('expression PLUS expression',
+       'expression MINUS expression',
+       'expression TIMES expression',
+       'expression DIVIDE expression',
+       'expression LT expression',
+       'expression LE expression',
+       'expression GT expression',
+       'expression GE expression',
+       'expression EQ expression',
+       'expression NE expression',
+       'expression LAND expression',
+       'expression LOR expression',
+       )
     def expression(self, p):
-        if p.LOR:
-            return BinOp('||', p.orterm0, p.orterm1)
-        else:
-            return p.orterm0
+        op = p[1]
+        left = p.expression0
+        right = p.expression1
+        return BinOp(op, left, right)
 
-# orterm:
-    @_('andterm [ LAND andterm ]')
-    def orterm(self, p):
-        if p.LAND:
-            return BinOp('&&', p.andterm0, p.andterm1)
-        else:
-            return p.andterm0
-
-
-# andterm:
-    @_('sumterm LT sumterm',
-       'sumterm LE sumterm',
-       'sumterm GT sumterm',
-       'sumterm GE sumterm',
-       'sumterm EQ sumterm',
-       'sumterm NE sumterm')
-    def andterm(self, p):
-        return BinOp(p[1], p.sumterm0, p.sumterm1)
-
-    @_('sumterm')
-    def andterm(self, p):
-        return p.sumterm
-
-# sumterm:
-    @_('multerm PLUS multerm',
-       'multerm MINUS multerm')
-    def sumterm(self, p):
-        return BinOp(p[1], p.multerm0, p.multerm1)
-
-    @_('multerm')
-    def sumterm(self, p):
-        return p.multerm
-
-# multerm:
-    @_('factor DIVIDE factor',
-       'factor TIMES factor')
-    def multerm(self, p):
-        return BinOp(p[1], p.factor0, p.factor1)
-
-    @_('factor')
-    def multerm(self, p):
-        return p.factor
-
-# factor :
-    @_('literal')
-    def factor(self, p):
-        return p.literal
-
-    @_('location')
-    def factor(self, p):
-        return p.location
-
-# factor :
-    @_('PLUS expression',
-       'MINUS expression',
-       'LNOT expression')
-    def factor(self, p):
+    @_('PLUS expression %prec UNARY',      # Use the high precedence of the fake "UNARY" token
+       'MINUS expression %prec UNARY',     # based on "yacc"  (yet another compiler compiler)
+       'LNOT expression %prec UNARY')      # Rewrite the grammar to not have ambiguity.
+    def expression(self, p):
         return UnaryOp(p[0], p.expression)
 
+    @_('LPAREN expression RPAREN')
+    def expression(self, p):
+        return Grouping(p.expression)
 
     @_('LBRACE statements RBRACE')
-    def factor(self, p):
-        return p.statements
+    def expression(self, p):
+        return Compound(p.statements)
 
+    @_('location')
+    def expression(self, p):
+        return p[0]
+        # return LoadLocation(p.location)
 
-# literal :
-
-    @_('INTEGER')
-    def literal(self, p):
+    @_('INTEGER')           # triggers
+    def expression(self, p):
         return Integer(int(p.INTEGER))
 
-    @_('FLOAT',
-       'CHAR',
-       'TRUE',
-       'FALSE',
-       'LPAREN RPAREN'
-       )
-    def literal(self, p):
-        if p.FLOAT:
-            return Float(float(p.FLOAT))
-        else:
-            print("Other literals need to be implemented.")
-            raise SyntaxError()
+    @_('FLOAT')
+    def expression(self, p):
+        return Float(float(p.FLOAT))
+
+    @_('CHAR')
+    def expression(self, p):
+        # Could be better..... alternative: write a real parser for escape codes.
+        # Cheating: test programs only use normal characters and '\n'.
+        return Char(eval(p.CHAR))     # "'\n'" --> eval() --> '\n'
+
+    @_('TRUE')
+    def expression(self, p):
+        return Bool(True)
+
+    @_('FALSE')
+    def expression(self, p):
+        return Bool(False)
 
     @_('NAME')
     def location(self, p):
-        return Name(repr(p.NAME))
+        return Name(p.NAME)
+
+    # @_('NAME')
+    # def type(self, p):
+    #     return p.NAME
+
+    # Custom error handler for syntax error
+    def error(self, p):
+        print(f"You have a syntax error at line {p.lineno} and index {p.index}")
+
+
+#     @_('orterm LOR orterm')
+#     def expression(self, p):
+#         return BinOp('||', p.orterm0, p.orterm1)
+
+
+#     @_('orterm')
+#     def expression(self, p):
+#         return p.orterm
+
+# # orterm:
+#     @_('andterm LAND andterm')
+#     def orterm(self, p):
+#         return BinOp('&&', p.andterm0, p.andterm1)
+
+#     @_('andterm')
+#     def orterm(self, p):
+#         return p.andterm
+
+
+# # andterm:
+#     @_('sumterm LT sumterm',
+#        'sumterm LE sumterm',
+#        'sumterm GT sumterm',
+#        'sumterm GE sumterm',
+#        'sumterm EQ sumterm',
+#        'sumterm NE sumterm')
+#     def andterm(self, p):
+#         return BinOp(p[1], p.sumterm0, p.sumterm1)
+
+#     @_('sumterm')
+#     def andterm(self, p):
+#         return p.sumterm
+
+# # sumterm:
+#     @_('multerm PLUS multerm',
+#        'multerm MINUS multerm')
+#     def sumterm(self, p):
+#         return BinOp(p[1], p.multerm0, p.multerm1)
+
+#     @_('multerm')
+#     def sumterm(self, p):
+#         return p.multerm
+
+# # multerm:
+#     @_('factor DIVIDE factor',
+#        'factor TIMES factor')
+#     def multerm(self, p):
+#         return BinOp(p[1], p.factor0, p.factor1)
+
+#     @_('factor')
+#     def multerm(self, p):
+#         return p.factor
+
+# # factor :
+#     @_('literal')
+#     def factor(self, p):
+#         return p.literal
+
+#     @_('location')
+#     def factor(self, p):
+#         return p.location
+
+# # factor :
+#     @_('PLUS expression',
+#        'MINUS expression',
+#        'LNOT expression')
+#     def factor(self, p):
+#         return UnaryOp(p[0], p.expression)
+
+
+#     @_('LBRACE statements RBRACE')
+#     def factor(self, p):
+#         return p.statements
+
+
+# # literal :
+
+#     @_('INTEGER')
+#     def literal(self, p):
+#         return Integer(int(p.INTEGER))
+
+#     @_('FLOAT',
+#        'CHAR',
+#        'TRUE',
+#        'FALSE',
+#        'LPAREN RPAREN'
+#        )
+#     def literal(self, p):
+#         if p.FLOAT:
+#             return Float(float(p.FLOAT))
+#         else:
+#             print("Other literals need to be implemented.")
+#             raise SyntaxError()
+
+    # @_('NAME')
+    # def location(self, p):
+    #     return Name(repr(p.NAME))
 
     @_('NAME')
     def type(self, p):
         if p.NAME is not None:
-            return Type(repr(p.NAME))
+            return Type(p.NAME)
         else:
             return Type(None)
 

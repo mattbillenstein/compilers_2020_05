@@ -23,7 +23,7 @@
 from collections import ChainMap
 from wabbit.model import *
 from wabbit.interp import interpret
-from wabbit.parse import parse_source
+# from wabbit.parse import parse_source
 
 # ----------------------------------------------------------------------
 # Simple Expression
@@ -37,9 +37,7 @@ expr_model = BinOp("+", Integer(2), BinOp("*", Integer(3), Integer(4)))
 expr_model_a = Print(expr_model)  # for automated test with interpreter
 
 # Can you turn it back into source code?
-# print(to_source(expr_model))
-
-# ----------------------------------------------------------------------
+# print(to_source(expr_model))# ----------------------------------------------------------------------
 # Program 1: Printing
 #
 # Encode the following program which tests printing and evaluates some
@@ -87,15 +85,8 @@ source2 = """
     print tau;
 """
 
-# print(parse_source(source2))
-
-expr1 = Const('pi', Type(None), Float(3.14159))
-expr2 = Var('tau', Type('float'))
-# expr3 = Assignment(NamedLocation('tau'),
-#                    BinOp("*", Float(2.0),
-#                    LoadLocation(NamedLocation('pi'))))
-# expr4 = Print(LoadLocation(NamedLocation('tau')))
-
+expr1 = Const('pi', Float(3.14159))
+expr2 = Var('tau', 'float')
 expr3 = Assignment(Name('tau'),
                    BinOp("*", Float(2.0),
                    Name('pi')))
@@ -108,8 +99,8 @@ model2 = Statements(expr1, expr2, expr3, expr4)
 
 # print(to_source(model2))
 
-# print("\n\nmodel2: expect the following value:", 6.28318, "\n")
-# interpret(model2, {})
+print("\n\nmodel2: expect the following value:", 6.28318, "\n")
+interpret(model2, ChainMap())
 
 # ----------------------------------------------------------------------
 # Program 3: Conditionals.  This program prints out the minimum of
@@ -125,8 +116,8 @@ source3 = """
     }
 """
 
-expr1 = Var('a', Type('int'), Integer(2))
-expr2 = Var('b', Type('int'), Integer(3))
+expr1 = Var('a', 'int', value=Integer(2))
+expr2 = Var('b', 'int', value=Integer(3))
 expr3 = If(BinOp('<', Name('a'),
                     Name('b')),
             Print(Name('a')),
@@ -155,9 +146,9 @@ source4 = """
     }
 """
 
-expr1 = Const('n', Type(None), Integer(10))
-expr2 = Var('x', Type('int'), Integer(1))
-expr3 = Var('fact', Type('int'), Integer(1))
+expr1 = Const('n', Integer(10))
+expr2 = Var('x', 'int', value=Integer(1))
+expr3 = Var('fact', 'int', value=Integer(1))
 
 expr4 = Assignment(Name('fact'),
                    BinOp("*", Name('fact'),
@@ -189,10 +180,10 @@ source5 = """
     print y;
 """
 
-expr1 = Var('x', Type(None), Integer(37))
-expr2 = Var('y', Type(None), Integer(42))
+expr1 = Var('x', value=Integer(37))
+expr2 = Var('y', value=Integer(42))
 
-expr3a = Var('t', Type(None), Name('y'))
+expr3a = Var('t', value=Name('y'))
 expr3b = Assignment(Name('y'), Name('x'))
 expr3c = ExpressionStatement(Name('t'))
 expr3 = Assignment(Name('x'), Compound(expr3a, expr3b, expr3c))
@@ -220,7 +211,7 @@ source_if_block = """
     var x int = 1;
     var y int = 37;
     print x;
-    if x < 5 {
+     if x < 5 {
         var x int = 10;
         print x;
         print y;
@@ -231,11 +222,11 @@ source_if_block = """
     print y;
 """
 
-var_x_1 = Var('x', Type('int'), Integer(1))
-var_x_10 = Var('x', Type('int'), Integer(10))
-var_x_100 = Var('x', Type('int'), Integer(100))
+var_x_1 = Var('x', 'int', value=Integer(1))
+var_x_10 = Var('x', 'int', value=Integer(10))
+var_x_100 = Var('x', 'int', value=Integer(100))
 
-var_y_37 = Var('y', Type('int'), Integer(37))
+var_y_37 = Var('y', 'int', value=Integer(37))
 
 print_x = Print(Name('x'))
 print_y = Print(Name('y'))

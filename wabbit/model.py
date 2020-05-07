@@ -112,7 +112,7 @@ class BinOp(Expression):
         self.is_valid()
 
     def __repr__(self):
-        return f"BinOp({self.op}, {self.left}, {self.right})"
+        return f"BinOp('{self.op}', {self.left}, {self.right})"
 
     def is_valid(self):
         try:
@@ -130,24 +130,14 @@ class Const(Definition):
         const pi = 3.14159;
         const tau float;
     """
-    def __init__(self, name, type, expression):
+    def __init__(self, name, value, type=None):
         self.name = name
+        self.value = value
         self.type = type
-        self.expression = expression
-        self.is_valid()
 
     def __repr__(self):
-        if self.type:
-            return ("Const(" +
-                f"'{self.name}', {self.type}, {self.expression})")
-        else:
-            return ("Const(" +
-                f"'{self.name}', Type(None), {self.expression})")
-
-    def is_valid(self):
-        assert self.type is None or isinstance(self.type, Type)
-        assert isinstance(self.name, str)
-        assert isinstance(self.expression, Expression)
+        type = f", '{type}'" if self.type is not None else ''
+        return f"Const('{self.name}', {self.value}{type})"
 
 
 class Compound(Expression):
@@ -309,7 +299,7 @@ class UnaryOp(Expression):
         self.is_valid()
 
     def __repr__(self):
-        return f"UnaryOp({self.op}, {self.value})"
+        return f"UnaryOp('{self.op}', {self.value})"
 
     def is_valid(self):
         try:
@@ -324,24 +314,15 @@ class Var(Definition):
     """Examples:
         var int pi;
     """
-    def __init__(self, name, type, expression=''):
+    def __init__(self, name, type=None, value=None):
         self.name = name
         self.type = type
-        self.expression = expression
-        self.is_valid()
+        self.value = value
 
     def __repr__(self):
-        if self.expression:
-            return ("Var(" +
-                f"{self.name}, {self.type}, {self.expression})")
-        else:
-            return ("Var(" +
-                f"{self.name}, {self.type})")
-
-    def is_valid(self):
-        assert isinstance(self.type, Type)
-        assert isinstance(self.name, str)
-        assert isinstance(self.expression, (str, Name, Expression))
+        type = f", 'type={self.type}" if self.type is not None else ''
+        value = f", 'value={self.value}" if self.value is not None else ''
+        return f"Var('{self.name}{type}{value}"
 
 
 class While(Statement):
@@ -385,11 +366,8 @@ def to_source_BinOp(node):
 
 @add(Const)
 def to_source_Const(node):
-    parts = [f"const {node.name}"]
-    if to_source(node.type):
-        parts.append(f" {to_source(node.type)}")
-    parts.append(f" = {to_source(node.expression)}")
-    return ''.join(parts) + ";"
+    type = f' {node.type}' if node.type else ''
+    return f'const {node.name}{type} = {to_source(node.value)};'
 
 @add(Compound)
 def to_source_Compound(node):
@@ -440,23 +418,15 @@ def to_source_Statements(node):
     statements = [to_source(s) for s in node.statements]
     return "\n".join(statements)
 
-@add(Type)
-def to_source_Type(node):
-    if node.type is None:
-        return ''
-    return node.type
-
 @add(UnaryOp)
 def to_source_UnaryOp(node):
     return f"{node.op}{to_source(node.value)}"
 
 @add(Var)
 def to_source_Var(node):
-    parts = [f"var {node.name}"]
-    parts.append(f" {to_source(node.type)}")
-    if node.expression:
-        parts.append(f" = {to_source(node.expression)}")
-    return ''.join(parts) + ";"
+    type = f' {node.type}' if node.type else ''
+    value = f' = {to_source(node.value)}' if node.value else ''
+    return f'var {node.name}{type}{value};'
 
 @add(While)
 def to_source_While(node):

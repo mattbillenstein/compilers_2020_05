@@ -132,5 +132,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# debugger file
+# debugger file and other
 parser.out
+ignore.py

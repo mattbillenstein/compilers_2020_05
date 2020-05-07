@@ -47,11 +47,12 @@ from .model import *
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
 
+# TODO: use chainmap
+
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = { }
     interpret(model, env)
-
 
 @singledispatch
 def interpret(node, env):
@@ -104,7 +105,7 @@ def interpret_BinOp(node, env):
 @add(Const)
 def interpret_Const(node, env):
     name = node.name
-    value = interpret(node.expression, env)
+    value = interpret(node.value, env)
     env[name] = value
 
 @add(Compound)
@@ -138,18 +139,8 @@ def interpret_Integer(node, env):
 def interpret_Group(node, env):
     return interpret(node.expression, env)
 
-# @add(LoadLocation)
-# def interpret_LoadLocation(node, env):
-#     name = interpret(node.location, env)
-#     return env[name]
-
-# @add(NamedLocation)
-# def interpret_NamedLocation(node, env):
-#     return node.name
-
 @add(Name)
 def interpret_Name(node, env):
-    print(env)
     return env[node.name]
 
 @add(Print)
@@ -181,9 +172,9 @@ def interpret_UnaryOp(node, env):
 def interpret_Var(node, env):
     # Assign default values of 0 if none are given
     # This is not defined in the specs.
-    type = interpret(node.type, env)
-    if node.expression:
-        value = interpret(node.expression, env)
+    type = node.type
+    if node.value:
+        value = interpret(node.value, env)
     elif type == 'float':
         value = 0.0
     else:
