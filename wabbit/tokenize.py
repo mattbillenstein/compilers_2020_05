@@ -141,9 +141,17 @@ class WabbitLexer(Lexer):
         DOT, FUNC, ARROW, MATCH, STRUCT, TRUE, FALSE, LOR, LAND, LNOT,
         RETURN
         }
-    ignore = ' \t\n'       # Ignore these (between tokens)
+    ignore = ' \t'       # Ignore these (between tokens)
+
+    @_(r'\n+')
+    def ignore_newline(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    @_(r'/\*((.|\n))*?\*/')
+    def ignore_block_comment(self, tok):
+        self.lineno += tok.value.count('\n')
     ignore_comment = r'//.*'
-    ignore_block_comment = r'/\*((.|\n))*?\*/'
+
     _escape_sequences = [
         r'\\\\',
         r"\\'",

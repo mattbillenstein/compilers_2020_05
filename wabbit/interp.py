@@ -447,3 +447,13 @@ def interpret_struct_instantiation_node(struct_inst_node, env):
     # first evaluate the argument expressions
     for arg_expr in arguments:
         arg_values.append(interpret(arg_expr, env))
+
+
+if __name__ == "__main__":
+    import sys
+    from .parse import parse_file
+    if len(sys.argv) != 2:
+        raise SystemExit("Usage: wabbit.interp filename")
+    model = parse_file(sys.argv[1])
+    print(repr(model))
+    print(model)

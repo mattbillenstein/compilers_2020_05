@@ -118,10 +118,12 @@ from .model import *
 from .tokenize import tokenize, WabbitLexer
 from sly import Parser
 
-
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 # Grammar for Wabbit  (Specificiation of syntax)
 #
-
+logging.basicConfig(level=logging.DEBUG)
 
 class WabbitParser(Parser):
     debugfile = 'parser.out'
@@ -221,7 +223,7 @@ class WabbitParser(Parser):
 
     @_("CONST NAME [ type ] ASSIGN expression SEMI")
     def const_definition(self, p):
-        return ConstDefinition(name=p.NAME0, type=p.NAME1, value=p.expression)
+        return ConstDefinition(name=p.NAME, type=p.type, value=p.expression)
 
     @_("VAR NAME [ type ] [ ASSIGN expression ] SEMI")
     def var_definition(self, p):
@@ -236,6 +238,7 @@ class WabbitParser(Parser):
 
     @_("WHILE expression clause")
     def while_statement(self, p):
+        print("HELP")
         return WhileLoop(condition=p.expression, body=p.clause)
 
     @_(
