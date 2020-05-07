@@ -229,17 +229,28 @@ if __name__ == "__main__":
     for i, (source, model) in enumerate(zip(sources, models)):
         print("\n\n--------------------------------------------------------------------------")
         print(i, "\n")
+
         utils.print_source(source)
-        check(source, model)
-
-        print("Expected model\n")
-        print(model)
-        print("\n\n")
         parsed_model = Parser(tokenize(source)).statements()
-        print("Parsed\n")
-        print(parsed_model)
-
+        utils.print_diff(model, parsed_model, formatter=format_json)
         check(source, parsed_model)
-        dump_json(model, i)
-        print("Interpreter output:\n")
-        interpret_program(model)
+
+        if i == 0:
+            break
+
+        if False:
+            print("Expected model\n")
+            print(model)
+            if False:
+                dump_json(model, i)
+            check(source, model)
+            interpret_program(model)
+
+            print("\n\n")
+
+            print("Parsed\n")
+
+            print(parsed_model)
+            check(source, parsed_model)
+
+            print("Interpreter output:\n")
