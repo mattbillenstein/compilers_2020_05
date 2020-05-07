@@ -171,7 +171,8 @@ class Bool(Expression):
     def __init__(self, value):
         assert isinstance(value, bool)
         super().__init__(value=value)
-
+    def to_source(self):
+        return 'true' if self.value else 'false'
 
 class CharacterLiteral(Expression):
     def __init__(self, value):
@@ -186,7 +187,7 @@ class CharacterLiteral(Expression):
 class UnaryOp(Expression):
     def __init__(self, op, operand):
         assert isinstance(op, str)
-        assert op in ('+', '-')
+        assert op in ('+', '-', '!'), f"Invalid Unary operand: {op}"
         assert isinstance(operand, Expression)
         super().__init__(op=op, operand=operand)
 
@@ -217,10 +218,12 @@ class BinOp(Expression):
             "/",
             "<",
             "<=",
-            "=>",
+            ">=",
             ">",
             "==",
             "!=",
+            "&&",
+            "||"
         ), f"Operation {op} is invalid"
         assert isinstance(left, Expression)
         assert isinstance(right, Expression)
@@ -455,6 +458,7 @@ class FunctionCall(Expression):
     def to_source(self):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
 
+
 class StructInstantiate(Expression):
     def __init__(self, struct_name, arguments):
         assert isinstance(struct_name, str)
@@ -468,11 +472,13 @@ class StructInstantiate(Expression):
 
 
 class BreakStatement(Statement):
-    ...
+    def to_source(self):
+        return 'break;'
 
 
 class ContinueStatement(Statement):
-    ...
+    def to_source(self):
+        return 'continue;'
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 

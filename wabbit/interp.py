@@ -54,11 +54,11 @@ import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+#logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
-# logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def wabbit_divide(a, b):
@@ -81,7 +81,13 @@ OPERATIONS = {
     "<": operator.lt,
     ">=": operator.ge,
     "<=": operator.le,
+    '||': operator.or_,
+    '&&': operator.and_
 }
+
+class WabbitUnit:
+    def __bool__(self):
+        return False
 
 
 class Environment(UserDict):
@@ -311,18 +317,10 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
 @interpret.register(Clause)
 def interpret_clause_node(clause_node, env: Environment):
     with env.child_env():
+        retval = None
         for statement in clause_node.statements:
-            # if isinstance(statement, BreakStatement):
-            #     break
-            # if isinstance(statement, ContinueStatement):
-            #     continue
-            # if isinstance(statement, ReturnStatement):
-            #     return interpret(statement, env)  # not sure about this
-            # EDIT: This is probably not the right place to handle this since
-            #       the rules aren't the same for every kind of clause
-            #       need to move to interpret impl for nodes that support this
-            interpret(statement, env)
-
+            retval = interpret(statement, env)
+        return retval  # Most callers won't need this, but Compound Expressions do need the last thing
 
 @interpret.register(WhileLoop)
 def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
@@ -337,7 +335,14 @@ def interpret_while_loop_node(while_loop_node: WhileLoop, env: Environment):
             )
         if condition_result is True:
             logger.debug(f"Condition evaluated True, executing body: {id(while_loop_node)}")
-            interpret(body, env)
+            try:
+                interpret(body, env)
+            except ContinueEncountered:
+                logger.debug('Continue encountered')
+                continue
+            except BreakEncountered:
+                logger.debug('Break encountered')
+                break
         else:
             logger.debug("Condition evaluated false, exiting while loop")
             break
@@ -358,6 +363,10 @@ def interpret_unary_op_node(unary_op_node, env):
         return value
     elif op == "-":
         return value * -1
+    elif op == '!':
+        if not isinstance(value, bool):
+            raise RuntimeError(f"Logical NOT (!) expected a bool. Got {type(value)}")
+        return not value
     else:
         raise RuntimeError(f'Unexpected unary operator: "{op}"')
 
@@ -452,6 +461,17 @@ def interpret_struct_instantiation_node(struct_inst_node, env):
     for arg_expr in arguments:
         arg_values.append(interpret(arg_expr, env))
 
+@interpret.register(CompoundExpr)
+def interpret_compound_expr(compound_expr_node, env):
+    return interpret(compound_expr_node, env)
+
+@interpret.register(Unit)
+def interpret_unit_node(unit_node, env):
+    return None #WabbitUnit()
+
+@interpret.register(Bool)
+def interpret_bool_node(bool_node, env):
+    return bool_node.value
 
 if __name__ == "__main__":
     print('-'*80)

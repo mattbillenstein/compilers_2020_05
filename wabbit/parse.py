@@ -256,6 +256,10 @@ class WabbitParser(Parser):
         right = p.expression1
         return BinOp(op=op, left=left, right=right)
 
+    @_("clause SEMI")
+    def expression(self, p):
+        return CompoundExpr(*p.clause.statements)
+
     @_("INTEGER")
     def expression(self, p):
         return Integer(int(p.INTEGER))
