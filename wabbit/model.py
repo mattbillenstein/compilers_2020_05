@@ -55,7 +55,9 @@ class Expression(Node):
     """An expression is something that can be used on the left-hand-side
     of an assignment.
     """
-    pass
+    def __init__(self, *, lineno=None):
+        self.lineno = lineno
+
 
 # class Location(Node):
 #     '''
@@ -65,8 +67,7 @@ class Expression(Node):
 
 class Statement(Node):
     """A statement is a single complete instruction"""
-    def __init__(self):
-        raise NotImplementedError("Do you mean Statements (plural)?")
+    pass
 
 
 class Definition(Statement):
@@ -84,9 +85,10 @@ class Definition(Statement):
 
 class Assignment(Statement):
     """location = expr"""
-    def __init__(self, location, expression):
+    def __init__(self, location, expression, **options):
         self.location = location
         self.expression = expression
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -105,10 +107,11 @@ class BinOp(Expression):
     """
     Example: left + right
     """
-    def __init__(self, op, left, right):
+    def __init__(self, op, left, right, **options):
         self.op = op
         self.left = left
         self.right = right
+        super().__init__(**options)
         # self.is_valid()
 
     def __repr__(self):
@@ -127,16 +130,18 @@ class BinOp(Expression):
 
 
 class Bool(Expression):
-    def __init__(self, value):
+    def __init__(self, value, **options):
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f"Bool({self.value})"
 
 
 class Char(Expression):
-    def __init__(self, value):
+    def __init__(self, value, **options):
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f"Char({self.value})"
@@ -150,10 +155,11 @@ class Const(Definition):
         const pi = 3.14159;
         const tau float;
     """
-    def __init__(self, name, value, type=None):
+    def __init__(self, name, value, type=None, **options):
         self.name = name
         self.value = value
         self.type = type
+        super().__init__(**options)
 
     def __repr__(self):
         type = f", '{type}'" if self.type is not None else ''
@@ -164,8 +170,9 @@ class Compound(Expression):
     '''
     A series of statements or expressions serving as a single expression.
     '''
-    def __init__(self, *statements):
+    def __init__(self, *statements, **options):
         self.statements = statements
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -176,8 +183,9 @@ class Compound(Expression):
 
 
 class Float(Expression):
-    def __init__(self, value):
+    def __init__(self, value, **options):
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f"Float({self.value})"
@@ -191,8 +199,9 @@ class ExpressionStatement(Statement):
        expressions used as statements are properly recreated with
        a final semi-colon when converting back to source.
     """
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f"ExpressionStatement({self.expression})"
@@ -204,8 +213,9 @@ class Group(Expression):
     '''
     ( expression )      # Expression surrounded by parenthesis
     '''
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         self.expression = expression
+        super().__init__(**options)
 
     def __repr__(self):
         return f'Group({self.expression})'
@@ -214,10 +224,11 @@ class Group(Expression):
         assert isinstance(self.expression, Expression)
 
 class If(Statement):
-    def __init__(self, condition, result, alternative=None):
+    def __init__(self, condition, result, alternative=None, **options):
         self.condition = condition
         self.result = result
         self.alternative = alternative
+        super().__init__(**options)
         # self.is_valid()
 
     def __repr__(self):
@@ -236,8 +247,9 @@ class Integer(Expression):
     """
     Example: 42
     """
-    def __init__(self, value):
+    def __init__(self, value, **options):
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         return f"Integer({self.value})"
@@ -250,8 +262,9 @@ class Name(Node):
     """
     a variable name
     """
-    def __init__(self, name):
+    def __init__(self, name, **options):
         self.name = name
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -269,8 +282,9 @@ class Print(Statement):
     """
     print expression
     """
-    def __init__(self, expression):
+    def __init__(self, expression, **options):
         self.expression = expression
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -284,8 +298,9 @@ class Statements(Statement):
     """
     A sequence of statements
     """
-    def __init__(self, *statements):
+    def __init__(self, *statements, **options):
         self.statements = statements
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -299,8 +314,9 @@ class Type(Node):
     """
     Example: float
     """
-    def __init__(self, type):
+    def __init__(self, type, **options):
         self.type = type
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):
@@ -313,9 +329,10 @@ class UnaryOp(Expression):
     """
     Example: - value
     """
-    def __init__(self, op, value):
+    def __init__(self, op, value, **options):
         self.op = op
         self.value = value
+        super().__init__(**options)
         # self.is_valid()
 
     def __repr__(self):
@@ -334,10 +351,11 @@ class Var(Definition):
     """Examples:
         var int pi;
     """
-    def __init__(self, name, type=None, value=None):
+    def __init__(self, name, type=None, value=None, **options):
         self.name = name
         self.type = type
         self.value = value
+        super().__init__(**options)
 
     def __repr__(self):
         type = f", '{self.type}'" if self.type is not None else ''
@@ -346,9 +364,10 @@ class Var(Definition):
 
 
 class While(Statement):
-    def __init__(self, condition, statements):
+    def __init__(self, condition, statements, **options):
         self.condition = condition
         self.statements = statements
+        super().__init__(**options)
         self.is_valid()
 
     def __repr__(self):

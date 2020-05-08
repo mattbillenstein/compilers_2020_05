@@ -77,30 +77,60 @@ from sly import Lexer
 
 class WabbitLexer(Lexer):
 
-    ignore = ' \t\n'
+    tokens = {
 
-    tokens = {CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
-        NAME, FLOAT, INTEGER, CHAR, LE, GE, EQ, NE, LAND, LOR, PLUS, MINUS, TIMES,
-        DIVIDE, LT, GT, LNOT, ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE, DOT}
+    # Reserved keywords
+    CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE,
 
-    ignore_eol_comments = r'//.*'
-    ignore_comments = r'/\*(.|\n)*?\*/'
+    # Identifiers
+    NAME,
 
-# Reserved Keywords:
-    CONST   = r'const'
-    VAR     = r'var'
-    PRINT   = r'print'
-    BREAK   = r'break'
-    CONTINUE= r'continue'
-    IF      = r'if'
-    ELSE    = r'else'
-    WHILE   = r'while'
-    TRUE    = r'true'
-    FALSE   = r'false'
+    # Literals: numbers and characters
+    FLOAT, INTEGER, CHAR,
 
+    # Operators
+    LE, GE, EQ, NE, LAND, LOR, PLUS, MINUS, TIMES, DIVIDE, LT, GT, LNOT, ASSIGN,
+
+    # Miscellaneous symbols
+     SEMI, LPAREN, RPAREN, LBRACE, RBRACE, DOT
+    }
+
+    ignore = ' \t'       # Characters ignored between tokens
+
+    @_('\n+')
+    def ignore_newline(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    @_(r'/\*(.|\n)*?\*/')
+    def ignore_block_comment(self, tok):
+        self.lineno += tok.value.count('\n')
+
+    ignore_line_comment = r'//.*'
+
+
+# Identifiers
     NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
 
-    # Literals
+# If we were to identify keywords with a regular expresion, something like:
+#   CONST = r'const'
+# then, it could mistakenly match parts of a word, like 'constant'.
+# Instead, we wish to identify keywords as a complete word; here's how
+# to do it with sly, as a special case of the above.
+
+# Reserved keywords:
+    NAME['const'] = CONST
+    NAME['var'] = VAR
+    NAME['print'] = PRINT
+    NAME['if'] = IF
+    NAME['else'] = ELSE
+    NAME['while'] = WHILE
+    NAME['break'] = BREAK
+    NAME['continue'] = CONTINUE
+    NAME['true'] = TRUE
+    NAME['false'] = FALSE
+
+
+# Literals: numbers and characters
     FLOAT = r'(\d+\.\d*|\.\d+)'
     INTEGER = r'\d+'
 
@@ -113,7 +143,6 @@ class WabbitLexer(Lexer):
         r'\\\d{1,3}',
         r'\\x[a-fA-F0-9]{1,2}',
     ])
-
     CHAR = r"'([\s\S]|%s)'" % _escape_sequences
 
     @_(CHAR)
@@ -121,8 +150,8 @@ class WabbitLexer(Lexer):
         token.value = token.value.replace("'", "")
         return token
 
-# operators
-
+# Operators; we need to put the longer operators first to avoid
+# identifying parts of an operator as a different one.
     LE       = r'<='
     GE       = r'>='
     EQ       = r'=='
@@ -139,8 +168,7 @@ class WabbitLexer(Lexer):
     ASSIGN   = r'='
 
 
-# Miscellaneous Symbols
-
+# Miscellaneous symbols
     SEMI     = r';'
     LPAREN   = r'\('
     RPAREN   = r'\)'
