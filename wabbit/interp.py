@@ -493,6 +493,14 @@ def interpret_struct_definition_node(struct_def_node, env):
 
     env[struct_def_node.name] = struct_def_node
 
+@interpret.register(EnumDefinition)
+def interpret_enum_definition_node(enum_def_node, env):
+    env[enum_def_node.name] = enum_def_node
+
+
+
+
+
 @interpret.register(FunctionOrStructCall)
 def interpret_function_call_node(function_or_struct_call_node, env):
     logger.debug("Handling struct/func call")
@@ -550,6 +558,19 @@ def interpret_struct_field_lookup_node(field_lookup_node, env):
     return attr  # >?
 
 
+@interpret.register(EnumLookup)
+def interpret_enum_lookup_node(enum_lookup_node, env):
+    logger.debug(f'Interpreting enum lookup node {repr(enum_lookup_node)}')
+    enum = env[enum_lookup_node.enum_location.name]
+    choice_name = enum_lookup_node.choice_name
+    for choice in enum.enum_choices:
+        if enum_lookup_node.choice_name == choice.name:
+            if enum_lookup_node.value_expression:
+                value = interpret(enum_lookup_node.value_expression, env)
+            else:
+                value = None
+
+            return (choice, value)
 
 
 # @interpret.register(StructInstantiate)

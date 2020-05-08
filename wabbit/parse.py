@@ -170,6 +170,7 @@ class WabbitParser(Parser):
         'return_statement',
         'function_definition',
         'field_assignment_statement',
+        'enum_definition_statement',
     )
     def statement(self, p):
         return p[0]  # Just return whatever the thing is
@@ -361,6 +362,26 @@ class WabbitParser(Parser):
     @_('field_lookup ASSIGN expression SEMI')
     def field_assignment_statement(self, p):
         return Assignment(location=p.field_lookup, value=p.expression)
+
+    @_('ENUM NAME LBRACE { enum_choice } RBRACE')
+    def enum_definition_statement(self, p):
+        return EnumDefinition(name=p.NAME, enum_choices=p.enum_choice)
+
+    @_('location DCOLON NAME [ LPAREN expression RPAREN ]')
+    def expression(self, p):
+        return EnumLookup(enum_location=p.location, choice_name=p.NAME, value_expression=p.expression)
+
+    # @_('NAME DCOLON NAME LPAREN expression RPAREN')
+    # def enum_value(self, p):
+    #     ...
+
+    @_("NAME [ LPAREN type RPAREN ] SEMI")
+    def enum_choice(self, p):
+        return EnumChoice(name=p.NAME, type=p.type)
+
+    # @_("NAME LPAREN type RPAREN")
+    # def enum_choice(self, p):
+    #     ...
 
 
 def parse_tokens(raw_tokens):

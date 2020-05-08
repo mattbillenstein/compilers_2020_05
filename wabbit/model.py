@@ -473,6 +473,27 @@ class FunctionOrStructCall(Expression):
     def to_source(self):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
 
+class EnumChoice(Node):
+    def __init__(self, name, type=None):
+        assert isinstance(name, str)
+        assert type is None or isinstance(type, str)
+        super().__init__(name=name, type=type)
+
+
+class EnumDefinition(Definition):
+    def __init__(self, name, enum_choices):
+        super().__init__(name=name, enum_choices=enum_choices)
+        for choice in self.enum_choices:
+            assert isinstance(choice, EnumChoice)
+
+
+class EnumLookup(Location):
+    def __init__(self, enum_location, choice_name, value_expression=None):
+        assert isinstance(enum_location, Location)
+        assert isinstance(choice_name, str)
+        assert value_expression is None or isinstance(value_expression, Expression)
+        super().__init__(enum_location=enum_location, choice_name=choice_name, value_expression=value_expression)
+
 
 # class StructInstantiate(Expression):
 #     def __init__(self, struct_name, arguments):
