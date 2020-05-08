@@ -1,10 +1,22 @@
-from dataclasses import dataclass
+import dataclasses
+from functools import partial
 from typing import Union, Optional, List
+
+
+# Hashable instances
+dataclass = partial(dataclasses.dataclass, eq=False)
 
 
 class Node:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__dict__})"
+
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls)  # type: ignore
+        from .parse import Parser
+
+        Parser.line_num_map[self] = Parser.line_num
+        return self
 
 
 class Statement(Node):

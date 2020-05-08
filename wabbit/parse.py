@@ -105,6 +105,7 @@ pattern   : NAME
 type      : NAME
 """
 from dataclasses import dataclass
+from typing import ClassVar
 from typing import Optional
 
 from .model import (  # noqa
@@ -121,6 +122,7 @@ from .model import (  # noqa
     Literal,
     Location,
     Name,
+    Node,
     Print,
     UnaryOp,
     VarDef,
@@ -147,6 +149,8 @@ def print(*args, **kwargs):
 class BaseParser:
     tokens: TokenStream
     lookahead: Optional[Token] = None
+    line_num: int = 0
+    line_num_map: ClassVar = {}
 
     def peek(self):
         if self.lookahead is None:
@@ -160,6 +164,7 @@ class BaseParser:
 
         print(green(f"    -> {tok}"))
         self.lookahead = None
+        self.line_num = tok.line_num
         return tok
 
     def accept(self, *types_) -> Optional[Token]:
@@ -172,6 +177,7 @@ class BaseParser:
         if tok.type_ in types_:
             print(green(f"    -> {tok}"))
             self.lookahead = None
+            self.line_num = tok.line_num
             return tok
         # print(blue("    -> reject"))
 
