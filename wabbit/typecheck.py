@@ -41,7 +41,7 @@ def check_program(model):
 
 @singledispatch
 def check(node, env):
-    raise RuntimeError(f"Can't check {node}")
+    raise RuntimeError(f"Can't check {node} on line {node.lineno}.")
 
 add = check.register
 
@@ -100,7 +100,8 @@ def check_BinOp(node, env):
     try:
         return valid_binop[(node.op, check(node.left, env), check(node.right, env))]
     except KeyError:
-        raise TypeError(f"incompatible types {node.left} {node.op} {node.right}")
+        raise TypeError("Incompatible types for operation:\n" +
+            f"     {to_source(node.left)} {node.op} {to_source(node.right)}")
 
 @add(Bool)
 def check_Bool(node, env):
@@ -170,8 +171,16 @@ def check_Print(node, env):
 
 @add(Statements)
 def check_Statements(node, env):
+    errors = []
     for s in node.statements:
-        check(s, env)
+        try:
+            check(s, env)
+        except TypeError as e:
+            statement = to_source(s)
+            message = f"TypeError found on line {s.lineno}:\n     {statement}\n{e.args[0]}"
+            errors.append(message)
+    if errors:
+        raise TypeError("\n\n".join(errors))
     return True
 
 @add(Type)
@@ -187,7 +196,7 @@ def check_UnaryOp(node, env):
     if node.op == "!" and value in ['bool']:
         return value
 
-    raise TypeError(f"Incompatible type for operation: {node.op} {node.value}")
+    raise TypeError(f"Incompatible type for unary operation: {node.op} {to_source(node.value)}")
 
 @add(Var)
 def check_Var(node, env):

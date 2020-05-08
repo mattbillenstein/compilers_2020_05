@@ -120,6 +120,9 @@ from .tokenize import WabbitLexer, tokenize
 from sly import Parser
 
 
+ERRORS = []
+
+
 class WabbitParser(Parser):
     debugfile = 'parser.out'
     tokens = WabbitLexer.tokens      # Token names
@@ -263,6 +266,36 @@ class WabbitParser(Parser):
     def error(self, p):
         print(f"You have a syntax error at line {p.lineno} and index {p.index}")
 
+    def error(self, tok):
+        # Read ahead looking for a terminating ";"
+        message = ''
+        lineno = None
+        if hasattr(tok, "lineno"):
+            message = f"You have a syntax error at line {tok.lineno}."
+            lineno = tok.lineno
+        while True:
+            tok = next(self.tokens, None)           # Get the next token
+            if lineno is None:
+                if hasattr(tok, "lineno"):
+                    lineno = tok.lineno
+            if not tok or tok.type == 'SEMI':
+                break
+            self.errok()
+        # Return SEMI to the parser as the next lookahead token
+        if not message:
+            if lineno is not None:
+                message = f"You have a syntax error at or before line {lineno}."
+            else:
+                message = """
+A syntax error was found at an unknown location.
+I am guessing that you forgot one or more
+semi-colon on the statements at the end of
+your program, or are missing a final closing }.
+"""
+        ERRORS.append(message)
+        return tok
+
+
 def parse_tokens(raw_tokens):
     parser = WabbitParser()
     return parser.parse(raw_tokens)
@@ -270,7 +303,12 @@ def parse_tokens(raw_tokens):
 # Top-level function that runs everything
 def parse_source(text):
     tokens = tokenize(text)
-    model = parse_tokens(tokens)  # You need to implement this part
+    model = parse_tokens(tokens)
+
+    if ERRORS:
+        raise SyntaxError("Your program contains one or more syntax errors.\n\n" +
+              "\n\n".join(ERRORS))
+
     return model
 
 

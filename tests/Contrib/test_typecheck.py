@@ -30,7 +30,9 @@ def test_add_two_floats():
     assert check_program(model)
 
 add_mixed_types = """
-2 + 3.0;
+print 2 + 3.0;
+print 42;
+print 2 + 3 + 4 + 5.0 + 6 + 7;
 """
 
 def test_add_mixed_types():
@@ -38,7 +40,7 @@ def test_add_mixed_types():
     caught = False
     try:
         check_program(model)
-    except TypeError:
+    except TypeError as e:
         caught = True
     assert caught
 
