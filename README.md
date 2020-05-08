@@ -94,6 +94,8 @@ about a day in advance (an email notification will also be sent).
 * [Part 6 - Code Generation](https://vimeo.com/415496570/329760928e) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/06CodeGeneration.pdf) 
 * [Part 7 - Transformations](https://vimeo.com/415915433/c7b6db33fd) (5 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/07Transformations.pdf) 
 * [Part 8 - Intermediate Code](https://vimeo.com/415915651/be16724fd6) (11 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/08IRCode.pdf) 
+* [Part 9 - Functions](https://vimeo.com/416322374/7b280d972b) (20 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/09Functions.pdf) 
+* [Part 10 - Advanced Types](https://vimeo.com/416321717/9907d0e2c0) (15 min) [PDF](https://github.com/dabeaz/compilers_2020_05/raw/master/present/10AdvancedTypes.pdf) 
 
 ## Live Session Recordings
 
