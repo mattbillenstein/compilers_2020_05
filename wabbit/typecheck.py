@@ -59,8 +59,12 @@ def clear_errors():
 
 @singledispatch
 def check(node, env, statement_info):
-    # this should not happen
-    raise RuntimeError(f"Can't check {node} on line {node.lineno}.")
+    # We should not reach this function
+    if hasattr(node, "lineno"):
+        raise RuntimeError(f"Can't check {node} on line {node.lineno}.")
+    else:
+        raise RuntimeError(f"Can't check {node}.")
+
 
 add = check.register
 
@@ -234,8 +238,7 @@ def check_UnaryOp(node, env, statement_info):
 
 @add(Var)
 def check_Var(node, env, statement_info):
-    # Assign default values of 0 if none are given
-    # This is not defined in the specs.
+
     if node.value:
         value_type = check(node.value, env, statement_info)
         if node.type and node.type != value_type:
@@ -248,6 +251,8 @@ def check_Var(node, env, statement_info):
     # A variable must have a type assigned
     if not node.type:
         record_error(f"Cannot determine type of {node.name}", statement_info)
+    elif node.type not in ['int', 'float', 'bool', 'char']:
+        record_error(f"Unknown type '{node.type}'.", statement_info)
 
     env[node.name] = node    # Put the VarDefinition node in environment
 

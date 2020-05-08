@@ -161,7 +161,7 @@ class Const(Definition):
         super().__init__(**options)
 
     def __repr__(self):
-        type = f", '{type}'" if self.type is not None else ''
+        type = f", '{self.type}'" if self.type is not None else ''
         return f"Const('{self.name}', {self.value}{type})"
 
 

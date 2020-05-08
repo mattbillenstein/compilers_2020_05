@@ -148,3 +148,19 @@ print int;
 def test_print_int():
     model = parse_source(print_int)
     assert catch_error(model)
+
+# The following are now caught at the parsing stage
+#
+# assign_to_type = """
+# var int = 2;
+# var float int;
+# const char float = 3.14156;
+# """
+
+not_a_type = """
+var x complex;
+"""
+
+def test_not_a_type():
+    model = parse_source(not_a_type)
+    assert catch_error(model)

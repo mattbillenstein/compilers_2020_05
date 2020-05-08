@@ -176,10 +176,16 @@ class WabbitParser(Parser):
 
     @_('VAR NAME [ type ] ASSIGN expression SEMI')
     def var_definition(self, p):
+        if p.NAME in ['int', 'float', 'bool', 'char']:
+            ERRORS.append(f"Line {p.lineno}:\n" +
+                            f"Cannot use type '{p.NAME}' as variable name.")
         return Var(p.NAME, p.type, value=p.expression, lineno=p.lineno)
 
     @_('VAR NAME type SEMI')
     def var_definition(self, p):
+        if p.NAME in ['int', 'float', 'bool', 'char']:
+            ERRORS.append(f"Line {p.lineno}:\n" +
+                            f"Cannot use type '{p.NAME}' as variable name.")
         return Var(p.NAME, p.type, lineno=p.lineno)
 
 ## ==============================================
@@ -193,6 +199,9 @@ class WabbitParser(Parser):
 
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
+        if p.NAME in ['int', 'float', 'bool', 'char']:
+            ERRORS.append(f"Line {p.lineno}:\n" +
+                            f"Cannot use type '{p.NAME}' as variable name.")
         return Const(p.NAME, p.expression, p.type, lineno=p.lineno)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
