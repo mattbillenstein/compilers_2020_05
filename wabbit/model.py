@@ -105,6 +105,19 @@ class Float(Node):
     def is_correct(self):
         return isinstance(self.value, float)
 
+class Char(Node):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+        self.is_expression = True
+        checkMe(self)
+
+    def __repr__(self):
+        return f'Char({self.value})'
+
+    def is_correct(self):
+        return isinstance(self.value, str)
+
 class Boolean(Node):
     def __init__(self, value):
         super().__init__()

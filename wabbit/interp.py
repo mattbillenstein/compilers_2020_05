@@ -82,6 +82,10 @@ def _(node, env):
         return left - right
     elif node.op == '<':
         return left < right
+    elif node.op == '>=':
+        return left >= right
+    elif node.op == '>':
+        return left > right
     else:
         raise RuntimeError(f'unsupported op: {node.op}')
 
@@ -91,9 +95,24 @@ def _(node, env):
 
 @interpret.register(PrintStatement)
 def _(node, env):
-    print(interpret(node.child, env))
+    to_print = interpret(node.child, env)
+    if isinstance(to_print, str):
+        if to_print == "'\\n'":
+            print('')
+        else:
+            print(to_print[1:-1], end='')
+    else:
+        print(to_print)
 
 @interpret.register(Float)
+def _(node, env):
+    return node.value
+
+@interpret.register(Boolean)
+def _(node, env):
+    return node.value
+
+@interpret.register(Char)
 def _(node, env):
     return node.value
 
@@ -135,7 +154,10 @@ def _(node, env):
     else:
         interpret(node.otherwise, env)
 
-#TODO If
+@interpret.register(If)
+def _(node, env):
+    if interpret(node.condition, env):
+        interpret(node.consequence, env)
 
 @interpret.register(While)
 def _(node, env):
@@ -163,6 +185,16 @@ def _(node, env):
     # raise RuntimeError(f"Can't interpret {node}")
 
 
+def main(filename):
+    from .parse import parse_file
+    # from .typecheck import check_program
+    model = parse_file(filename)
+    # check_program(model)
+    interpret_program(model)
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1])
 
 
 

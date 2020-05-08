@@ -216,3 +216,19 @@ s = "(2 + 3) * 4;"
 print(s)
 print(parse_source(s))
 print()
+
+print(104)
+s = '''
+             print '*';
+ '''
+print(s)
+print(parse_source(s))
+print()
+
+print(105)
+s = '''
+             if (_x*_x + _y*_y) > 4.0 { }
+'''
+print(s)
+print(parse_source(s))
+print()

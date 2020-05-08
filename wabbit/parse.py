@@ -121,8 +121,10 @@ from sly import Parser
 class WabbitParser(Parser):
     tokens = WabbitLexer.tokens
     precedence = (
+        ('left', LT, LAND, LOR, GE, GT),
         ('left', PLUS, MINUS),
         ('left', TIMES, DIVIDE),
+        ('right', UNARY),
         )
 
     @_('{ statement }')
@@ -157,6 +159,10 @@ class WabbitParser(Parser):
     @_('IF expr LBRACE statements RBRACE ELSE LBRACE statements RBRACE')
     def statement(self, p):
         return IfElse(p.expr, p.statements0, p.statements1)
+
+    @_('IF expr LBRACE statements RBRACE')
+    def statement(self, p):
+        return If(p.expr, p.statements)
 
     @_('WHILE expr LBRACE statements RBRACE')
     def statement(self, p):
@@ -198,6 +204,10 @@ class WabbitParser(Parser):
             value = True
         return Boolean(value)
 
+    @_('CHAR')
+    def expr(self, p):
+        return Char(p[0])
+
     @_('expr PLUS expr',
         'expr MINUS expr',
         'expr TIMES expr',
@@ -205,6 +215,8 @@ class WabbitParser(Parser):
         'expr LT expr',
         'expr LAND expr',
         'expr LOR expr',
+        'expr GE expr',
+        'expr GT expr',
             )
     def expr(self, p):
         return BinOp(p[1], p[0], p[2])
@@ -213,7 +225,7 @@ class WabbitParser(Parser):
     def expr(self, p):
         return Variable(p.NAME)
 
-    @_('PLUS expr', 'MINUS expr', 'LNOT expr')
+    @_('PLUS expr %prec UNARY', 'MINUS expr %prec UNARY', 'LNOT expr %prec UNARY')
     def expr(self, p):
         return UnaryOp(p[0], p.expr)
 
