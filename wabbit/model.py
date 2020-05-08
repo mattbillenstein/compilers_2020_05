@@ -109,7 +109,7 @@ class Integer(Literal):
 		super().__init__(**kwargs)
 
 	def __repr__(self):
-		return f'Integer({self.value})'
+		return f'Integer([{self.nodename}] {self.value})'
 
 	def to_source(self):
 		return repr(self.value)
@@ -126,7 +126,7 @@ class Float(Literal):
 		super().__init__(**kwargs)
 		
 	def __repr__(self):
-		return f'Float({self.value})'
+		return f'Float([{self.nodename}] {self.value})'
 
 	def to_source(self):
 		return repr(self.value)
@@ -143,7 +143,7 @@ class Char(Literal):
 		super().__init__(**kwargs)
 				
 	def __repr__(self):
-		return f'Char({self.value})'
+		return f'Char([{self.nodename}] {self.value})'
 
 	def to_source(self):
 		return self.value
@@ -159,7 +159,7 @@ class Bool(Literal):
 		super().__init__(**kwargs)
 
 	def __repr__(self):
-		return f'Bool({self.value})'
+		return f'Bool([{self.nodename}] {self.value})'
 
 	def to_source(self):
 		return str(self.value)
@@ -176,7 +176,7 @@ class Unit(Literal):
 		super().__init__(**kwargs)
 		
 	def __repr__(self):
-		return f'Unit()'
+		return f'Unit([{self.nodename}])'
 		
 	def to_source(self):
 		return '()'
@@ -199,7 +199,7 @@ class BinOp(Expression):
 		self.right = right
 
 	def __repr__(self):
-		return f'BinOp({self.op}, {self.left}, {self.right})'
+		return f'BinOp([{self.nodename}] {self.op}, {self.left}, {self.right})'
 		
 	def to_source(self):
 		return f'{self.left.to_source()} {self.op} {self.right.to_source()}'
@@ -214,7 +214,7 @@ class UnaryOp(Expression):
 		self.right = right
 
 	def __repr__(self):
-		return f'UnaryOp({self.op}, {self.right})'
+		return f'UnaryOp([{self.nodename}] {self.op}, {self.right})'
 		
 	def to_source(self):
 		return f'{self.op}{self.right.to_source()}'
@@ -230,7 +230,7 @@ class LocationLookup(Expression):
 		self.var = var
 		
 	def __repr__(self):
-		return f"LocationLookup({self.var})"
+		return f"LocationLookup([{self.nodename}] {self.var})"
 		
 	def to_source(self):
 		return self.var.to_source()
@@ -245,7 +245,7 @@ class Compound(Expression):
 		self.stmts = stmts
 
 	def __repr__(self):
-		return f'Compound({self.stmts})'	
+		return f'Compound([{self.nodename}] {self.stmts})'	
 		
 	def to_source(self):
 		return '{\n' + self.stmts.to_source() + '\n}'
@@ -260,7 +260,7 @@ class Grouping(Expression):
 		self.expr = expr
 
 	def __repr__(self):
-		return f'Grouping({self.expr})'
+		return f'Grouping([{self.nodename}] {self.expr})'
 		
 	def to_source(self):
 		return f"({self.expr})"
@@ -278,7 +278,7 @@ class Var(Location):
 		self.name = name
 		
 	def __repr__(self):
-		return f"Var({self.name})"
+		return f"Var([{self.nodename}] {self.name})"
 		
 	def to_source(self):
 		return f"{self.name}"
@@ -300,7 +300,7 @@ class Statements(Statement):
 		self.stmts = stmts
 		
 	def __repr__(self):
-		return f"Statements([id={self.nodename}]" + ",".join([repr(x) for x in self.stmts]) + ")"
+		return f"Statements([{self.nodename}] " + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
 		return "\n".join([x.to_source() for x in self.stmts])
@@ -319,7 +319,7 @@ class Assignment(Statement):
 		self.right = right
 		
 	def __repr__(self):
-		return f'Assign({self.left}, {self.right})'
+		return f'Assign([{self.nodename}] {self.left}, {self.right})'
 		
 	def to_source(self):
 		return f'{self.left.to_source()} = {self.right.to_source()};'
@@ -349,7 +349,7 @@ class Block(Statement):
 		self.stmts = stmts
 		
 	def __repr__(self):
-		return "Block(" + ",".join([repr(x) for x in self.stmts]) + ")"
+		return f"Block([{self.nodename}] " + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
 		return "{\n" + "\n".join([x.to_source() for x in self.stmts]) + "\n}\n"
@@ -370,7 +370,7 @@ class ConstDef(Statement):
 		self.value = value		
 
 	def __repr__(self):
-		return f"ConstDef({self.name}, {self.valtype}, {self.value})"
+		return f"ConstDef([{self.nodename}] {self.name}, {self.valtype}, {self.value})"
 		
 	def to_source(self):
 		if self.valtype is None:
@@ -390,7 +390,7 @@ class VarDef(Statement):
 		self.value = value				# if the value had an assignment, this is the expr assigned to .name variable
 		
 	def __repr__(self):
-		return f"VarDef({self.name}, {self.valtype}, {self.value})"
+		return f"VarDef([{self.nodename}] {self.name}, {self.valtype}, {self.value})"
 		
 	def to_source(self):
 		src = f"var {self.name}"
@@ -414,8 +414,8 @@ class IfConditional(Statement):
 
 	def __repr__(self):
 		if self.isfalse is None:
-			return f"IfConditional({self.condition}, {self.istrue})"
-		return f"IfConditional({self.condition}, {self.istrue}, {self.isfalse})"
+			return f"IfConditional([{self.nodename}] {self.condition}, {self.istrue})"
+		return f"IfConditional([{self.nodename}] {self.condition}, {self.istrue}, {self.isfalse})"
 		
 	def to_source(self):
 		output = f"if {self.condition.to_source()} {self.istrue.to_source()}"
@@ -433,7 +433,7 @@ class While(Statement):
 		self.todo = todo
 
 	def __repr__(self):
-		return f"While({self.condition}, {self.todo})"
+		return f"While([{self.nodename}] {self.condition}, {self.todo})"
 		
 	def to_source(self):
 		return f"while {self.condition.to_source()} {self.todo.to_source()}"
@@ -444,7 +444,7 @@ class BreakStatement(Statement):
 		super().__init__(**kwargs)
 		
 	def __repr__(self):
-		return f"Break()"
+		return f"Break([{self.nodename}])"
 		
 	def to_source(self):
 		return f"break;"
@@ -454,7 +454,7 @@ class ContinueStatement(Statement):
 		super().__init__(**kwargs)
 		
 	def __repr__(self):
-		return f"ContinueStatement()"
+		return f"ContinueStatement([{self.nodename}])"
 		
 	def to_source(self):
 		return f"continue;"
@@ -468,10 +468,33 @@ class ExpressionStatement(Statement):
 		self.expr = expr
 	
 	def __repr__(self):
-		return f"ExpressionStatement({self.expr})"
+		return f"ExpressionStatement([{self.nodename}] {self.expr})"
 		
 	def to_source(self):
 		return f"{self.expr.to_source()};"
+		
+		
+		
+###
+### Functions
+###
+
+class FunctionDefinition(Node):
+	pass
+	
+class FunctionApplication(Node):
+	pass
+	
+class ReturnStatement(Statement):
+	pass
+	
+class Parameters(Expression):
+	pass
+	
+class Arguments(Expression):
+	pass
+	
+	
 
 # ------ Debugging function to convert a model into source code (for easier viewing)
 

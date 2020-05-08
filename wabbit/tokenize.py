@@ -92,7 +92,7 @@ class WabbitLexer(Lexer):
 		PLUS, MINUS, TIMES, DIVIDE, LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT,
 		
 		# misc. 
-		ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE, DOT,
+		ASSIGN, SEMI, LPAREN, RPAREN, LBRACE, RBRACE, # DOT,
 		
 		}
 	ignore = ' \t'	   # Ignore these (between tokens)
@@ -155,7 +155,7 @@ class WabbitLexer(Lexer):
 	NAME['true'] = TRUE
 	NAME['false'] = FALSE
 
-	DOT = r'\.'
+	#DOT = r'\.'
 	
 	# put at the bottom to avoid override single character tokens	
 	@_(r"'((\\')|(\\n)|(\\x[a-fA-F0-9]{1,2})|(.))'")

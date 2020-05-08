@@ -195,11 +195,11 @@ class WabbitParser(Parser):
 
 	# variable_definition : VAR NAME [ type ] ASSIGN expr SEMI
 	#					 | VAR NAME type [ ASSIGN expr ] SEMI
-	@_("VAR NAME [ type ] ASSIGN expr SEMI")
-	def variable_definition(self, p):
-		return VarDef(p.NAME, p.type, p.expr, nodename=self.getNewID())
+	#@_("VAR NAME [ type ] ASSIGN expr SEMI")
+	#def variable_definition(self, p):
+	#	return VarDef(p.NAME, p.type, p.expr, nodename=self.getNewID())
 
-	@_("VAR NAME type [ ASSIGN expr ] SEMI")
+	@_("VAR NAME [ type ] [ ASSIGN expr ] SEMI")
 	def variable_definition(self, p):
 		return VarDef(p.NAME, p.type, p.expr, nodename=self.getNewID())
 
@@ -351,6 +351,8 @@ class WabbitParser(Parser):
 	@_("NAME")
 	def type(self, p):
 		return p.NAME
+
+	
 
 	"""
 	@_('FUNC name LPAREN [ arguments ] RPAREN [ type ] LBRACE statements RBRACE')
