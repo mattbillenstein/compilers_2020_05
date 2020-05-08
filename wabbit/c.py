@@ -132,25 +132,22 @@
 import os.path
 import sys
 
-from .interp import new_scope
 from .model import *
 from .parse import parse
+from .scope import *
 
+NOOP = 'while(0){};\n'
 
 class TypeVisitor:
     def __init__(self, node):
-        self.env = None
-        self.nodes = []
+        self.env = Scopes()
+#        self.nodes = []
         self.var_ids = {}
 
         self.visit(node)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.types})'
-
-    @property
-    def current_scope(self):
-        return self.env.maps[0]
 
     def var(self, node):
         name = node.__class__.__name__
@@ -167,29 +164,22 @@ class TypeVisitor:
 
     def visit(self, node):
         node._var = self.var(node)
-        if not isinstance(node, (Name, Type)):
-            self.nodes.append(node)
+#        if not isinstance(node, (Name, Type)):
+#            self.nodes.append(node)
         m = getattr(self, f'visit_{node.__class__.__name__}')
         m(node)
 #        print('VISIT', node, node._var, node._type, file=sys.stderr)
 
-    @new_scope
+    @new_scope()
     def visit_Block(self, node):
         for n in node.statements:
             self.visit(n)
 
-            # first return wins?
-            if isinstance(n, Return):
-                if not node._type:
-                    node._type = n.value._type
-
-        # else, last node type
-        if not node._type:
-            node._type = n._type
-
+    @new_scope()
     def visit_Compound(self, node):
-        # same as Block really
-        self.visit_Block(node)
+        for n in node.statements:
+            self.visit(n)
+        node._type = n._type
 
     def visit_Return(self, node):
         self.visit(node.value)
@@ -226,12 +216,12 @@ class TypeVisitor:
 #        print(node, node.arg, file=sys.stderr)
         self.visit(node.arg)
 
-    def set_Name(self, env, node, type):
+    def set_Name(self, node, type):
         node._var = self.var(node)
         node._type = type
 #        print('SET_NAME', node, type, node._var, file=sys.stderr)
-        env[node.value] = node
-        self.nodes.append(node)
+        self.env.define(node.value, node)
+#        self.nodes.append(node)
 
     def visit_Var(self, node):
         # name, arg, type
@@ -241,7 +231,7 @@ class TypeVisitor:
         elif node.type:
             type = node.type.type
 
-        self.set_Name(self.current_scope, node.name, type)
+        self.set_Name(node.name, type)
 
     def visit_Const(self, node):
         # name, arg, type
@@ -250,7 +240,7 @@ class TypeVisitor:
         if node.type:
             assert node.type.type == type
 
-        self.set_Name(self.current_scope, node.name, type)
+        self.set_Name(node.name, type)
 
     def visit_Name(self, node):
         # take the var name and type from the var/const node
@@ -259,11 +249,10 @@ class TypeVisitor:
         node._var, node._type = n._var, n._type
 
     def visit_Assign(self, node):
-        # FIXME, protect const somehow?
         self.visit(node.arg)
 
         if isinstance(node.name, Name):
-            # visit to populat from env
+            # visit to populate from env
             self.visit(node.name)
             return
 
@@ -291,43 +280,54 @@ class TypeVisitor:
         self.visit(node.block)
 
     def visit_Func(self, node):
-        # save off the function so we can lookup in call
-        self.current_scope[node.name.value] = node
-
-        # set name for args, we'll call the function by setting these from Call
-        # and jumping...
-        for argdef in node.args:
-            self.set_Name(self.current_scope, argdef.name, argdef.type.type)
-
         self.visit(node.block)
 
     def visit_Call(self, node):
-        func = self.env[node.name.value]
-
-        # fixme, return unit -- just return -1
-        node._type = 'int'
-        if func.ret_type:
-            node._type = func.ret_type.type
-
-        # return goto??
-
-class CTypeVisitor(TypeVisitor):
-    typemap = {
-        int: 'int',
-        float: 'double',
-        str: 'char',
-        bool: 'bool'
-    }
+        pass
 
 class CCompilerVisitor:
+    # wabbit -> C types
+    typemap = {
+        'int': 'int',
+        'float': 'double',
+        'bool': 'bool',
+        'char': 'char',
+        None: 'void',
+    }
 
     def compile_c(self, node):
-        types = CTypeVisitor(node)
+        types = TypeVisitor(node)
 
-        typemap = {'float': 'double'}
-        variables = ''.join(f'{"// " if n._type is None else ""}{typemap.get(n._type, n._type)} {n._var};\n' for n in types.nodes)
-        code = self.visit(node)
-        return '#include <stdio.h>\n#include <stdbool.h>\nint main() {\n' + variables + '\n// Execute...\n' + code + '\nreturn 0;\n}'
+        s = '#include <stdio.h>\n#include <stdbool.h>\n\n'
+
+        # global vars / functions
+        s += '// global variables\n'
+
+        main = None
+        for n in node.statements:
+            # grab the program main if it exists
+            if isinstance(n, Func) and n.name.value == 'main':
+                assert main is None
+                main = n
+                n.name.value = '_main'  # hack, rename wabbit main
+
+            s += self.define(n)
+
+        s += '\nvoid _wabbit_init() {\n'
+
+        for n in node.statements:
+            s += self.visit(n)
+
+        s += '}\n\n'
+
+        s += f'''int main() {{
+_wabbit_init();
+{'_main();' if main else ''}
+return 0;
+}}
+'''
+
+        return s
 
     def visit(self, node):
         m = getattr(self, f'visit_{node.__class__.__name__}')
@@ -345,6 +345,7 @@ class CCompilerVisitor:
             s += f'{node._var} = {n._var};\n'
 
         s += f'{node._var}_End:\n'
+        s += NOOP
         return s
 
     def visit_Compound(self, node):
@@ -383,7 +384,6 @@ class CCompilerVisitor:
     def visit_Print(self, node):
         s = self.visit(node.arg)
 
-        print(node.arg, file=sys.stderr)
         format = {
             'int': '%d',
             'float': '%f',  # we emit double
@@ -403,6 +403,9 @@ class CCompilerVisitor:
     def visit_Name(self, node):
         return ''
 
+    def visit_Func(self, node):
+        return ''
+
     def visit_If(self, node):
         s =  self.visit(node.cond)
         s += f'if ({node.cond._var}) goto {node.block._var};\n'
@@ -420,19 +423,97 @@ class CCompilerVisitor:
         s += self.visit(node.block)
         s += f'goto {node._var};\n'
         s += f'{node._var}_End:\n'
-        return s
-
-    def visit_Func(self, node):
-        s = f'{node._var}:\n'
-        s += self.visit(node.block)
-        s += f'{node._var}_End:\n'
+        s += NOOP
         return s
 
     def visit_Return(self, node):
-        return ''
+        s = self.visit(node.value)
+        return s + f'return {node.value._var};\n'
 
     def visit_Call(self, node):
-        return ''
+        args = ', '.join(self.visit(n) for n in node.args)
+        return f'{node.name.value}({args});'
+
+    #### definitions
+
+    def define(self, node):
+        m = getattr(self, f'define_{node.__class__.__name__}')
+        return m(node)
+    
+    def define_Node(self, node):
+        return f'{self.typemap[node._type]} {node._var};\n';
+
+    def define_Integer(self, node):
+        return self.define_Node(node)
+    
+    def define_Float(self, node):
+        return self.define_Node(node)
+    
+    def define_Char(self, node):
+        return self.define_Node(node)
+    
+    def define_Bool(self, node):
+        return self.define_Node(node)
+    
+    def define_Name(self, node):
+        return self.define_Node(node)
+
+    def define_Var(self, node):
+        s = self.define(node.name)
+        if node.arg:
+            s += self.define(node.arg)
+        return s
+
+    def define_Const(self, node):
+        s = self.define(node.name)
+        return s + self.define(node.arg)
+
+    def define_Assign(self, node):
+        s = self.define(node.arg)
+        return s
+
+    def define_UnaOp(self, node):
+        s = self.define_Node(node)
+        return s + self.define(node.arg)
+
+    def define_BinOp(self, node):
+        s = self.define_Node(node)
+        return s + self.define(node.left) + self.define(node.right)
+
+    def define_Block(self, node):
+        s = ''
+        for n in node.statements:
+            s += self.define(n)
+        return s
+            
+    def define_Compound(self, node):
+        s = self.define_Node(node)
+        return s + self.define_Block(node)
+
+    def define_Func(self, node):
+        args = ', '.join(f'{self.typemap[n.type.type]} {n.name.value}' for n in node.args)
+        s = f'\n{self.typemap[node.ret_type.type]} {node.name.value}({args}) {{\n'
+        s += self.define(node.block)
+        s += self.visit(node.block)
+        s += '}\n\n'
+        return s
+
+    def define_Print(self, node):
+        return self.define(node.arg)
+
+    def define_Return(self, node):
+        return self.define(node.value)
+
+    def define_If(self, node):
+        s = self.define(node.cond)
+        s += self.define(node.block)
+        s += self.define(node.eblock)
+        return s
+
+    def define_While(self, node):
+        s = self.define(node.cond)
+        s += self.define(node.block)
+        return s
 
 def compile_c(text_or_node):
     node = text_or_node
@@ -441,7 +522,6 @@ def compile_c(text_or_node):
     return CCompilerVisitor().compile_c(node)
 
 def cc(text_or_node, filename):
-    return
     code = compile_c(text_or_node)
     with open(filename, 'w') as f:
         f.write(code)

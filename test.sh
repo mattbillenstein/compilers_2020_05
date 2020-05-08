@@ -23,6 +23,13 @@ for f in tests/Func/*.wb tests/Func/*.wb $(grep -L '::' tests/Type/*.wb); do
     echo
     echo "time python3 -m wabbit.interp $f 2> /dev/null > /tmp/$name-mattb.out"
     time python3 -m wabbit.interp $f 2> /dev/null > /tmp/$name-mattb.out
+
+    echo
+    echo "python3 -m wabbit.interp $f 2> /dev/null > /tmp/$name-mattb.out"
+    python3 -m wabbit.c $f 2> /dev/null > /tmp/$name-mattb.c
+    clang /tmp/$name-mattb.c -o /tmp/$name-mattb.c.exe
+    /tmp/$name-mattb.c.exe > /tmp/$name-mattb.c.out
+
     echo
     echo "diff /tmp/$name-silly.out /tmp/$name-mattb.out"
     diff /tmp/$name-silly.out /tmp/$name-mattb.out

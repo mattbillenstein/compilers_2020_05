@@ -36,7 +36,7 @@ class Scopes:
             if isinstance(scope, CallScope):
                 break
 
-        assert key in self.global_scope, 'Undefined?'
+        assert key in self.global_scope, ('Undefined:', key)
         return self.global_scope
 
     def define(self, key, value):
