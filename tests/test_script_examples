@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/local/bin/bash
 
 set -u
 set -o pipefail
@@ -11,8 +11,8 @@ for infile in tests/Script/*.wb; do
     }
     actual_output="$(python -m wabbit.interp $infile 2>/dev/null)"
     if ! diff -qu "$expected_outfile" - <<<"$actual_output" > /dev/null; then
-        echo "FAILURE $(wc -l $infile)"
+        echo -e "\e[31mFAILURE\e[0m $(wc -l $infile)"
     else
-        echo "SUCCESS $(wc -l $infile)"
+        echo -e "\e[33mSUCCESS\e[0m $(wc -l $infile)"
     fi
 done

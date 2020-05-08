@@ -1,0 +1,9 @@
+#!/usr/local/bin/bash
+
+set -u
+set -o pipefail
+
+infile="$1"
+expected_outfile="${infile%%.wb}.out"
+actual_output="$(python -m wabbit.interp $infile 2>/dev/null)"
+diff -u "$expected_outfile" - <<<"$actual_output" | delta
