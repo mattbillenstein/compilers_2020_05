@@ -50,6 +50,7 @@ NoneType = type(None)
 
 class Node:
     is_statement = False
+    _var = ''
     _type = None
 
     def __eq__(self, other):

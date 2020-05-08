@@ -132,99 +132,157 @@
 import os.path
 import sys
 
+from .interp import new_scope
 from .model import *
 from .parse import parse
 
 
 class TypeVisitor:
-    typemap = {
-        int: int,
-        float: float,
-        bool: bool,
-        str: str,
-    }
-
     def __init__(self, node):
-        self.types = {}
+        self.env = None
+        self.nodes = []
+        self.var_ids = {}
+
         self.visit(node)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.types})'
 
-    def __iter__(self):
-        return iter(self.types.values())
+    @property
+    def current_scope(self):
+        return self.env.maps[0]
 
-    def set(self, node, type):
-        if type is not None:
-            type = self.typemap.get(type, type)
-            self.types[id(node)] = (node, type)
-            print('SET', node, type, file=sys.stderr)
-        else:
-            assert 0, (node, type)
+    def var(self, node):
+        name = node.__class__.__name__
+        if isinstance(node, Name):
+            name += '_' + node.value
+        elif hasattr(node, 'name'):
+            name += '_' + node.name.value
 
-    def get(self, node):
-        x = self.types.get(id(node), (None, None))[1]
-        print('GET', node, x, file=sys.stderr)
-        return x
+        i = self.var_ids.get(id(node))
+        if i is None:
+            self.var_ids[id(node)] = i = len(self.var_ids)
+
+        return f'{name}_{i}'
 
     def visit(self, node):
+        node._var = self.var(node)
+        if not isinstance(node, (Name, Type)):
+            self.nodes.append(node)
         m = getattr(self, f'visit_{node.__class__.__name__}')
         m(node)
+#        print('VISIT', node, node._var, node._type, file=sys.stderr)
 
+    @new_scope
     def visit_Block(self, node):
-        type = None
         for n in node.statements:
             self.visit(n)
 
             # first return wins?
-            if type is None and isinstance(n, Return):
-                type = self.get(n)
+            if isinstance(n, Return):
+                if not node._type:
+                    node._type = n.arg._type
 
-        # otherwise, type of last statement
-        if type is None:
-            type = self.get(n)
+        # else, last node type
+        if not node._type:
+            node._type = n._type
 
-        self.set(node, type)
+    def visit_UnaOp(self, node):
+        self.visit(node.arg)
+        node._type = node.arg._type
+        if node.op == '!':
+            node._type = 'bool'
 
     def visit_BinOp(self, node):
         self.visit(node.left)
         self.visit(node.right)
 
-        type = ltype = self.get(node.left)
-        rtype = self.get(node.right)
-        assert ltype == rtype, (node.left, ltype, node.right, rtype)
+        assert node.left._type == node.right._type, (node, node.left._type, node.right._type)
 
+        node._type = node.left._type
         if node.op in ('||', '&&'):
-            type = bool
-
-        self.set(node, type)
+            node._type = 'bool'
 
     def visit_Integer(self, node):
-        self.set(node, int)
+        node._type = 'int'
 
     def visit_Float(self, node):
-        self.set(node, float)
+        node._type = 'float'
 
     def visit_Char(self, node):
-        self.set(node, str)
+        node._type = 'char'
 
     def visit_Bool(self, node):
-        self.set(node, bool)
+        node._type = 'bool'
 
     def visit_Print(self, node):
+#        print(node, node.arg, file=sys.stderr)
         self.visit(node.arg)
 
+    def set_Name(self, env, node, type):
+        node._var = self.var(node)
+        node._type = type
+#        print('SET_NAME', node, type, node._var, file=sys.stderr)
+        env[node.value] = node
+        self.nodes.append(node)
+
     def visit_Var(self, node):
+        # name, arg, type
         if node.arg:
             self.visit(node.arg)
-            type = self.get(node.arg)
+            type = node.arg._type
         elif node.type:
-            type = self.visit(node.type)
+            type = node.type.type
 
-        self.set(node.name, type)
+        self.set_Name(self.current_scope, node.name, type)
+
+    def visit_Const(self, node):
+        # name, arg, type
+        self.visit(node.arg)
+        type = node.arg._type
+        if node.type:
+            assert node.type.type == type
+
+        self.set_Name(self.current_scope, node.name, type)
 
     def visit_Name(self, node):
-        return self.get(node)
+        # take the var name and type from the var/const node
+        n = self.env[node.value]
+#        print(node, n, n._var, n._type, file=sys.stderr)
+        node._var, node._type = n._var, n._type
+
+    def visit_Assign(self, node):
+        # FIXME, protect const somehow?
+        self.visit(node.arg)
+
+        if isinstance(node.name, Name):
+            # visit to populat from env
+            self.visit(node.name)
+            return
+
+        # Attribute - recursively lookup the dict to set the value in...
+        attr = node.name
+        env = self.resolve_Attribute(attr.name)
+        env[attr.attr] = arg._type
+
+    def resolve_Attribute(self, node):
+        if isinstance(node, Name):
+            # we're updating an existing struct, so we don't need
+            # current_scope here - update it in whatever scope it lives in...
+            return self.env[node.value]
+        return self.resolve_Attribute(node.name)[node.attr]
+
+    def visit_If(self, node):
+        self.visit(node.cond)
+        node._type = node.cond._type
+        self.visit(node.block)
+        self.visit(node.eblock)
+
+    def visit_While(self, node):
+        self.visit(node.cond)
+        node._type = node.cond._type
+        self.visit(node.block)
+
 
 class CTypeVisitor(TypeVisitor):
     typemap = {
@@ -236,65 +294,91 @@ class CTypeVisitor(TypeVisitor):
 
 class CCompilerVisitor:
 
-    def __init__(self):
-        self.var_ids = {}
-
-    def var(self, node):
-        if hasattr(node, 'name'):
-            name = node.name.value
-        else:
-            name = node.__class__.__name__
-
-        i = self.var_ids.get(id(node))
-        if i is None:
-            self.var_ids[id(node)] = i = len(self.var_ids)
-
-        return f'v{name}_{i}'
-
-    def get(self, node):
-        # get type
-        return self.types.get(node)
-
     def compile_c(self, node):
-        self.types = CTypeVisitor(node)
-        variables = ''.join(f'{t} {self.var(n)};\n' for n, t in self.types)
+        types = CTypeVisitor(node)
+
+        typemap = {'float': 'double'}
+        variables = ''.join(f'{"// " if n._type is None else ""}{typemap.get(n._type, n._type)} {n._var};\n' for n in types.nodes)
         code = self.visit(node)
-        return '#include <stdio.h>\n#include <stdbool.h>\nint main() {\n' + variables + code + '\nreturn 0;\n}'
+        return '#include <stdio.h>\n#include <stdbool.h>\nint main() {\n' + variables + '\n// Execute...\n' + code + '\nreturn 0;\n}'
 
     def visit(self, node):
         m = getattr(self, f'visit_{node.__class__.__name__}')
         return m(node)
 
     def visit_Block(self, node):
-        s = ''
+        s = f'{node._var}:\n'
+
         for n in node.statements:
             s += self.visit(n)
+
+        s += f'{node._var}_End:\n'
         return s
+
+    def visit_UnaOp(self, node):
+        s = self.visit(node.arg)
+        return s + f'{node._var} = {node.op}{node.arg._var};\n'
 
     def visit_BinOp(self, node):
         s = self.visit(node.left) + self.visit(node.right)
-        return s + f'{self.var(node)} = {self.var(node.left)} {node.op} {self.var(node.right)};\n'
+        return s + f'{node._var} = {node.left._var} {node.op} {node.right._var};\n'
 
     def visit_Integer(self, node):
-        return f'{self.var(node)} = {node.value};\n';
+        return f'{node._var} = {node.value};\n';
+
+    def visit_Float(self, node):
+        return f'{node._var} = {node.value};\n';
 
     def visit_Var(self, node):
+        if node.arg is None:
+            return ''
         s = self.visit(node.arg)
-        return s + f'{self.var(node)} = {self.var(node.arg)};\n';
+        return s + f'{node.name._var} = {node.arg._var};\n';
+
+    def visit_Const(self, node):
+        s = self.visit(node.arg)
+        return s + f'{node.name._var} = {node.arg._var};\n';
 
     def visit_Print(self, node):
         s = self.visit(node.arg)
 
-        type = self.get(node.arg)
+#        print(node.arg, file=sys.stderr)
         format = {
             'int': '%d',
-            'double': '%f',
+            'float': '%f',  # we emit double
             'char': '%c',
             'bool': '%d',
-        }[type]
+        }[node.arg._type]
 
-        s += f'printf("{format}", {self.var(node.arg)});'
+        s += f'printf("{format}\\n", {node.arg._var});\n'
 
+        return s
+
+    def visit_Assign(self, node):
+        # would have been defined via var/const
+        s = self.visit(node.arg)
+        return s + f'{node.name._var} = {node.arg._var};\n';
+
+    def visit_Name(self, node):
+        return ''
+
+    def visit_If(self, node):
+        s =  self.visit(node.cond)
+        s += f'if ({node.cond._var}) goto {node.block._var};\n'
+        s += f'goto {node.eblock._var};\n'
+        s += self.visit(node.block)
+        s += f'goto {node.eblock._var}_End;\n'
+        s += self.visit(node.eblock)
+        return s
+
+    def visit_While(self, node):
+        s = f'{node._var}:\n'
+        s +=  self.visit(node.cond)
+        s += f'if ({node.cond._var}) goto {node.block._var};\n'
+        s += f'goto {node._var}_End;\n'
+        s += self.visit(node.block)
+        s += f'goto {node._var};\n'
+        s += f'{node._var}_End:\n'
         return s
 
 def compile_c(text_or_node):
