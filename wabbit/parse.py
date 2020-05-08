@@ -327,7 +327,7 @@ class Parser(BaseParser):
             type_ = None
 
         self.expect("ASSIGN")
-        value = self._literal()
+        _assert(value := self.expression())
         self.expect("SEMICOLON")
 
         node = ConstDef(name, type_, value)
