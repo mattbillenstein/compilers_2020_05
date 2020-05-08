@@ -106,6 +106,7 @@ type      : NAME
 """
 from dataclasses import dataclass
 from typing import ClassVar
+from typing import Dict
 from typing import Optional
 
 from .model import (  # noqa
@@ -134,6 +135,7 @@ from .tokenize import tokenize, Token, TokenStream
 
 blue = lambda s: __import__("clint").textui.colored.blue(s, always=True, bold=True)  # noqa
 green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=True)  # noqa
+red = lambda s: __import__("clint").textui.colored.red(s, always=True, bold=True)  # noqa
 
 _print = print
 
@@ -145,12 +147,20 @@ def print(*args, **kwargs):
         _print(*args, **kwargs)
 
 
+def _assert(condition, error_message=None):
+    if not condition:
+        message = f"line {Parser.line_num}"
+        if error_message is not None:
+            message = f"{message}: {error_message}"
+        raise RuntimeError(message)
+
+
 @dataclass
 class BaseParser:
     tokens: TokenStream
     lookahead: Optional[Token] = None
-    line_num: int = 0
-    line_num_map: ClassVar = {}
+    line_num: ClassVar[int] = 0
+    line_num_map: ClassVar[Dict[Node, int]] = {}
 
     def peek(self):
         if self.lookahead is None:
@@ -160,11 +170,11 @@ class BaseParser:
     def expect(self, type_) -> Token:
         print(blue(f"expect({type_}) next = {self.peek()}"))
         tok = self.peek()
-        assert tok.type_ == type_, f"Expected {type_}, got {tok}"
+        _assert(tok.type_ == type_, f"Expected {type_}, got {tok}")
 
         print(green(f"    -> {tok}"))
         self.lookahead = None
-        self.line_num = tok.line_num
+        self.__class__.line_num = tok.line_num  # TODO: __class__ shouldn't be necessary
         return tok
 
     def accept(self, *types_) -> Optional[Token]:
@@ -177,7 +187,7 @@ class BaseParser:
         if tok.type_ in types_:
             print(green(f"    -> {tok}"))
             self.lookahead = None
-            self.line_num = tok.line_num
+            self.__class__.line_num = tok.line_num  # TODO: __class__ shouldn't be necessary
             return tok
         # print(blue("    -> reject"))
 
@@ -229,8 +239,9 @@ class Parser(BaseParser):
         if not self.accept("IF"):
             return None
 
-        assert (test := self.expression())
-        assert (then := self.block())
+        _assert(test := self.expression())
+        _assert(then := self.block())
+        assert then is not None
         else_ = self._else()
         node = If(test, then.statements, else_.statements if else_ else None)
         print(green(f"    parsed If: {node}"))
@@ -239,7 +250,7 @@ class Parser(BaseParser):
     def _else(self) -> Optional[Block]:
         if not self.accept("ELSE"):
             return None
-        assert (block := self.block())
+        _assert(block := self.block())
         return block
 
     def while_(self) -> Optional[Statement]:
@@ -248,8 +259,9 @@ class Parser(BaseParser):
         if not self.accept("WHILE"):
             return None
 
-        assert (test := self.expression())
-        assert (then := self.block())
+        _assert(test := self.expression())
+        _assert(then := self.block())
+        assert then is not None
         node = While(test, then.statements)
         print(green(f"    parsed While: {node}"))
         return node
@@ -267,7 +279,7 @@ class Parser(BaseParser):
         if not self.accept("PRINT"):
             return None
 
-        assert (expression := self.expression())
+        _assert(expression := self.expression())
         self.expect("SEMICOLON")
         node = Print(expression)
 
@@ -283,7 +295,7 @@ class Parser(BaseParser):
 
         self.expect("ASSIGN")
 
-        assert (expression := self.expression())
+        _assert(expression := self.expression())
         self.expect("SEMICOLON")
         node = Assign(location, expression)
 
@@ -305,10 +317,10 @@ class Parser(BaseParser):
             type_ = None
 
         if self.accept("ASSIGN"):
-            assert (value := self.expression())
+            _assert(value := self.expression())
         else:
             value = None
-            assert type_
+            _assert(type_)
 
         self.expect("SEMICOLON")
         node = VarDef(name, type_, value)
@@ -355,7 +367,7 @@ class Parser(BaseParser):
             print(blue(f"expression({operators}): next = {self.peek()}"))
             left = child_parser(self)
             while tok := self.accept(*operators):
-                assert (right := child_parser(self))
+                _assert(right := child_parser(self))
                 left = BinOp(tok.token, left, right)
             print(green(f"    parsed {left}"))
             return left
@@ -369,7 +381,10 @@ class Parser(BaseParser):
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB", "LNOT"):
-            assert (expr := self._factor(self))
+            _assert(
+                (expr := self._factor(self)),
+                f"_unary_op tok={tok} peek={self.peek()}: expected factor",
+            )
             return UnaryOp(tok.token, expr)
 
     def name(self) -> Optional[Name]:
