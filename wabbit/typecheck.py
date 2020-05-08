@@ -219,7 +219,6 @@ def check_Statements(node, env, statement_info):
                           "-"*20 + f"\n\n{statement}\n\n" + "-"*20 +"\n")
         check(s, env, statement_info)
 
-
 @add(Type)
 def check_Type(node, env, statement_info):
     return node.type
