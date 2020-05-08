@@ -105,7 +105,7 @@ def interpret_BinOp(node, env):
         raise RuntimeError(f"Unsupported operator {node.op}")
 
 @add(Bool)
-def interpret_Char(node, env):
+def interpret_Bool(node, env):
     return node.value
 
 @add(Char)
@@ -136,7 +136,7 @@ def interpret_Float(node, env):
 @add(If)
 def interpret_If(node, env):
     condition = interpret(node.condition, env)
-    if condition:
+    if condition in [True, 'true']:
         interpret(node.result, env.new_child())
     elif node.alternative is not None:
         interpret(node.alternative, env.new_child())
@@ -202,7 +202,7 @@ def interpret_Var(node, env):
 def interpret_While(node, env):
     while True:
         condition = interpret(node.condition, env)
-        if condition:
+        if condition in [True, 'true']:
             interpret(node.statements, env.new_child())
         else:
             break

@@ -36,11 +36,25 @@ from .model import *
 def check_program(model):
     # Make the initial environment (a dict)
     env = ChainMap()     # Use instead of dict
-    return check(model, env)
+    check(model, env, None)
+    if ERRORS:
+        raise TypeError("\n\n".join(ERRORS))
+    return True
 
+ERRORS = []
+
+def record_error(message, statement_info):
+    ERRORS.append(statement_info + message)
+
+def clear_errors():
+    '''Used by testing framework when calling multiple times
+       to insure we only capture the correct error(s).
+    '''
+    ERRORS.clear()
 
 @singledispatch
-def check(node, env):
+def check(node, env, statement_info):
+    # this should not happen
     raise RuntimeError(f"Can't check {node} on line {node.lineno}.")
 
 add = check.register
@@ -48,15 +62,19 @@ add = check.register
 # Order alphabetically so that they are easier to find
 
 @add(Assignment)
-def check_Assignment(node, env):
-    value = check(node.expression, env)
-    name = node.location.name
-    # find the nearest environment in which this variable is known.
-    for e in env.maps:
-        if name in e:
-            e[name] = value
-            return
+def check_Assignment(node, env, statement_info):
+    expression_type = check(node.expression, env, statement_info)
+    var = check(node.location, env, statement_info)
 
+    if isinstance(var, Const):
+        record_error(f"Cannot change value of constant {node.location.name}.",
+                     statement_info)
+
+    if var.type != expression_type:
+        record_error(f"Incompatible types: {var.type} != {expression_type}",
+                     statement_info)
+
+    print("Done checking assignment")
 
 valid_binop = {
     # Integer operations
@@ -95,129 +113,147 @@ valid_binop = {
 }
 
 @add(BinOp)
-def check_BinOp(node, env):
-
+def check_BinOp(node, env, statement_info):
     try:
-        return valid_binop[(node.op, check(node.left, env), check(node.right, env))]
+        return valid_binop[(node.op,
+                            check(node.left, env, statement_info),
+                            check(node.right, env, statement_info))]
     except KeyError:
-        raise TypeError("Incompatible types for operation:\n" +
-            f"     {to_source(node.left)} {node.op} {to_source(node.right)}")
+        record_error("Incompatible types for operation:\n" +
+            f"     {to_source(node.left)} {node.op} {to_source(node.right)}",
+            statement_info)
 
 @add(Bool)
-def check_Bool(node, env):
-    if node.value in ['true', 'false']:
+def check_Bool(node, env, statement_info):
+    if node == 'bool' or node.value in ['true', 'false']:
         return 'bool'
     else:
-        raise TypeError(f"Expected 'true' or 'false'; got {node.value}")
+        record_error(f"Expected 'true' or 'false'; got {node.value}",
+                     statement_info)
 
 @add(Char)
-def check_Char(node, env):
+def check_Char(node, env, statement_info):
     if isinstance(node.value, str) and len(node.value) == 1:
         return 'char'
     else:
-        raise TypeError(f"Expected a 'char'; got {node.value}")
+        record_error(f"Expected a 'char'; got {node.value}", statement_info)
 
 
 @add(Const)
-def check_Const(node, env):
-    name = node.name
-    value = check(node.expression, env)
-    env[name] = value
+def check_Const(node, env, statement_info):
+
+    value_type = check(node.value, env, statement_info)
+    if node.type and node.type != value_type:
+        record_error(f"Wrong type declaration: {node.type} != {value_type}.",
+         statement_info)
+
+    node.is_constant = True
+    env[node.name] = node
+    return node
+
 
 @add(Compound)
-def check_Compound(node, env):
+def check_Compound(node, env, statement_info):
     new_env = env.new_child()
     for s in node.statements:
-        result = check(s, new_env)
+        result = check(s, new_env, statement_info)
     return result
 
 @add(ExpressionStatement)
-def check_ExpressionStatement(node, env):
-    return check(node.expression, env)
+def check_ExpressionStatement(node, env, statement_info):
+    return check(node.expression, env, statement_info)
 
 @add(Float)
-def check_Float(node, env):
+def check_Float(node, env, statement_info):
     if not isinstance(node.value, float):
-        raise TypeError(f"Argument of Float is not a float: {node.value}")
+        record_error(f"Argument of Float is not a float: {node.value}",
+                     statement_info)
+        return
     return 'float'
 
 @add(If)
-def check_If(node, env):
-    condition = check(node.condition, env)
-    if condition:
-        check(node.result, env.new_child())
-    elif node.alternative is not None:
-        check(node.alternative, env.new_child())
+def check_If(node, env, statement_info):
+    condition = check(node.condition, env, statement_info)
+
+    if condition != 'bool':
+        record_error(f"Expected a boolean for if condition; got {condition}",
+                     statement_info)
+    check(node.result, env.new_child(), statement_info)
+
+    if node.alternative is not None:
+        check(node.alternative, env.new_child(), statement_info)
 
 @add(Integer)
-def check_Integer(node, env):
+def check_Integer(node, env, statement_info):
     if not isinstance(node.value, int):
-        raise TypeError(f"Argument of Integer is not an int: {node.value}")
+        record_error(f"Argument of Integer is not an int: {node.value}",
+                     statement_info)
+        return
     return "int"
 
 @add(Group)
-def check_Group(node, env):
-    return check(node.expression, env)
-
+def check_Group(node, env, statement_info):
+    return check(node.expression, env, statement_info)
 
 @add(Name)
-def check_Name(node, env):
+def check_Name(node, env, statement_info):
     return env[node.name]
 
 @add(Print)
-def check_Print(node, env):
-    expr = check(node.expression, env)
-    return True
+def check_Print(node, env, statement_info):
+    expr = check(node.expression, env, statement_info)
+
 
 @add(Statements)
-def check_Statements(node, env):
-    errors = []
+def check_Statements(node, env, statement_info):
     for s in node.statements:
-        try:
-            check(s, env)
-        except TypeError as e:
-            statement = to_source(s)
-            message = f"TypeError found on line {s.lineno}:\n     {statement}\n{e.args[0]}"
-            errors.append(message)
-    if errors:
-        raise TypeError("\n\n".join(errors))
-    return True
+        statement = to_source(s)
+        statement_info = f"TypeError found on line {s.lineno}:\n\n{statement}\n"
+        check(s, env, statement_info)
+
 
 @add(Type)
-def check_Type(node, env):
+def check_Type(node, env, statement_info):
     return node.type
 
 @add(UnaryOp)
-def check_UnaryOp(node, env):
-    value = check(node.value, env)
+def check_UnaryOp(node, env, statement_info):
+    value = check(node.value, env, statement_info)
     if node.op in ['+', '-'] and value in ['float', 'int']:
         return value
 
     if node.op == "!" and value in ['bool']:
         return value
-
-    raise TypeError(f"Incompatible type for unary operation: {node.op} {to_source(node.value)}")
+    record_error(
+        f"Incompatible type for unary operation: {node.op} {to_source(node.value)}",
+        statement_info)
 
 @add(Var)
-def check_Var(node, env):
+def check_Var(node, env, statement_info):
     # Assign default values of 0 if none are given
     # This is not defined in the specs.
-    type = check(node.type, env)
-    if node.expression:
-        value = check(node.expression, env)
-    elif type == 'float':
-        value = 0.0
-    else:
-        value = 0
-    env[node.name] = value
+    if node.value:
+        value_type = check(node.value, env, statement_info)
+        if node.type and node.type != value_type:
+            record_error(f"Wrong type declaration: {node.type} != {value_type}.",
+                         statement_info)
+
+        if not node.type:  # deduce the type
+            node.type = value_type
+
+    # A variable must have a type assigned
+    if not node.type:
+        record_error(f"Cannot determine type of {node.name}", statement_info)
+
+    env[node.name] = node    # Put the VarDefinition node in environment
 
 
 @add(While)
-def check_While(node, env):
+def check_While(node, env, statement_info):
     while True:
-        condition = check(node.condition, env)
+        condition = check(node.condition, env, statement_info)
         if condition:
-            check(node.statements, env.new_child())
+            check(node.statements, env.new_child(), statement_info)
         else:
             break
 

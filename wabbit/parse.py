@@ -252,11 +252,11 @@ class WabbitParser(Parser):
 
     @_('TRUE')
     def expression(self, p):
-        return Bool(True, lineno=p.lineno)
+        return Bool('true', lineno=p.lineno)
 
     @_('FALSE')
     def expression(self, p):
-        return Bool(False, lineno=p.lineno)
+        return Bool('false', lineno=p.lineno)
 
     @_('NAME')
     def expression(self, p):

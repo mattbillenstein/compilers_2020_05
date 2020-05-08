@@ -134,7 +134,7 @@ class Bool(Expression):
         super().__init__(**options)
 
     def __repr__(self):
-        return f"Bool({self.value})"
+        return f"Bool('{self.value}')"
 
 
 class Char(Expression):
