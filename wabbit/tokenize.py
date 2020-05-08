@@ -6,6 +6,7 @@ from typing import Tuple
 from typing import Union
 
 import utils
+from .error import WabbitError
 
 
 class Token(NamedTuple):
@@ -109,7 +110,7 @@ def tokenize(text: str) -> TokenStream:
                 yield Token(type_, matched, line_num)
                 break
         else:
-            raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
+            raise WabbitError(f"Unrecognized input: __{text[:10]}__...")
 
 
 def test_tokenizer():

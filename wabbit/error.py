@@ -1,0 +1,2 @@
+class WabbitError(RuntimeError):
+    pass

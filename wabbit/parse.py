@@ -109,6 +109,7 @@ from typing import ClassVar
 from typing import Dict
 from typing import Optional
 
+from .error import WabbitError
 from .model import (  # noqa
     Assign,
     BinOp,
@@ -152,7 +153,7 @@ def _assert(condition, error_message=None):
         message = f"line {Parser.line_num}"
         if error_message is not None:
             message = f"{message}: {error_message}"
-        raise RuntimeError(message)
+        raise WabbitError(message)
 
 
 @dataclass
