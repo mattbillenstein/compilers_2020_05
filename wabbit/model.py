@@ -544,7 +544,9 @@ class WabbitFloat(float):
     def __repr__(self):
         return f'WabbitFloat({self})'
 
+from functools import lru_cache
 
+@lru_cache(maxsize=1024)
 def black_format_code(source):
     import black
     kwargs = {
