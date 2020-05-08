@@ -378,7 +378,13 @@ class Parser(BaseParser):
     @staticmethod
     def _factor(self):
         # TODO: LPAREN
-        return self._literal() or self.name() or self._unary_op() or self.block()
+        return (
+            self._literal()
+            or self.name()
+            or self._unary_op()
+            or self.block()
+            or self._parenthesized_expression()
+        )
 
     def _unary_op(self) -> Optional[UnaryOp]:
         if tok := self.accept("ADD", "SUB", "LNOT"):
@@ -394,6 +400,13 @@ class Parser(BaseParser):
 
     def _literal(self) -> Literal:
         return self.bool() or self.char() or self.integer() or self.float()
+
+    def _parenthesized_expression(self) -> Optional[Expression]:
+        if not (tok := self.accept("LPAREN")):
+            return
+        _assert(expression := self.expression())
+        self.expect("RPAREN")
+        return expression
 
     def integer(self):
         if tok := self.accept("INTEGER"):
