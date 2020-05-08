@@ -141,6 +141,7 @@ class WabbitParser(sly.Parser):
     def block(self, p):
         return Block(p.node)
 
+    # this causes a lot of reduce/reduce problems - refactor
     @_('node SEMI')
     def node(self, p):
         return p.node
