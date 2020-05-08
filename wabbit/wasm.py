@@ -36,6 +36,7 @@ from collections import ChainMap
 from functools import singledispatch
 from wabbit.model import *
 from wabbit.wasm_helpers import *
+from wabbit.typecheck import check_program
 
 
 class WasmModule:
@@ -141,7 +142,7 @@ class WabbitWasmModule:
     def __init__(self):
         self.module = WasmModule("wabbit")
         # Current function (temporary hack. Set to main)
-        self.function = WasmFunction(self.module, "main", [], [FLOAT64])
+        self.function = WasmFunction(self.module, "main", [], [INT32])
 
         # Environment for tracking symbols
         self.env = ChainMap()
@@ -150,6 +151,9 @@ class WabbitWasmModule:
 # Top-level function for generating code from the model
 def generate_program(model):
     module = WabbitWasmModule()
+
+    # Typecheck. Annotates nodes with types.
+    check_program(model)
 
     generate(model, module)
     return module
@@ -163,22 +167,68 @@ def generate(node, func):
 
 rule = generate.register
 
+_bin_op_methods = {
+    # Integer operations
+    ("+", "int", "int"): "iadd",
+    ("-", "int", "int"): "int",
+    ("*", "int", "int"): "int",
+    ("/", "int", "int"): "int",
+    ("<", "int", "int"): "bool",
+    ("<=", "int", "int"): "bool",
+    (">", "int", "int"): "bool",
+    (">=", "int", "int"): "bool",
+    ("==", "int", "int"): "bool",
+    ("!=", "int", "int"): "bool",
+    # Float operations
+    ("+", "float", "float"): "float",
+    ("-", "float", "float"): "float",
+    ("*", "float", "float"): "float",
+    ("/", "float", "float"): "float",
+    ("<", "float", "float"): "bool",
+    ("<=", "float", "float"): "bool",
+    (">", "float", "float"): "bool",
+    (">=", "float", "float"): "bool",
+    ("==", "float", "float"): "bool",
+    ("!=", "float", "float"): "bool",
+    # Char operations
+    ("<", "char", "char"): "bool",
+    ("<=", "char", "char"): "bool",
+    (">", "char", "char"): "bool",
+    (">=", "char", "char"): "bool",
+    ("==", "char", "char"): "bool",
+    ("!=", "char", "char"): "bool",
+    # Bool operations
+    ("==", "bool", "bool"): "bool",
+    ("!=", "bool", "bool"): "bool",
+    ("&&", "bool", "bool"): "bool",
+    ("||", "bool", "bool"): "bool",
+}
+
+_type_methname_map = {"int": "iconst", "float": "fconst"}
+
+_type_type_map = {"int": INT32, "float": FLOAT64}
+
+_op_methname_map = {
+    ("+", "int"): "iadd",
+    ("*", "int"): "imul",
+}
+
 
 @rule(If)
-def generate_If(node, func):
+def generate_If(mod, func):
     # do the test
-    generate(node.test)
+    generate(mod.test)
 
 
 @rule(Statements)
-def generate_Statements(node, func):
+def generate_Statements(node, mod):
     for s in node.statements:
-        generate(s, func)
+        generate(s, mod)
 
 
 @rule(Integer)
 def generate_Integer(node, mod):
-    mod.function.iconst(node.value)
+    mod.function.iconst(int(node.value))
 
 
 @rule(Float)
@@ -193,7 +243,7 @@ def generate_Char(node, mod):
 
 @rule(Var)
 def generate_Var(node, mod):
-    v_idx = mod.function.alloca(FLOAT64)
+    v_idx = mod.function.alloca(_type_type_map.get(node.type))
     # e.g. put float on stack
     generate(node.value, mod)
 
@@ -224,14 +274,19 @@ def generate_If(node, mod):
 
 
 @rule(BinOp)
-def generate_BinOp(node, func):
-    generate(node.left, func)
-    generate(node.right, func)
+def generate_BinOp(node, mod):
+    generate(node.left, mod)
+    generate(node.right, mod)
 
-    if node.op == "+":
-        func.fadd()
-    if node.op == "*":
-        func.fmul()
+    op_methname = _op_methname_map.get((node.op, node.left.type))
+
+    method = getattr(mod.function, op_methname)
+    if method is None:
+        raise SyntaxError(
+            f"Cannot perform {node.op} operation on {node.left.type} and {node.right.type}"
+        )
+
+    method()
 
 
 def main(filename):

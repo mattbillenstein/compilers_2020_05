@@ -31,11 +31,56 @@ from .model import *
 from functools import singledispatch
 from collections import ChainMap
 
+_unary_ops = {
+    ("+", "int"): "int",
+    ("-", "int"): "int",
+    ("+", "float"): "float",
+    ("-", "float"): "float",
+    ("!", "bool"): "bool",
+}
+_bin_ops = {
+    # Integer operations
+    ("+", "int", "int"): "int",
+    ("-", "int", "int"): "int",
+    ("*", "int", "int"): "int",
+    ("/", "int", "int"): "int",
+    ("<", "int", "int"): "bool",
+    ("<=", "int", "int"): "bool",
+    (">", "int", "int"): "bool",
+    (">=", "int", "int"): "bool",
+    ("==", "int", "int"): "bool",
+    ("!=", "int", "int"): "bool",
+    # Float operations
+    ("+", "float", "float"): "float",
+    ("-", "float", "float"): "float",
+    ("*", "float", "float"): "float",
+    ("/", "float", "float"): "float",
+    ("<", "float", "float"): "bool",
+    ("<=", "float", "float"): "bool",
+    (">", "float", "float"): "bool",
+    (">=", "float", "float"): "bool",
+    ("==", "float", "float"): "bool",
+    ("!=", "float", "float"): "bool",
+    # Char operations
+    ("<", "char", "char"): "bool",
+    ("<=", "char", "char"): "bool",
+    (">", "char", "char"): "bool",
+    (">=", "char", "char"): "bool",
+    ("==", "char", "char"): "bool",
+    ("!=", "char", "char"): "bool",
+    # Bool operations
+    ("==", "bool", "bool"): "bool",
+    ("!=", "bool", "bool"): "bool",
+    ("&&", "bool", "bool"): "bool",
+    ("||", "bool", "bool"): "bool",
+}
+
 # Top-level function used to check programs
 def check_program(model):
     env = ChainMap()
     check(model, env)
     # Maybe return True/False if there are errors
+    return env
 
 
 # Internal function used to check nodes with an environment
@@ -47,9 +92,71 @@ def check(node, env):
 rule = check.register
 
 
+@rule(Statements)
+def check_Statements(node, env):
+    for statement in node.statements:
+        check(statement, env)
+
+
 @rule(Float)
 def check_Float(node, env):
+    node.type = "float"
     return "float"
+
+
+@rule(Integer)
+def check_Integer(node, env):
+    node.type = "int"
+    return "int"
+
+
+@rule(BinOp)
+def check_BinOp(node, env):
+    left_type = check(node.left, env)
+    right_type = check(node.right, env)
+
+    result_type = _bin_ops.get((node.op, left_type, right_type))
+    if not result_type:
+        raise SyntaxError(
+            f"Unknown operator {node.op} for {left_type} and {right_type}"
+        )
+
+    node.type = result_type
+    return result_type
+
+
+@rule(Var)
+def check_Var(node, env):
+    if node.type is None and node.value is None:
+        raise SyntaxError(
+            f"Var declaration for {node.name} is missing one of (type, value))"
+        )
+
+    if node.value is None:
+        env[node.name] = node.type
+        return node.type
+
+    value_type = check(node.value, env)
+
+    if node.type and node.type != value_type:
+        raise SyntaxError(
+            f"Var declaration type mismatch. Type {node.type} does not match type {value_type}"
+        )
+
+    env[node.name] = value_type
+    node.type = value_type
+    return value_type
+
+
+@rule(Variable)
+def check_Variable(node, env):
+    variable_type = env.get(node.name)
+
+    if not variable_type:
+        raise SyntaxError(f"Variable {node.name} not found in scope")
+
+    node.type = variable_type
+    return variable_type
 
 
 # Sample main program

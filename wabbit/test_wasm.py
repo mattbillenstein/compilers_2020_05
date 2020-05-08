@@ -35,28 +35,38 @@ def test_wasm_basic():
     #     file.write(encode_module(mod))
     # assert encode_module(mod) == ""
 
-    model = Statements([Float("2.2")])
+    # model = Statements([Float("2.2")])
 
-    mod = generate_program(model)
+    # mod = generate_program(model)
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    # wasm_bytes = encode_module(mod.module)
+    # instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 2.2
+    # result = instance.exports.main()
+    # assert result == 2.2
 
-    model = Statements([Var("naz", "char", Char("N")), Variable("naz")])
+    # model = Statements([Var("naz", "char", Char("N")), Variable("naz")])
 
-    mod = generate_program(model)
+    # mod = generate_program(model)
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    # wasm_bytes = encode_module(mod.module)
+    # instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 78
+    # result = instance.exports.main()
+    # assert result == 78
+
+    # model = Statements([Integer(5)])
+
+    # mod = generate_program(model)
+
+    # wasm_bytes = encode_module(mod.module)
+    # instance = Instance(wasm_bytes)
+
+    # result = instance.exports.main()
+    # assert result == 7
 
     model = Statements(
-        [Var("naz", "int", Integer(2)), BinOp("+", Integer(5), Variable("Naz"))]
+        [Var("age", None, Integer(30)), BinOp("*", Variable("age"), Integer(2))]
     )
 
     mod = generate_program(model)
@@ -65,7 +75,7 @@ def test_wasm_basic():
     instance = Instance(wasm_bytes)
 
     result = instance.exports.main()
-    assert result == 7
+    assert result == 60
 
     # model = Statements(
     #     [
