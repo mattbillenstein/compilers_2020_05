@@ -121,3 +121,10 @@ Video recordings of live sessions will be posted here.
 * [Project 5, Type Checking](https://vimeo.com/415678414/d87a14cb3f) (32 min)
 * [Error Handling](https://vimeo.com/415917112/03bf76a938) (45 min)
 
+**Day 4**
+
+* [Project 6, Code Generation](https://vimeo.com/416163581/9641e7d260) (44 min)
+* [Code generation](https://vimeo.com/416163359/5c018c29b3) (7 min)
+* [Stacks and code generation](https://vimeo.com/416162660/5d7cf08715) (13 min)
+* [WebAssembly discussion](https://vimeo.com/416159967/5550b1fb27) (56 min)
+
