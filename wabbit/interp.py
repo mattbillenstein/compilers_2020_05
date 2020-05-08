@@ -115,6 +115,9 @@ class Interpreter:
     def interpret_Print(self, node: Print, env):
         value = self.interpret(node.expression, env)
         if isinstance(value, str):
+            # Hack: bug in tokenizer
+            if value == "\\n":
+                value = "\n"
             sys.stdout.write(value)
         elif isinstance(value, float):
             sys.stdout.write(f"{value:.6f}\n")
