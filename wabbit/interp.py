@@ -107,8 +107,9 @@ class Interpreter:
 
     @typechecked
     def interpret_Assign(self, node: Assign, env):
-        # TODO
-        env[node.location.value] = self.interpret(node.value, env)
+        value = node.location.value
+        receiving_env = next((env for env in env.maps if value in env), env)
+        receiving_env[value] = self.interpret(node.value, env)
 
     @typechecked
     def interpret_Print(self, node: Print, env):
