@@ -246,6 +246,47 @@ def check_break_statement(node, env):
 def check_continue_statement(node, env):
     pass
 
+# -------------------  Functions
+
+@rule(FunctionDefinition)
+def check_function_definition(node, env):
+    # Put the function object in the environment
+    env[node.name] = node
+
+    # Create a new environment for checking parameters/function body
+    newenv = env.new_child()
+    for parm in node.parameters:
+        check(parm, newenv)
+    check(node.statements, newenv)
+
+@rule(FunctionApplication)
+def check_function_application(node, env):
+    funcdecl = env.get(node.name)
+    if not isinstance(funcdecl, FunctionDefinition):
+        error(node.lineno, f'{node.name} is not a function')
+        return
+
+    if len(node.arguments) != len(funcdecl.parameters):
+        error(node.lineno, f'Wrong # args')
+
+    for parm, arg in zip(funcdecl.parameters, node.arguments):
+        argtype = check(arg, env)
+        if argtype != parm.type:
+            error(arg.lineno, f'Type error in arguments')
+
+    node.type = funcdecl.return_type
+    return funcdecl.return_type
+
+@rule(ReturnStatement)
+def check_return_statement(node, env):
+    # How do you verify that the expression type matches the function return type?
+    # How do you even know that you're inside a function?
+    check(node.expression, env)
+
+@rule(Parameter)
+def check_parameter(node, env):
+    env[node.name] = node
+
 # Sample main program
 def main(filename):
     from .parse import parse_file

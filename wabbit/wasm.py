@@ -235,6 +235,9 @@ class WasmFunction:
     def call(self, func):
         self.code += b'\x10' + encode_unsigned(func.idx)
 
+    def return_(self):
+        self.code += b'\x0f'
+
     def if_(self):
         self.code += b'\x04\x40'
 
@@ -350,8 +353,8 @@ class WabbitWasmModule:
         self._printb = WasmImportedFunction(self.module, 'runtime', '_printb', [i32], [])
         self._printc = WasmImportedFunction(self.module, 'runtime', '_printc', [i32], [])
 
-        # Current function (temporary hack. Set to main)
-        self.function = WasmFunction(self.module, 'main', [], [])
+        # Current function (temporary hack. Set to _init)
+        self.function = self._init_function = WasmFunction(self.module, '_init', [], [])
 
         # Environment for tracking symbols
         self.env = ChainMap()
@@ -376,7 +379,13 @@ _typemap = {
 def generate_program(model):
     mod = WabbitWasmModule()
     generate(model, mod)
+
+    # If there's no main function... generate an empty one just to get the
+    # global init code to run (see hack in generate_function_definition below)
+    if 'main' not in mod.env:
+        generate(FunctionDefinition('main', [], 'int', Statements([ReturnStatement(Integer(0))])), mod)
     mod.function.end_block()
+
     return mod
 
 # Internal function for generating code on each node
@@ -461,11 +470,19 @@ def generate_var_definition(node, mod):
     # Need to declare as a Wasm global variable
     # (or local variable if in function)
     wtype = _typemap[node.type]
-    vardecl = WasmGlobalVariable(mod.module, node.name, wtype, 0)
+
+    if len(mod.env.maps) == 1:
+        vardecl = WasmGlobalVariable(mod.module, node.name, wtype, 0)
+    else:
+        vardecl = mod.function.alloca(wtype)
+
     mod.env[node.name] = vardecl     
     if node.value:
         generate(node.value, mod)
-        mod.function.global_set(vardecl)
+        if isinstance(vardecl, WasmGlobalVariable):
+            mod.function.global_set(vardecl)
+        else:
+            mod.function.local_set(vardecl)
 
 @rule(LoadLocation)
 def generate_load_location(node, mod):
@@ -473,7 +490,7 @@ def generate_load_location(node, mod):
     if isinstance(wdecl, WasmGlobalVariable):
         mod.function.global_get(wdecl)
     else:
-        assert False
+        mod.function.local_get(wdecl)
 
 @rule(NamedLocation)
 def generate_named_location(node, mod):
@@ -486,7 +503,7 @@ def generate_assignment(node, mod):
     if isinstance(wdecl, WasmGlobalVariable):
         mod.function.global_set(wdecl)
     else:
-        assert False
+        mod.function.local_set(wdecl)
 
 @rule(PrintStatement)
 def generate_print_statement(node, mod):
@@ -547,6 +564,54 @@ def generate_while_statement(node, mod):
     mod.function.br(0)
     mod.function.end_block()   # loop
     mod.function.end_block()   # block
+
+# ---------------- Functions
+
+@rule(FunctionDefinition)
+def generate_function_definition(node, mod):
+    # Discussion.... There is an implicit "outer" function being created that's
+    # used to initialize the global variables and run scripting-level statements.
+    # When a function definition is encountered, we have to temporarily suspend
+    # what we're doing with that and start creating a new function.  
+
+    # Save the current function
+    current_function = mod.function 
+    
+    # Map the function parameters to web assembly types
+    argtypes = [_typemap[parm.type] for parm in node.parameters ]
+
+    # Map the function return type to a web assembly type
+    rettype = [_typemap[node.return_type]]
+
+    # Create the new Wasm function
+    mod.function = WasmFunction(mod.module, node.name, argtypes, rettype)
+    mod.env[node.name] = mod.function
+
+    # Now have create a new environment and set it up for visit the function body
+    mod.new_env()
+    # Bind function arguments
+    for n, parm in enumerate(node.parameters):
+        mod.env[parm.name] = n      # Local variables are referenced by numeric index
+
+    # Hack alert.  If main(), we inject a call to _init() to set up the globals
+    if node.name == 'main':
+        mod.function.call(mod._init_function)
+    generate(node.statements, mod)
+    mod.pop_env()
+
+    # Restore the previous function
+    mod.function = current_function
+
+@rule(FunctionApplication)
+def generate_function_application(node, mod):
+    for arg in node.arguments:
+        generate(arg, mod)
+    mod.function.call(mod.env[node.name])
+
+@rule(ReturnStatement)
+def generate_return_statement(node, mod):
+    generate(node.expression, mod)
+    mod.function.return_()
 
 def main(filename):
     from .parse import parse_file
