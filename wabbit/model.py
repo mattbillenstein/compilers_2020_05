@@ -139,6 +139,8 @@ class Bool(Expression):
 
 class Char(Expression):
     def __init__(self, value, **options):
+        if value == "\\n":  # hack
+            value = "\n"
         self.value = value
         super().__init__(**options)
 

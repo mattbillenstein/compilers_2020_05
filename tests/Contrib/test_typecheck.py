@@ -177,3 +177,36 @@ print n;
 def test_while_cond():
     model = parse_source(while_compare_cond)
     assert check_program(model) # no error should be raised
+
+# Finding multiple bugs while trying to check mandel_loop
+
+mandel_part1 = """
+const xmin = -2.0;
+const xmax = 1.0;
+const width = 80.0;
+var dx float = (xmax - xmin)/width;
+"""
+
+def test_mandel_part1():
+    model = parse_source(mandel_part1)
+    assert check_program(model)
+
+
+mandel_part2 = """
+const ymax = 1.5;
+var y float = ymax;
+"""
+
+def test_mandel_part2():
+    model = parse_source(mandel_part2)
+    assert check_program(model)
+
+mandel_part3 = """
+const xmin = -2.0;
+var x float;
+x = xmin;
+"""
+
+def test_mandel_part3():
+    model = parse_source(mandel_part3)
+    assert check_program(model)

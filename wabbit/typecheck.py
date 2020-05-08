@@ -73,6 +73,8 @@ add = check.register
 @add(Assignment)
 def check_Assignment(node, env, statement_info):
     expression_type = check(node.expression, env, statement_info)
+    if hasattr(expression_type, "type"): # hack
+        expression_type = expression_type.type
     var = check(node.location, env, statement_info)
 
     if isinstance(var, Const):
@@ -156,15 +158,16 @@ def check_Char(node, env, statement_info):
 
 @add(Const)
 def check_Const(node, env, statement_info):
-
     value_type = check(node.value, env, statement_info)
     if node.type and node.type != value_type:
         record_error(f"Wrong type declaration: {node.type} != {value_type}.",
          statement_info)
+    if node.type is None:
+        node.type = value_type
 
     node.is_constant = True
     env[node.name] = node
-    return node
+    return node.type
 
 
 @add(Compound)
@@ -189,6 +192,8 @@ def check_Float(node, env, statement_info):
 @add(If)
 def check_If(node, env, statement_info):
     condition = check(node.condition, env, statement_info)
+    if hasattr(condition, "type"):  # hack
+        condition = condition.type
 
     if condition != 'bool':
         record_error(f"Expected a boolean for if condition; got {condition}",
@@ -245,9 +250,11 @@ def check_UnaryOp(node, env, statement_info):
 
 @add(Var)
 def check_Var(node, env, statement_info):
-
+    # Hard to follow logic - probably a result of a poorly designed model.
     if node.value:
         value_type = check(node.value, env, statement_info)
+        if hasattr(value_type, "type"):
+            value_type = value_type.type
         if node.type and node.type != value_type:
             record_error(f"Wrong type declaration: {node.type} != {value_type}.",
                          statement_info)
@@ -262,6 +269,7 @@ def check_Var(node, env, statement_info):
         record_error(f"Unknown type '{node.type}'.", statement_info)
 
     env[node.name] = node    # Put the VarDefinition node in environment
+    return node.type
 
 
 @add(While)
