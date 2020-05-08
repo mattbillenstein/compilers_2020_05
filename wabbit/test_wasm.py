@@ -98,17 +98,73 @@ def test_wasm_basic():
     instance = Instance(wasm_bytes)
 
     result = instance.exports.main()
-    assert result == 60
+    assert result == 17 * 17
 
-    # model = Statements(
-    #     [
-    #         If(
-    #             BinOp(">", Integer(5), Integer(4)),
-    #             Statements([Print(Integer(3))]),
-    #             Statements([Print(Integer(2))]),
-    #         )
-    #     ]
-    # )
+    # func mul(x int, y int) int {
+    #     return y*x;
+    # }
+    model = Statements(
+        [
+            FunctionDefinition(
+                "mul",
+                Arguments(Argument("x", "int"), Argument("y", "int")),
+                "int",
+                Statements([BinOp("*", Variable("y"), Variable("x"))]),
+            ),
+            FunctionCall("mul", Integer(17), Integer(2)),
+        ]
+    )
+
+    mod = generate_program(model)
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 17 * 2
+
+    # /* calculate square roots */
+
+    # func fabs(x float) float {
+    #     if x < 0.0 {
+    #         return -x;
+    #     } else {
+    #         return x;
+    #     }
+    # }
+
+    # func sqrt(x float) float {
+    #     var guess = 1.0;
+    #     var nextguess = 0.0;
+    #     if x == 0.0 {
+    #         return 0.0;
+    #     }
+    #     while true {
+    #         nextguess = (guess + (x / guess)) / 2.0;
+    # 	if (fabs(nextguess-guess)/guess) < 0.00000001 {
+    # 	    break;
+    #         }
+    # 	guess = nextguess;
+    #     }
+    #     return guess;
+    # }
+    model = Statements(
+        [
+            If(
+                BinOp(">", Integer(2), Integer(4)),
+                Statements([Integer(1)]),
+                Statements([Integer(2)]),
+            )
+        ]
+    )
+
+    mod = generate_program(model)
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 17 * 2
 
     # mod = generate_program(model)
     # # Write to a file

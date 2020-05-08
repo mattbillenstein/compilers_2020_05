@@ -96,6 +96,9 @@ class WasmFunction:
     def imul(self):
         self.code += b"\x6c"
 
+    def igt(self):
+        self.code += b"\x4a"
+
     # floored
     def idiv(self):
         self.code += b"\x6e"
@@ -111,6 +114,15 @@ class WasmFunction:
 
     def call(self, func):
         self.code += b"\x10" + encode_unsigned(func.idx)
+
+    def _if(self):
+        self.code += b"\x04"
+
+    def _else(self):
+        self.code += b"\x05"
+
+    def end(self):
+        self.code += b"\x0b"
 
     def alloca(self, type):
         idx = len(self.argtypes) + len(self.local_types)
@@ -173,6 +185,7 @@ def generate_program(model):
     check_program(model)
 
     generate(model, module)
+    module.function.ret()
     return module
 
 
@@ -230,13 +243,8 @@ _op_methname_map = {
     ("*", "int"): "imul",
     ("/", "int"): "idiv",
     ("-", "int"): "isub",
+    (">", "int"): "igt",
 }
-
-
-@rule(If)
-def generate_If(mod, func):
-    # do the test
-    generate(mod.test)
 
 
 @rule(Statements)
@@ -329,9 +337,11 @@ def generate_Return(node, mod):
 def generate_If(node, mod):
     generate(node.test, mod)
     mod.function._if()
+    mod.function.code += INT32
     generate(node.when_true, mod)
     mod.function._else()
     generate(node.when_false, mod)
+    mod.function.end()
 
 
 @rule(BinOp)

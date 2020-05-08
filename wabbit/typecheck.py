@@ -189,6 +189,14 @@ def check_Arguments(node, env):
         check(arg, env)
 
 
+@rule(If)
+def check_If(node, env):
+    check(node.test, env)
+    check(node.when_true, env.new_child())
+    if node.when_false:
+        check(node.when_false, env.new_child())
+
+
 @rule(Argument)
 def check_Argument(node, env):
     env[node.name] = node.type
