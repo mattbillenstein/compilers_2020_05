@@ -132,12 +132,26 @@
 from .model import *
 from collections import ChainMap
 
+# Need some kind of top-level module that serves as a container
+# for everything else (global variables, functions, etc.)
+class CModule:
+    def __init__(self):
+        self.globals = ""   # Global variables
+        self.functions = [ ]
+
+    def __str__(self):
+        return (self.globals + "\n".join(str(func) for func in self.functions))
+
 # I think you want some kind of "C Function" object that gathers everything
 # that's being generated as output.
 
 class CFunction:
-    def __init__(self, name):
+    def __init__(self, module, name, parameters, return_type):
+        self.module = module
+        self.module.functions.append(self)    # Add to module function list
         self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
         self.locals = ""      # Local variables
         self.statements = ""  # Statements generated
         self.stack = [ ]      # Expression stack
@@ -149,7 +163,8 @@ class CFunction:
         return self.stack.pop()
 
     def __str__(self):
-        return (f"int {self.name}()" + " {\n" + self.locals + self.statements + "return 0; }\n")
+        parmstr = ','.join(f'{ptype} {pname}' for ptype, pname in self.parameters)
+        return (f"{self.return_type} {self.name}({parmstr})" + " {\n" + self.locals + self.statements + "\n}\n")
     
     def tempname(self, node):
         return f'_{id(node)}'
@@ -163,9 +178,16 @@ def new_label():
 # Top-level function to handle an entire program.
 def compile_program(model):
     env = ChainMap()           # Environment.  To keep track of definitions and things.
-    cfunc = CFunction('main')  # Function that code is going into
+    cmod = CModule()           # Container for all of the generated code
+    cfunc = CFunction(cmod, '_init', [], 'void')
     compile(model, env, cfunc)
-    return str(cfunc)
+
+    src = str(cmod)
+    # If no main is in environment.  Create one
+    if 'main' not in env:
+        src += 'int main() { _init(); return 0; }\n'
+
+    return src
 
 # Discussion of how this is supposed to work.  env is an environment where we keep
 # track of definitions of things (variables, consts, etc.).   cfunc is an object 
@@ -245,7 +267,12 @@ def compile_var_definition(node, env, cfunc):
     # Still need to track var/const definitions for later use
     # Need to emit a C variable declaration for this of some kind.
     env[node.name] = node    
-    cfunc.locals += f'{node.type} {node.name};\n'
+    # If there is any nesting of environments, it has to be a local variable
+    if len(env.maps) > 1:
+        cfunc.locals += f'{node.type} {node.name};\n'
+    else:
+        cfunc.module.globals += f'{node.type} {node.name};\n'
+
     if node.value:
         compile(node.value, env, cfunc)
         cfunc.statements += f'{node.name} = {cfunc.pop()};\n'
@@ -320,6 +347,38 @@ def compile_break_statement(node, env, cfunc):
 @rule(ContinueStatement)
 def compile_continue_statement(node, env, cfunc):
     cfunc.statements += f'goto {env["continue"]};\n'
+
+
+@rule(FunctionDefinition)
+def compile_function_definition(node, env, cfunc):
+    env[node.name] = node    
+    parameters = [ (parm.type, parm.name) for parm in node.parameters ]
+    newfunc = CFunction(cfunc.module, node.name, parameters, node.return_type)
+
+    # Hack.  If 'main', inject a call to _init (need to initialize globals)
+    if node.name == 'main':
+        newfunc.statements += '_init();\n'
+
+    compile(node.statements, env.new_child(), newfunc)
+
+@rule(ReturnStatement)
+def compile_return_statement(node, env, cfunc):
+    compile(node.expression, env, cfunc)
+    cfunc.statements += f'return {cfunc.pop()};'
+
+@rule(FunctionApplication)
+def compile_function_application(node, env, cfunc):
+    # Evaluate each argument
+    for arg in node.arguments:
+        compile(arg, env, cfunc)
+
+    # The arguments are on the stack (they pop in reverse order). 
+    args = [ cfunc.pop() for _ in node.arguments ]
+    args.reverse()
+    myname = cfunc.tempname(node)
+    cfunc.locals += f'{node.type} {myname};\n'
+    cfunc.statements += f'{myname} = {node.name}({",".join(args)});\n'
+    cfunc.push(myname)
 
 def main(filename):
     from .parse import parse_file
