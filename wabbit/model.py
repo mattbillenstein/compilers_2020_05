@@ -49,14 +49,13 @@
 
 
 class Node:
-    pass
+    def __init__(self, *, lineno=None):
+        self.lineno = lineno
 
 class Expression(Node):
     """An expression is something that can be used on the left-hand-side
     of an assignment.
     """
-    def __init__(self, *, lineno=None):
-        self.lineno = lineno
 
 
 # class Location(Node):

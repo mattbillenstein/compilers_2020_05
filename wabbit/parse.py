@@ -159,30 +159,30 @@ class WabbitParser(Parser):
 
     @_('expression SEMI')
     def expression_statement(self, p):
-        return ExpressionStatement(p.expression)
+        return ExpressionStatement(p.expression, lineno=p.lineno)
 
     @_('PRINT expression SEMI')
     def print_statement(self, p):
-        return Print(p.expression)
+        return Print(p.expression, lineno=p.lineno)
 
 ## ============  Conflict here =================
 
     @_('location ASSIGN expression SEMI')
     def assignment_statement(self, p):
-        return Assignment(p.location, p.expression)
+        return Assignment(p.location, p.expression, lineno=p.lineno)
 
     @_('VAR NAME [ type ] ASSIGN expression SEMI')
     def var_definition(self, p):
-        return Var(p.NAME, p.type, value=p.expression)
+        return Var(p.NAME, p.type, value=p.expression, lineno=p.lineno)
 
     @_('VAR NAME type SEMI')
     def var_definition(self, p):
-        return Var(p.NAME, p.type)
+        return Var(p.NAME, p.type, lineno=p.lineno)
 
 ## ==============================================
     @_('NAME')
     def location(self, p):
-        return Name(p.NAME)
+        return Name(p.NAME, lineno=p.lineno)
 
     @_('NAME')
     def type(self, p):
@@ -190,16 +190,16 @@ class WabbitParser(Parser):
 
     @_('CONST NAME [ type ] ASSIGN expression SEMI')
     def const_definition(self, p):
-        return Const(p.NAME, p.expression, p.type)
+        return Const(p.NAME, p.expression, p.type, lineno=p.lineno)
 
     @_('IF expression LBRACE statements RBRACE [ ELSE LBRACE statements RBRACE ]')
     def if_statement(self, p):
-        return If(p.expression, p.statements0, p.statements1)
+        return If(p.expression, p.statements0, p.statements1, lineno=p.lineno)
 
 
     @_('WHILE expression LBRACE statements RBRACE')
     def while_statement(self, p):
-        return While(p.expression, p.statements)
+        return While(p.expression, p.statements, lineno=p.lineno)
 
 
     @_('expression PLUS expression',
@@ -219,45 +219,45 @@ class WabbitParser(Parser):
         op = p[1]
         left = p.expression0
         right = p.expression1
-        return BinOp(op, left, right)
+        return BinOp(op, left, right, lineno=p.lineno)
 
     @_('PLUS expression %prec UNARY',      # Use the high precedence of the fake "UNARY" token
        'MINUS expression %prec UNARY',     # based on "yacc"  (yet another compiler compiler)
        'LNOT expression %prec UNARY')      # Rewrite the grammar to not have ambiguity.
     def expression(self, p):
-        return UnaryOp(p[0], p.expression)
+        return UnaryOp(p[0], p.expression, lineno=p.lineno)
 
     @_('LPAREN expression RPAREN')
     def expression(self, p):
-        return Group(p.expression)
+        return Group(p.expression, lineno=p.lineno)
 
     @_('LBRACE statements RBRACE')
     def expression(self, p):
-        return Compound(p.statements)
+        return Compound(p.statements, lineno=p.lineno)
 
     @_('INTEGER')
     def expression(self, p):
-        return Integer(int(p.INTEGER))
+        return Integer(int(p.INTEGER), lineno=p.lineno)
 
     @_('FLOAT')
     def expression(self, p):
-        return Float(float(p.FLOAT))
+        return Float(float(p.FLOAT), lineno=p.lineno)
 
     @_('CHAR')
     def expression(self, p):
-        return Char(p.CHAR)
+        return Char(p.CHAR, lineno=p.lineno)
 
     @_('TRUE')
     def expression(self, p):
-        return Bool(True)
+        return Bool(True, lineno=p.lineno)
 
     @_('FALSE')
     def expression(self, p):
-        return Bool(False)
+        return Bool(False, lineno=p.lineno)
 
     @_('NAME')
     def expression(self, p):
-        return Name(p.NAME)
+        return Name(p.NAME, lineno=p.lineno)
 
     # Custom error handler for syntax error
     def error(self, p):
