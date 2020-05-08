@@ -132,14 +132,6 @@
 from functools import singledispatch
 from .model import *
 
-#TODO do I need the whole adding the type to the string thing any more?
-
-class S(str):
-    def setType(self, varType):
-        self.varType = varType
-    def getType(self):
-        return self.varType
-
 def add_var(env, varName, varType): # TODO OOOOO scope???
     key = 'dict_of_vars'
     if key not in env:
@@ -225,54 +217,53 @@ def _(node, env):
     result_type = get_type_from_expr(env, left_var_name) # TODO it's not always the left type
     var_name = make_temp_var(env, '_BinOp', result_type)
 
-    def withType(s):
-        s1 = S(s)
-        s1.setType(result_type)
-        return s1
-
     if node.op == '+':
         statements.append(f'{var_name} = {left_var_name} + {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '*':
         statements.append(f'{var_name} = {left_var_name} * {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '/':
         statements.append(f'{var_name} = {left_var_name} / {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '-':
         statements.append(f'{var_name} = {left_var_name} - {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '<':
         statements.append(f'{var_name} = {left_var_name} < {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '>':
         statements.append(f'{var_name} = {left_var_name} > {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     elif node.op == '>=':
         statements.append(f'{var_name} = {left_var_name} >= {right_var_name}')
-        return (withType(var_name), statements)
+        # return (withType(var_name), statements)
+        return (var_name, statements)
     else:
         raise RuntimeError(f'unsupported op: {node.op}')
 
 @ccompile.register(Integer)
 def _(node, env):
     var_name = make_temp_var(env, "_I", "int")
-    s = S(f'{var_name} = {node.value}')
-    s.setType('int')
+    s = f'{var_name} = {node.value}'
     return (var_name, [s])
 
 @ccompile.register(Float)
 def _(node, env):
     var_name = make_temp_var(env, "_F", "float")
-    s = S(f'{var_name} = {node.value}')
-    s.setType('float')
+    s = f'{var_name} = {node.value}'
     return (var_name, [s])
 
 @ccompile.register(Char)
 def _(node, env):
     var_name = make_temp_var(env, "_C", "char")
-    s = S(f'{var_name} = {node.value}')
-    s.setType('char')
+    s = f'{var_name} = {node.value}'
     return (var_name, [s])
 
 @ccompile.register(Boolean)
@@ -281,8 +272,7 @@ def _(node, env):
     val = 0
     if node.value is True:
         val = 1
-    s = S(f'{var_name} = {val}')
-    s.setType('int')
+    s = f'{var_name} = {val}'
     return (var_name, [s])
 
 @ccompile.register(Var)
@@ -461,14 +451,9 @@ def _(node, env):
     return (None, statements)
 
 
-
-
-
 # Top-level function to handle an entire program.
 def compile_program(model):
     env = { }
-    # TODO to handle scope we either want to declare variables at the top of their scope _OR_ come up
-    # with unique variable names at compile Var time (and when we look them up we have to know scope)
     ccode = ccompile(model, env)
     variable_declarations = make_variable_declarations(env)
     return f'''
