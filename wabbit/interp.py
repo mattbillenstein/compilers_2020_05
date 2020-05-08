@@ -43,7 +43,6 @@
 import os.path
 import sys
 from collections import ChainMap
-from functools import wraps
 
 from .model import *
 from .parse import parse
@@ -58,41 +57,74 @@ class DoReturn(Exception):
     def __init__(self, value):
         self.value = value
 
-class DeepChainMap(ChainMap):
-    'Variant of ChainMap that allows direct updates to inner scopes'
+class GlobalScope(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+class CallScope(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+class Scopes:
+    def __init__(self):
+        self.scopes = []
+
+    @property
+    def global_scope(self):
+        return self.scopes[0]
+
+    def push(self, scope_class=None):
+        if not self.scopes:
+            assert scope_class is None
+            scope_class = GlobalScope
+        elif not scope_class:
+            scope_class = dict
+
+        self.scopes.append(scope_class())
+
+    def pop(self):
+        if not self.scopes[-1] is self.global_scope:
+            self.scopes.pop()
+
+    def _find_scope(self, key):
+        for scope in reversed(self.scopes):
+            if key in scope:
+                return scope
+
+            # stop chained lookup at Call
+            if isinstance(scope, CallScope):
+                break
+
+        assert key in self.global_scope, 'Undefined?'
+        return self.global_scope
+
+    def define(self, key, value):
+        # special setter where we define a new var in the current scope
+        self.scopes[-1][key] = value
 
     def __setitem__(self, key, value):
-        for mapping in self.maps:
-            if key in mapping:
-                mapping[key] = value
-                return
-        self.maps[0][key] = value
+        scope = self._find_scope(key)
+        scope[key] = value
 
-    def __delitem__(self, key):
-        for mapping in self.maps:
-            if key in mapping:
-                del mapping[key]
-                return
-        raise KeyError(key)
+    def __getitem__(self, key):
+        scope = self._find_scope(key)
+        return scope[key]
 
-def new_scope(func):
+    def __len__(self):
+        return len(self.scopes)
+
+def new_scope(scope_type=None):
     '''Call function with new scope, remove it after the function exits'''
-    def inner(*args, **kwargs):
-        self = args[0]
-        try:
-            if self.env is None:
-                self.env = DeepChainMap()
-            else:
-                self.env = self.env.new_child()
-
-            return func(*args, **kwargs)
-        finally:
-            # don't remove the last scope since this is what we return to check
-            # simple expressions
-            if len(self.env.maps) > 1:
-                self.env = self.env.parents
-
-    return inner
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            self = args[0]
+            try:
+                self.env.push(scope_type)
+                return func(*args, **kwargs)
+            finally:
+                self.env.pop()
+        return wrapper
+    return decorator
 
 
 class Interpreter:
@@ -101,21 +133,18 @@ class Interpreter:
     # - Scope only if var/const in a block?
 
     def __init__(self):
-        self.env = None
+        self.env = Scopes()
         self.stdout = []
-
-    @property
-    def current_scope(self):
-        return self.env.maps[0]
 
     def interpret(self, node):
         ret = self.visit(node)
 
-        if isinstance(self.env.get('main'), Func):
+        if isinstance(self.env.global_scope.get('main'), Func):
             ret = self.visit(Call(Name('main'), []))
 
-        assert self.env is not None and len(self.env.maps) == 1
-        return ret, self.current_scope, self.stdout
+        assert self.env is not None and len(self.env) == 1
+
+        return ret, self.env.global_scope, self.stdout
 
     def visit(self, node):
         assert node is not None
@@ -127,7 +156,7 @@ class Interpreter:
         return x
 
     def visit_Name(self, node):
-        return self.env.get(node.value)
+        return self.env[node.value]
 
     def visit_Type(self, node):
         return {
@@ -197,29 +226,25 @@ class Interpreter:
             '!': lambda a: not a,
         }[node.op](self.visit(node.arg))
 
-    @new_scope
-    def visit_Block(self, node, args=None):
-        if args:
-            # called with args, insert them into the current scope
-            self.current_scope.update(args)
+    @new_scope()
+    def visit_Block(self, node):
+        for n in node.statements:
+            self.visit(n)
 
+    @new_scope()
+    def visit_Compound(self, node):
         ret = None
         for n in node.statements:
             ret = self.visit(n)
-
-        # hmm, should a block actually return something? See Compound
         return ret
-
-    def visit_Compound(self, node):
-        # same as Block almost...
-        return self.visit_Block(node)
 
     def visit_Print(self, node):
         self.stdout.append(self.visit(node.arg))
 
     def visit_Const(self, node):
         name = node.name.value
-        self.current_scope[name] = v = self.visit(node.arg)
+        v = self.visit(node.arg)
+        self.env.define(name, v)
 
         if node.type is not None:
             t = self.visit(node.type)
@@ -236,8 +261,7 @@ class Interpreter:
         if arg is None and typ is not None:
             arg = typ()
 
-        # set in the current scope
-        self.current_scope[name] = arg
+        self.env.define(name, arg)
 
     def visit_Assign(self, node):
         # FIXME, protect const somehow?
@@ -255,8 +279,6 @@ class Interpreter:
 
     def resolve_Attribute(self, node):
         if isinstance(node, Name):
-            # we're updating an existing struct, so we don't need
-            # current_scope here - update it in whatever scope it lives in...
             return self.env[node.value]
         return self.resolve_Attribute(node.name)[node.attr]
 
@@ -276,9 +298,10 @@ class Interpreter:
                 pass
 
     def visit_Func(self, node):
-        # just store the function node into the current scope, see Call for
+        # just store the function node into the global scope, see Call for
         # calling...
-        self.current_scope[node.name.value] = node
+        assert len(self.env) == 1, 'Nested function definition'
+        self.env.global_scope[node.name.value] = node
 
     def visit_Return(self, node):
         raise DoReturn(self.visit(node.value))
@@ -290,7 +313,8 @@ class Interpreter:
         raise DoBreak()
 
     def visit_Call(self, node):
-        func = self.env[node.name.value]
+        # functions all in the global scope?
+        func = self.env.global_scope[node.name.value]
 
         if isinstance(func, Struct):
             struct = func
@@ -304,23 +328,33 @@ class Interpreter:
                 values[field.name.value] = self.visit(arg)
             return values
 
-        # visit args and put them into a scope
+        # visit args and put them into current scope
         assert len(func.args) == len(node.args)
         args = {}
         for farg, arg in zip(func.args, node.args):
             args[farg.name.value] = self.visit(arg)
 
-        # visit block, args get injected into the block scope there
+        return self.do_call(func.block, args)
+
+    @new_scope(CallScope)
+    def do_call(self, node, args):
+        for k, v in args.items():
+            self.env.define(k, v)
+
         try:
-            ret = self.visit_Block(func.block, args)
+            ret = None
+            for n in node.statements:
+                ret = self.visit(n)
         except DoReturn as e:
             ret = e.value
+
         return ret
 
     def visit_Struct(self, node):
         # just store this model in the env, we'll use it later to create
         # instances...
-        self.env[node.name.value] = node
+        assert len(self.env) == 1, 'Nested scope definition'
+        self.env.global_scope[node.name.value] = node
 
     def visit_Field(self, node):
         return node.name.value, self.visit(node.name)

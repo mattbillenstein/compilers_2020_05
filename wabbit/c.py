@@ -441,6 +441,7 @@ def compile_c(text_or_node):
     return CCompilerVisitor().compile_c(node)
 
 def cc(text_or_node, filename):
+    return
     code = compile_c(text_or_node)
     with open(filename, 'w') as f:
         f.write(code)

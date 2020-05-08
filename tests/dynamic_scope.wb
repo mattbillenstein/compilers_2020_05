@@ -1,0 +1,18 @@
+// Make sure we didn't implement dynamic scopes
+
+var n = 12;
+
+func b() {
+    print n;        // 12
+}
+
+func a() {
+    var n = 42;
+    print n;        // 42
+    b();
+}
+
+func main() int {
+    a();
+    return 0;
+}

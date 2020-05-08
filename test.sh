@@ -6,7 +6,7 @@ echo "./script_models.py 2> /dev/null"
 ./script_models.py 2> /dev/null
 echo "./func_models.py 2> /dev/null"
 ./func_models.py 2> /dev/null
-echo "./type_models.py 2> /dev/null":w
+echo "./type_models.py 2> /dev/null"
 ./type_models.py 2> /dev/null
 
 # everything except enums...
