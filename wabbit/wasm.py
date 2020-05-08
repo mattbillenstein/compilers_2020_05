@@ -81,58 +81,7 @@ class WasmFunction:
         # Types of local variables
         self.local_types = []
 
-    def iconst(self, value):
-        self.code += b"\x41" + encode_signed(value)
-
-    def fconst(self, value):
-        self.code += b"\x44" + encode_FLOAT64(value)
-
-    def iadd(self):
-        self.code += b"\x6a"
-
-    def isub(self):
-        self.code += b"\x6b"
-
-    def imul(self):
-        self.code += b"\x6c"
-
-    def igt(self):
-        self.code += b"\x4a"
-
-    def ilt(self):
-        self.code += b"\x48"
-
-    def fgt(self):
-        self.code += b"\x56"
-
-    def flt(self):
-        self.code += b"\x54"
-
-    # floored
-    def idiv(self):
-        self.code += b"\x6e"
-
-    def fadd(self):
-        self.code += b"\xa0"
-
-    def fmul(self):
-        self.code += b"\xa2"
-
-    def ret(self):
-        self.code += b"\x0f"
-
-    def call(self, func):
-        self.code += b"\x10" + encode_unsigned(func.idx)
-
-    def _if(self):
-        self.code += b"\x04"
-
-    def _else(self):
-        self.code += b"\x05"
-
-    def end(self):
-        self.code += b"\x0b"
-
+    # Webassembly "op codes" (machine code)
     def alloca(self, type):
         idx = len(self.argtypes) + len(self.local_types)
         self.local_types.append(type)
@@ -149,6 +98,107 @@ class WasmFunction:
 
     def global_set(self, gvar):
         self.code += b"\x24" + encode_unsigned(gvar.idx)
+
+    def iconst(self, value):
+        self.code += b"\x41" + encode_signed(value)
+
+    def iadd(self):
+        self.code += b"\x6a"
+
+    def isub(self):
+        self.code += b"\x6b"
+
+    def imul(self):
+        self.code += b"\x6c"
+
+    def idiv(self):
+        self.code += b"\x6d"
+
+    def ieq(self):
+        self.code += b"\x46"
+
+    def ine(self):
+        self.code += b"\x47"
+
+    def ilt(self):
+        self.code += b"\x48"
+
+    def ile(self):
+        self.code += b"\x4c"
+
+    def igt(self):
+        self.code += b"\x4a"
+
+    def ige(self):
+        self.code += b"\x4e"
+
+    def fconst(self, value):
+        self.code += b"\x44" + encode_f64(value)
+
+    def fadd(self):
+        self.code += b"\xa0"
+
+    def fsub(self):
+        self.code += b"\xa1"
+
+    def fmul(self):
+        self.code += b"\xa2"
+
+    def fdiv(self):
+        self.code += b"\xa3"
+
+    def feq(self):
+        self.code += b"\x61"
+
+    def fne(self):
+        self.code += b"\x62"
+
+    def flt(self):
+        self.code += b"\x63"
+
+    def fle(self):
+        self.code += b"\x65"
+
+    def fgt(self):
+        self.code += b"\x64"
+
+    def fge(self):
+        self.code += b"\x66"
+
+    def ret(self):
+        self.code += b"\x0f"
+
+    def call(self, func):
+        self.code += b"\x10" + encode_unsigned(func.idx)
+
+    def return_(self):
+        self.code += b"\x0f"
+
+    def if_(self):
+        self.code += b"\x04\x40"
+
+    def else_(self):
+        self.code += b"\x05"
+
+    def end_block(self):
+        self.code += b"\x0b"
+
+    def br(self, idx):
+        self.code += b"\x0c" + encode_unsigned(idx)
+
+    def br_if(self, idx):
+        self.code += b"\x0d" + encode_unsigned(idx)
+
+    def block(self):
+        self.code += b"\x02\x40"
+
+    def loop(self):
+        self.code += b"\x03\x40"
+
+    # Logical not
+    def lnot(self):
+        self.iconst(1)
+        self.code += b"\x73"  # XOR
 
 
 class WasmGlobalVariable:
@@ -167,10 +217,10 @@ class WasmGlobalVariable:
 
 # Class representing the world of Wasm
 class WabbitWasmModule:
-    def __init__(self):
+    def __init__(self, return_type):
         self.module = WasmModule("wabbit")
         # Current function (temporary hack. Set to main)
-        self.function = WasmFunction(self.module, "main", [], [INT32])
+        self.function = WasmFunction(self.module, "main", [], [return_type])
 
         # Environment for tracking symbols
         self.env = ChainMap()
@@ -188,10 +238,10 @@ class WabbitWasmModule:
 
 # Top-level function for generating code from the model
 def generate_program(model):
-    module = WabbitWasmModule()
-
     # Typecheck. Annotates nodes with types.
     check_program(model)
+
+    module = WabbitWasmModule(_type_type_map.get(model.type))
 
     generate(model, module)
     module.function.ret()
@@ -347,46 +397,50 @@ def generate_Return(node, mod):
 # }
 @rule(If)
 def generate_If(node, mod):
-    # test
     generate(node.test, mod)
-    mod.function._if()
-    mod.function.code += _type_type_map.get(node.test.type)
-    # when_true
+
+    mod.function.if_()
+
+    mod.new_scope()
     generate(node.when_true, mod)
+    mod.previous_scope()
+
+    mod.function.else_()
 
     if node.when_false:
-        mod.function._else()
+        mod.new_scope()
         generate(node.when_false, mod)
+        mod.previous_scope()
 
-    mod.function.end()
+    mod.function.end_block()
+
+
+# Instruction table for binops
+_ops = {
+    "+": "add",
+    "-": "sub",
+    "*": "mul",
+    "/": "div",
+    "<": "lt",
+    "<=": "le",
+    ">": "gt",
+    ">=": "ge",
+    "==": "eq",
+    "!=": "ne",
+}
 
 
 @rule(BinOp)
 def generate_BinOp(node, mod):
     generate(node.left, mod)
     generate(node.right, mod)
-
-    print("methnaem", node.left, node.right)
-    op_methname = _op_methname_map.get((node.op, node.left.type))
-
-    if op_methname is None:
-        op_type = _type_type_map.get(node.type)
-
-        if op_type is None:
-            raise SyntaxError(
-                f"Cannot perform {node.op} operation on {node.left.type} and {node.right.type}"
-            )
-
-        mod.function.code += op_type
-        return
-
-    method = getattr(mod.function, op_methname)
-    if method is None:
-        raise SyntaxError(
-            f"Cannot perform {node.op} operation on {node.left.type} and {node.right.type}"
-        )
-
-    method()
+    # Emit the appropriate opcode
+    if node.left.type == "int":
+        prefix = "i"
+    else:
+        prefix = "f"
+    inst = f"{prefix}{_ops[node.op]}"
+    getattr(mod.function, inst)()
 
 
 def main(filename):

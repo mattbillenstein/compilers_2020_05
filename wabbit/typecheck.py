@@ -94,8 +94,12 @@ rule = check.register
 
 @rule(Statements)
 def check_Statements(node, env):
+    type = None
     for statement in node.statements:
-        check(statement, env)
+        type = check(statement, env)
+
+    node.type = type
+    return type
 
 
 @rule(Float)
@@ -195,6 +199,7 @@ def check_If(node, env):
     check(node.when_true, env.new_child())
     if node.when_false:
         check(node.when_false, env.new_child())
+    node.type = "int"
 
 
 @rule(Argument)

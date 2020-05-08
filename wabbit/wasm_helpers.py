@@ -5,8 +5,8 @@ INT32 = b"\x7f"  # (32-bit int)
 INT64 = b"\x7e"  # (64-bit int)
 FLOAT32 = b"\x7d"  # (32-bit float)
 FLOAT64 = b"\x7c"  # (64-bit float)
-I32CONST = b'\x41'  # <value>  => i32.const value
-F64CONST = b'\x44'  # <value>  => f64.const value
+I32CONST = b"\x41"  # <value>  => i32.const value
+F64CONST = b"\x44"  # <value>  => f64.const value
 
 
 def encode_unsigned(value):
@@ -49,7 +49,7 @@ assert encode_signed(-624485) == bytes([0x9B, 0xF1, 0x59])
 assert encode_signed(127) == bytes([0xFF, 0x00])
 
 
-def encode_FLOAT64(value):
+def encode_f64(value):
     """
     Encode a 64-bit float point as little endian
     """
@@ -109,7 +109,7 @@ def encode_global(gvar):
     if gvar.type == INT32:
         return INT32 + b"\x01\x41" + encode_signed(gvar.initializer) + b"\x0b"
     elif gvar.type == FLOAT64:
-        return FLOAT64 + b"\x01\x44" + encode_FLOAT64(gvar.initializer) + b"\x0b"
+        return FLOAT64 + b"\x01\x44" + encode_f64(gvar.initializer) + b"\x0b"
 
 
 def encode_module(module):
@@ -150,5 +150,4 @@ def encode_module(module):
             section10,
         ]
     )
-
 
