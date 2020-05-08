@@ -83,6 +83,7 @@ class Integer(Expression):
     '''
     Literal Integer: Example: 42
     '''
+    type = 'int'
     def __init__(self, value, **options):
         assert isinstance(value, int)
         self.value = value
@@ -95,6 +96,7 @@ class Float(Expression):
     '''
     Example: 4.2
     '''
+    type = 'float'
     def __init__(self, value, **options):
         assert isinstance(value, float)
         self.value = value
@@ -107,6 +109,7 @@ class Bool(Expression):
     '''
     Literal Bool:  true, false
     '''
+    type = 'bool'
     def __init__(self, value, **options):
         assert isinstance(value, bool)
         self.value = value
@@ -119,6 +122,7 @@ class Char(Expression):
     '''
     Literal Char:
     '''
+    type = 'char'
     def __init__(self, value, **options):
         assert isinstance(value, str)
         self.value = value

@@ -62,22 +62,18 @@ def check_statements(node, env):
 @rule(Integer)
 def check_integer(node, env):
     # Return the type that results from doing the operation. 
-    node.type = 'int'
     return "int"
 
 @rule(Float)
 def check_float(node, env):
-    node.type = 'float'
     return "float"
 
 @rule(Bool)
 def check_bool(node, env):
-    node.type = 'bool'
     return "bool"
 
 @rule(Char)
 def check_char(node, env):
-    node.type = 'char'
     return "char"
 
 # Capability/type table

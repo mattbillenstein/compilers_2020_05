@@ -235,6 +235,33 @@ class WasmFunction:
     def call(self, func):
         self.code += b'\x10' + encode_unsigned(func.idx)
 
+    def if_(self):
+        self.code += b'\x04\x40'
+
+    def else_(self):
+        self.code += b'\x05'
+
+    def end_block(self):
+        self.code += b'\x0b'
+
+    def br(self, idx):
+        self.code += b'\x0c' + encode_unsigned(idx)
+
+    def br_if(self, idx):
+        self.code += b'\x0d' + encode_unsigned(idx)
+
+    def block(self):
+        self.code += b'\x02\x40'
+
+    def loop(self):
+        self.code += b'\x03\x40'
+
+    # Logical not
+    def lnot(self):
+        self.iconst(1)
+        self.code += b'\x73'    # XOR
+        
+
 class WasmGlobalVariable:
     '''
     A natively defined Wasm global variable
@@ -329,6 +356,14 @@ class WabbitWasmModule:
         # Environment for tracking symbols
         self.env = ChainMap()
 
+    # Functions for creating, popping environments
+    def new_env(self):
+        self.env = self.env.new_child()
+        return self
+
+    def pop_env(self):
+        self.env = self.env.parents
+
 # Mapping of Wabbit types to Wasm types
 _typemap = {
     'int': i32,
@@ -341,6 +376,7 @@ _typemap = {
 def generate_program(model):
     mod = WabbitWasmModule()
     generate(model, mod)
+    mod.function.end_block()
     return mod
 
 # Internal function for generating code on each node
@@ -359,6 +395,18 @@ def generate_statements(node, mod):
 @rule(Integer)
 def generate_integer(node, mod: WabbitWasmModule):
     mod.function.iconst(node.value)
+
+@rule(Float)
+def generate_float(node, mod):
+    mod.function.fconst(node.value)
+
+@rule(Bool)
+def generate_float(node, mod):
+    mod.function.iconst(node.value)
+
+@rule(Char)
+def generate_float(node, mod):
+    mod.function.iconst(ord(node.value))
 
 # Instruction table for binops
 _ops = {
@@ -400,6 +448,8 @@ def generate_unaryop(node, mod):
     generate(node.operand, mod)
     if node.op == '+':
         return
+    if node.op == '!':
+        mod.function.lnot()
 
 @rule(Grouping)
 def generate_grouping(node, mod):
@@ -432,7 +482,7 @@ def generate_named_location(node, mod):
 @rule(AssignmentStatement)
 def generate_assignment(node, mod):
     wdecl = generate(node.location, mod)
-    generate(node.value, mod)
+    generate(node.expression, mod)
     if isinstance(wdecl, WasmGlobalVariable):
         mod.function.global_set(wdecl)
     else:
@@ -463,10 +513,40 @@ def generate_print_statement(node, mod):
 def generate_if_statement(node, mod):
     generate(node.test, mod)
     mod.function.if_()
-    generate(node.consequence, mod)
+    generate(node.consequence, mod.new_env())
+    mod.pop_env()
     mod.function.else_()
-    generate(node.alternative, mod)
+    generate(node.alternative, mod.new_env())
+    mod.pop_env()
     mod.function.end_block()
+
+# while test {
+#    body
+# }
+#
+# In Wasm, while loops are encoded in a very strange way...
+#
+# block {
+#    loop {
+#        not test
+#        br_if 1   # 1 refers to "block"
+#        body
+#        br 0      # 0 refers to "loop"
+#    }
+# }
+
+@rule(WhileStatement)
+def generate_while_statement(node, mod):
+    mod.function.block()      # block
+    mod.function.loop()       
+    generate(node.test, mod)
+    mod.function.lnot()
+    mod.function.br_if(1)
+    generate(node.body, mod.new_env())
+    mod.pop_env()
+    mod.function.br(0)
+    mod.function.end_block()   # loop
+    mod.function.end_block()   # block
 
 def main(filename):
     from .parse import parse_file
