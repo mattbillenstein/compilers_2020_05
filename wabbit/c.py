@@ -201,11 +201,9 @@ class WabbitToC:
 		self.c.push(node.value)
 		
 	def compile_Char(self, node):
-		node.valtype = "int"
 		self.c.push(ord(node.value))
 	
 	def compile_Bool(self, node):
-		node.valtype = "int"
 		self.c.push(int(node.value))
 		
 
@@ -221,7 +219,7 @@ class WabbitToC:
 		leftval = self.c.pop()			# get the left side from the stack
 		lvar = self.c.getVarName(node)
 		self.c.locals += f"{self.c.convertType(node.valtype)} {lvar};\n"
-		self.c.statements += f"{lvar} = {leftval} {node.op} {rightval};  // {node}\n"
+		self.c.statements += f"{lvar} = {leftval} {node.op} {rightval};  \n"
 		self.c.push(lvar);
 
 		
@@ -230,12 +228,12 @@ class WabbitToC:
 		rightval = self.c.pop()			# get the right side from the stack
 		lvar = self.c.getVarName(node)
 		self.c.locals += f"{self.c.convertType(node.valtype)} {lvar};\n"
-		self.c.statements += f"{lvar} = {node.op}{rightval};  // {node}\n"
+		self.c.statements += f"{lvar} = {node.op}{rightval};  \n"
 		self.c.push(lvar);
 
 
 	def compile_LocationLookup(self, node):
-		self.c.push(f"_t{node.var.nodename}")
+		self.c.push(node.var.name)
 		
 		
 	def compile_Grouping(self, node):
@@ -268,20 +266,20 @@ class WabbitToC:
 		
 	def compile_Assignment(self, node):
 		self.compile(node.right)
-		self.c.statements += f"{self.c.getVarName(node.left)} = {self.c.pop()};  // {node}\n"
+		self.c.statements += f"{node.left.name} = {self.c.pop()};  \n"
 
 		
 	def compile_PrintStatement(self, node):
 		self.compile(node.expr)
 		exprval = self.c.pop()
 		if node.expr.valtype == "int":
-			self.c.statements += f"printf(\"%d\", {exprval});  // {node}\n"
+			self.c.statements += f"printf(\"%d\\n\", {exprval});  \n"
 		elif node.expr.valtype == "float":
-			self.c.statements += f"printf(\"%f\", {exprval});  // {node}\n"
+			self.c.statements += f"printf(\"%f\\n\", {exprval});  \n"
 		elif node.expr.valtype == "char":
-			self.c.statements += f"printf(\"%c\", {exprval});  // {node}\n"
+			self.c.statements += f"printf(\"%c\", {exprval});  \n"
 		elif node.expr.valtype == "bool":
-			self.c.statements += f"printf(\"%i\", {exprval});  // {node}\n"
+			self.c.statements += f"printf(\"%i\\n\", {exprval});  \n"
 
 
 	def compile_Statements(self, node):
@@ -309,21 +307,21 @@ class WabbitToC:
 
 	def compile_ConstDef(self, node):
 		self.c.env[node.nodename] = node
-		self.c.locals += f"const {self.c.convertType(node.valtype)} {self.c.getVarName(node)};  // {node}\n"
+		self.c.locals += f"{self.c.convertType(node.valtype)} {node.name};  \n"
 		if node.value is not None:
 			self.compile(node.value)
 			val = self.c.pop()
-			self.c.statements += f"{self.c.getVarName(node)} = {val};\n"
+			self.c.statements += f"{node.name} = {val};\n"
 		#self.env.addConst(node.name, self.compile(node.value))
 		
 		
 	def compile_VarDef(self, node):
 		self.c.env[node.nodename] = node
-		self.c.locals += f"{self.c.convertType(node.valtype)} {self.c.getVarName(node)};  // {node}\n"
+		self.c.locals += f"{self.c.convertType(node.valtype)} {node.name};  \n"
 		if node.value is not None:
 			self.compile(node.value)
 			val = self.c.pop()
-			self.c.statements += f"{self.c.getVarName(node)} = {val};\n"
+			self.c.statements += f"{node.name} = {val};\n"
 		#self.env.addValue(node.name, value)
 		
 
@@ -333,50 +331,49 @@ class WabbitToC:
 		isfalseLabel = f"L{self.c.getNewLabel()}"
 		completionLabel = f"L{self.c.getNewLabel()}"
 			
-		self.c.statements += f"if ({self.c.pop()}) goto {istrueLabel}; // {node}\n"
+		self.c.statements += f"if ({self.c.pop()}) goto {istrueLabel}; \n"
 		self.c.statements += f"goto {isfalseLabel};\n"
 		
-		self.c.statements += f"{istrueLabel}: //{node.istrue}\n"
+		self.c.statements += f"{istrueLabel}: \n"
 		self.c.statements += "{\n"
 		self.compile(node.istrue)
 		self.c.statements += "}\n"
-		self.c.statements += f"goto {completionLabel}\n"
-		self.c.statements += f"{isfalseLabel}: //{node.isfalse}\n"
+		self.c.statements += f"goto {completionLabel};\n"
+		self.c.statements += f"{isfalseLabel}: \n"
+		self.c.statements += "{\n"			
 		if node.isfalse is not None:
-			self.c.statements += "{\n"			
 			self.compile(node.isfalse)
-			self.c.statements += "}\n"
+		self.c.statements += "}\n"
 			
-		self.c.statements +=f"{completionLabel}:\n"
+		self.c.statements +=f"{completionLabel}:;\n"
 			
 
 	def compile_While(self, node):
-		self.compile(node.condition)				# conditional statement is now on the stack
 		condLabel = f"L{self.c.getNewLabel()}"
 		bodyLabel = f"L{self.c.getNewLabel()}"
 		exitLabel = f"L{self.c.getNewLabel()}"
 			
-		self.c.statements += f"{condLabel}:  // {node}\n"
+		self.c.statements += f"{condLabel}:  \n"
 		self.compile(node.condition)				# push condition expression to stack
 		
-		self.c.statements += f"if ({self.c.getVarName(node.condition)}) goto {bodyLabel};\ngoto {exitLabel};\n"
-		self.c.statements += f"{bodyLabel}: //{node.todo}\n"
+		self.c.statements += f"if ({self.c.pop()}) goto {bodyLabel};\ngoto {exitLabel};\n"
+		self.c.statements += f"{bodyLabel}: \n"
 		self.c.statements += "{\n"
 		# increase scope
 		self.c.env['break'] = exitLabel
 		self.c.env['continue'] = condLabel
 		self.compile(node.todo)
-		self.c.statements += "}"
+		self.c.statements += "}\n"
 		self.c.statements += f"goto {condLabel};\n" 
 		
-		self.c.statements += f"{exitLabel}:\n"
+		self.c.statements += f"{exitLabel}:;\n"
 		
 		
 	def compile_BreakStatement(self, node):
-		self.c.statements += f"goto {self.c.env['break']};  // {node}\n"
+		self.c.statements += f"goto {self.c.env['break']};  \n"
 		
 	def compile_ContinueStatement(self, node):
-		self.c.statements += f"goto {self.c.env['continue']};  // {node}\n"
+		self.c.statements += f"goto {self.c.env['continue']};  \n"
 		
 	###
 	### The meta container ... Program
@@ -400,6 +397,9 @@ def main(filename):
 	check_program(model)
 	code = compile_program(model)
 	with open('out.c', 'w') as file:
+		file.write("/*\n")
+		file.write(str(repr(model)))
+		file.write("\n*/\n")
 		file.write("#include <stdio.h>\n")
 		file.write(code)
 	print('Wrote: out.c')

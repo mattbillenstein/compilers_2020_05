@@ -121,7 +121,7 @@ from sly import Parser
 
 class WabbitParser(Parser):
 	tokens = WabbitLexer.tokens			# token names from the lexer
-	#debugfile = "parser.out"
+	debugfile = "parser.out"
 	nodeid = 0							# counter for identifying nodes
 
 	precedence = [
@@ -165,6 +165,8 @@ class WabbitParser(Parser):
 	#		   | break_statement
 	#		   | continue_statement
 	#		   | expr SEMI
+	#          | function_definition
+	#          | return_statement
 	@_('print_statement',
 		'assignment_statement',
 		'variable_definition', 
@@ -173,7 +175,10 @@ class WabbitParser(Parser):
 		'while_statement',
 		'break_statement',
 		'continue_statement',
-		'expression_statement'
+		'expression_statement',
+		'function_definition',
+		'return_statement',
+
 	)
 	def statement(self, p):
 		return p[0]					# this is basically a pass through
@@ -260,6 +265,7 @@ class WabbitParser(Parser):
 	#	  | location
 	#	  | literal
 	#	  | LBRACE statements RBRACE 
+	#     | NAME LPAREN [ arguments ] RPAREN
 	
 	@_("expr PLUS expr",
 		"expr MINUS expr",
@@ -353,20 +359,50 @@ class WabbitParser(Parser):
 		return p.NAME
 
 	
+	###
+	### Functions
+	###
 
-	"""
-	@_('FUNC name LPAREN [ arguments ] RPAREN [ type ] LBRACE statements RBRACE')
-	def func_definition(self, p):
-		pass
+
+	# function_definition : FUNC name LPAREN [ parameters ] RPAREN [ rettype ] LBRACE statements RBRACE
+	#
+	@_('FUNC NAME LPAREN [ parameters ] RPAREN [ type ] LBRACE statements RBRACE')
+	def function_definition(self, p):
+		params = p.parameters if p.parameters else []			# empty set of parameters if none specified
+		rettype = p.type if p.type else "unit"
+		return FunctionDef(p.NAME, params, rettype, p.statements, nodename=self.getNewID())
 		
+	# parameters : parameter { COMMA parameter }
+	#
+	@_('parameter { COMMA parameter }')
+	def parameters(self, p):
+		return [p.parameter0] + p.parameter1
 		
-	@_('argument { COMMA argument } ')
-	def arguments(self, p)
-		pass
-		
-	"""
+	# parameter : NAME type
+	#
+	@_('NAME type')
+	def parameter(self, p):
+		return Parameter(p.NAME, p.type, nodename=self.getNewID())
 	
 	
+	@_('NAME LPAREN [ arguments ] RPAREN')
+	def expr(self, p):
+		arguments = p.arguments if p.arguments else []
+		return FunctionCall(p.NAME, arguments, nodename=self.getNewID())	
+
+	# argument : expression { COMMA expression }
+	#
+	@_('expr { COMMA expr }')
+	def arguments(self, p):
+		return [ p.expr0 ] + p.expr1
+
+	# return_statement : RETURN expression SEMI
+	#
+	@_('RETURN expr SEMI')
+	def return_statement(self, p):
+		return ReturnStatement(p.expr, nodename=self.getNewID())
+
+
 
 # Top-level function that runs everything	
 def parse_source(raw_tokens):
@@ -385,7 +421,7 @@ if __name__ == '__main__':
 	import sys
 	if len(sys.argv) != 2:
 		raise SystemExit('Usage: wabbit.parse filename')
-	model = parse(sys.argv[1])
+	model = parse_file(sys.argv[1])
 	print(model)
 
 

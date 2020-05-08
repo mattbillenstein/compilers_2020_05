@@ -479,18 +479,81 @@ class ExpressionStatement(Statement):
 ### Functions
 ###
 
-class FunctionDefinition(Node):
-	pass
+class FunctionDef(Definition):			# function definition
+	'''
+		func foo(x int, y float) int { ... }
+	'''
+	def __init__(self, name, parameters, returnType, statements, **kwargs):
+		super().__init__(**kwargs)
+		assert isinstance(name, str)
+		#assert isinstance(parameters, list)
+		#assert isinstance(returnType, Literal)
+		#assert isinstance(args, Expression)
+		self.name = name
+		self.parameters = parameters
+		self.returnType = returnType
+		self.stmts = statements
+		
+	def __repr__(self):
+		return f'FunctionDef([{self.nodename}], {self.parameters}, {self.returnType}, {self.stmts})'
+		
+	def to_source(self):
+		return f'func {self.name}({self.parameters.to_source()}) {self.returnType}\n' + '{\n' + self.statements.to_source() + '\n}\n'
+		
 	
-class FunctionApplication(Node):
-	pass
+class FunctionCall(Expression):			# function call
+	'''
+		foo(1, 3.14)
+	'''
+	def __init__(self, name, args, **kwargs):
+		super().__init__(**kwargs)
+		assert isinstance(name, str)
+		assert isinstance(args, list)
+		self.name = name
+		self.args = args
+
+	def __repr__(self):
+		return f'FunctionCall([{self.nodename}], {self.name}, {self.args})'
+		
+	def to_source(self):
+		return f'{self.name}({self.args.to_source()})'
+		
+		
+class Parameter(Definition):
+	'''
+	 parameters for FunctionDef
+	'''
+	def __init__(self, name, type, **kwargs):
+		super().__init__(**kwargs)
+		assert isinstance(name, str)
+		assert isinstance(type, str)
+		self.name = name
+		self.type = type
+		
+	def __repr__(self):
+		return f'Parameter([{self.nodename}], {self.name}, {self.type})'
+		
+	def to_source(self):
+		return f'{self.node} {self.type}, '
+		
+	
 	
 class ReturnStatement(Statement):
-	pass
+	'''
+		return expression;
+	'''
+	def __init__(self, expr, **kwargs):
+		super().__init__(**kwargs)
+		assert isinstance(expr, Expression)
+		self.expr = expr
 	
-class Parameters(Expression):
-	pass
+	def __repr__(self):
+		return f'ReturnStatement([{self.nodename}], {self.expr})'
+		
+	def to_source(self):
+		return f'return {self.expr}\n'
 	
+
 class Arguments(Expression):
 	pass
 	

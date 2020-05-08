@@ -94,6 +94,7 @@ class Environment:
 		self.consts[self.scopeLevel][name] = value		
 		return None
 		
+		
 	def increaseScope(self):
 		# increase the scope level
 		self.scopeLevel += 1
@@ -415,7 +416,13 @@ class WabbitChecker:
 			self.correct == False
 			print("Invalid Syntax: continue statement outside of a while loop")
 
-			
+	
+	
+	##
+	## Functions 
+	##
+	
+	
 	###
 	### The meta container ... Program
 	###
