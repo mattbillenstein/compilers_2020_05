@@ -394,6 +394,9 @@ class Statements(Statement):
             return False
         return self.statements == other.statements
 
+    def __iter__(self):
+        yield from self.statements
+
 
 class If(Statement):
     """

@@ -90,11 +90,18 @@ class WasmFunction:
     def iadd(self):
         self.code += b"\x6a"
 
-    def fadd(self):
-        self.code += b"\xa0"
+    def isub(self):
+        self.code += b"\x6b"
 
     def imul(self):
         self.code += b"\x6c"
+
+    # floored
+    def idiv(self):
+        self.code += b"\x6e"
+
+    def fadd(self):
+        self.code += b"\xa0"
 
     def fmul(self):
         self.code += b"\xa2"
@@ -146,6 +153,16 @@ class WabbitWasmModule:
 
         # Environment for tracking symbols
         self.env = ChainMap()
+        self.prev = None
+
+    def new_scope(self):
+        self.prev = self.env
+        self.env = self.env.new_child()
+        return
+
+    def previous_scope(self):
+        self.env = self.prev
+        return
 
 
 # Top-level function for generating code from the model
@@ -211,6 +228,8 @@ _type_type_map = {"int": INT32, "float": FLOAT64}
 _op_methname_map = {
     ("+", "int"): "iadd",
     ("*", "int"): "imul",
+    ("/", "int"): "idiv",
+    ("-", "int"): "isub",
 }
 
 
@@ -259,6 +278,46 @@ def generate_Variable(node, mod):
         mod.function.local_get(idx)
 
 
+@rule(FunctionDefinition)
+def generate_FunctionDefinition(node, mod):
+    arg_types = [_type_type_map.get(a.type) for a in node.args.args]
+    return_types = [_type_type_map.get(node.type)]
+
+    main = mod.function
+    f_def = WasmFunction(mod.module, node.name, arg_types, return_types)
+    mod.function = f_def
+
+    mod.new_scope()
+    for i, param in enumerate(node.args.args):
+        mod.env[param.name] = i
+
+    for statement in node.body:
+        generate(statement, mod)
+    mod.previous_scope()
+
+    mod.function = main
+
+    # set function as a local variable
+    mod.env[node.name] = f_def
+
+
+@rule(FunctionCall)
+def generate_FunctionCall(node, mod):
+    func = mod.env[node.name]
+
+    # put args onto stack
+    for argument in node.args:
+        generate(argument, mod)
+
+    mod.function.call(func)
+
+
+@rule(Return)
+def generate_Return(node, mod):
+    generate(node.value, mod)
+    mod.function.ret()
+
+
 # if test {
 #    when_true
 # } else {
@@ -278,6 +337,7 @@ def generate_BinOp(node, mod):
     generate(node.left, mod)
     generate(node.right, mod)
 
+    print("methnaem", node.left, node.right)
     op_methname = _op_methname_map.get((node.op, node.left.type))
 
     method = getattr(mod.function, op_methname)

@@ -77,6 +77,30 @@ def test_wasm_basic():
     result = instance.exports.main()
     assert result == 60
 
+    # func square(x int) int {
+    #     return x*x;
+    # }
+    model = Statements(
+        [
+            FunctionDefinition(
+                "square",
+                Arguments(Argument("x", "int")),
+                "int",
+                # Statements([Variable("x")]),
+                Statements([Return(BinOp("*", Variable("x"), Variable("x")))]),
+            ),
+            FunctionCall("square", Integer(2)),
+        ]
+    )
+
+    mod = generate_program(model)
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 60
+
     # model = Statements(
     #     [
     #         If(

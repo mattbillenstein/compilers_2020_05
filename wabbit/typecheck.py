@@ -104,6 +104,14 @@ def check_Float(node, env):
     return "float"
 
 
+@rule(Return)
+def check_Return(node, env):
+    value_type = check(node.value, env)
+
+    node.type = value_type
+    return value_type
+
+
 @rule(Integer)
 def check_Integer(node, env):
     node.type = "int"
@@ -146,6 +154,45 @@ def check_Var(node, env):
     env[node.name] = value_type
     node.type = value_type
     return value_type
+
+
+@rule(Return)
+def check_Return(node, env):
+    check(node.value, env)
+
+    node.type = "empty"
+    return "empty"
+
+
+@rule(FunctionCall)
+def check_FunctionCall(node, env):
+    func_return_type = env[node.name]
+    node.type = func_return_type
+
+    return func_return_type
+
+
+@rule(FunctionDefinition)
+def check_FunctionDefinition(node, env):
+    check(node.args, env)
+    check(node.body, env)
+
+    env[node.name] = node.return_type
+
+    node.type = node.return_type
+    return node.return_type
+
+
+@rule(Arguments)
+def check_Arguments(node, env):
+    for arg in node.args:
+        check(arg, env)
+
+
+@rule(Argument)
+def check_Argument(node, env):
+    env[node.name] = node.type
+    return node.type
 
 
 @rule(Variable)
