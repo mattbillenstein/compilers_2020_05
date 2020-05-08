@@ -24,11 +24,17 @@ from wabbit.model import (
     While,
 )
 
+
+_DIV_OPERATORS = {
+    (float, float): operator.truediv,
+    (int, int): operator.floordiv,
+}
+
 OPERATORS = {
     "+": operator.add,
     "-": operator.sub,
     "*": operator.mul,
-    "/": operator.truediv,
+    "/": lambda x, y: _DIV_OPERATORS[type(x), type(y)](x, y),
     "<": operator.lt,
     ">": operator.gt,
     ">=": operator.ge,
@@ -37,6 +43,8 @@ OPERATORS = {
 
 UNARY_OPERATORS = {
     "-": lambda x: -x,
+    "+": lambda x: x,
+    "!": lambda x: not x,
 }
 
 
