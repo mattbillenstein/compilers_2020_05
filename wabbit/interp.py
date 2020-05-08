@@ -39,12 +39,14 @@ OPERATORS = {
     ">": operator.gt,
     ">=": operator.ge,
     "<=": operator.le,
+    "==": operator.eq,
+    "!=": operator.ne,
 }
 
 UNARY_OPERATORS = {
-    "-": lambda x: -x,
-    "+": lambda x: x,
-    "!": lambda x: not x,
+    "-": operator.neg,
+    "+": operator.pos,
+    "!": operator.not_,
 }
 
 
@@ -107,6 +109,8 @@ class Interpreter:
             sys.stdout.write(value)
         elif isinstance(value, float):
             sys.stdout.write(f"{value:.6f}\n")
+        elif isinstance(value, bool):
+            sys.stdout.write({True: "true", False: "false"}[value] + "\n")
         else:
             sys.stdout.write(f"{value}\n")
         sys.stdout.flush()
