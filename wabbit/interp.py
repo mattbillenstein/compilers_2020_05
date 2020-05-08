@@ -98,18 +98,18 @@ class Interpreter:
 
     @typechecked
     def interpret_ConstDef(self, node: ConstDef, env):
-        env[node.name.value] = self.interpret(node.value, env)
+        env[node.left.value] = self.interpret(node.right, env)
 
     @typechecked
     def interpret_VarDef(self, node: VarDef, env):
-        if node.value is not None:
-            env[node.name.value] = self.interpret(node.value, env)
+        if node.right is not None:
+            env[node.left.value] = self.interpret(node.right, env)
 
     @typechecked
     def interpret_Assign(self, node: Assign, env):
-        value = node.location.value
+        value = node.left.value
         receiving_env = next((env for env in env.maps if value in env), env)
-        receiving_env[value] = self.interpret(node.value, env)
+        receiving_env[value] = self.interpret(node.right, env)
 
     @typechecked
     def interpret_Print(self, node: Print, env):

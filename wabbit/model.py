@@ -91,22 +91,22 @@ Literal = Union[Bool, Char, Float, Integer]
 
 @dataclass
 class ConstDef(Statement):
-    name: Name
+    left: Name
     type: Optional[str]
-    value: Literal
+    right: Literal
 
 
 @dataclass
 class VarDef(Statement):
-    name: Name
+    left: Name
     type: Optional[str]
-    value: Optional[Expression]
+    right: Optional[Expression]
 
 
 @dataclass
 class Assign(Statement):
-    location: Location
-    value: Expression
+    left: Location
+    right: Expression
 
 
 @dataclass

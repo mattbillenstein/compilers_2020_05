@@ -69,24 +69,24 @@ class SourceFormatter:
     @typechecked
     def visit_ConstDef(self, node: ConstDef) -> str:
         tokens = (
-            ["const", node.name.value, "="]
+            ["const", node.left.value, "="]
             + ([node.type] if node.type else [])
-            + [self.visit(node.value)]
+            + [self.visit(node.right)]
         )
         return " ".join(tokens)
 
     @typechecked
     def visit_VarDef(self, node: VarDef) -> str:
-        tokens = ["var", node.name.value]
+        tokens = ["var", node.left.value]
         if node.type is not None:
             tokens.append(node.type)
-        if node.value is not None:
-            tokens.extend(["=", self.visit(node.value)])
+        if node.right is not None:
+            tokens.extend(["=", self.visit(node.right)])
         return " ".join(tokens)
 
     @typechecked
     def visit_Assign(self, node: Assign) -> str:
-        return " ".join([self.visit(node.location), "=", self.visit(node.value)])
+        return " ".join([self.visit(node.left), "=", self.visit(node.right)])
 
     @typechecked
     def visit_Print(self, node: Print) -> str:
