@@ -147,7 +147,25 @@ def interpret_compound(node, env):
 def interpret_load_location(node, env):
     # Feels wrong. Having to look inside location to get a name.
     # Think about.
-    return env[node.location.name]
+    get, set = interpret(node.location, env)
+    return get()
+
+#     return env[node.location.name]
+
+@rule(NamedLocation)
+def interpret_named_location(node, env):
+    for m in env.maps:
+        if node.name in m:
+            break
+
+    # m is the environment that has definition
+    def get():
+        return m[node.name]
+
+    def set(value):
+        m[node.name] = value
+
+    return (get, set)
 
 @rule(PrintStatement)
 def interpret_print_statement(node, env):
@@ -188,6 +206,10 @@ def interpret_assignment(node, env):
     # same environment where the variable was defined originally.
 
     # env[node.location.name] = exprval
+
+    get, set = interpret(node.location, env)
+    set(exprval)
+    return
 
     # Search all of the scopes for the location of the variable
     for e in env.maps:

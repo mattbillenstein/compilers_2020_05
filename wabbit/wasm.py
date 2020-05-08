@@ -565,6 +565,14 @@ def generate_while_statement(node, mod):
     mod.function.end_block()   # loop
     mod.function.end_block()   # block
 
+@rule(BreakStatement)
+def generate_break_statement(node, mod):
+    mod.function.br(1)
+
+@rule(ContinueStatement)
+def generate_continue_statement(node, mod):
+    mod.function.br(0)
+
 # ---------------- Functions
 
 @rule(FunctionDefinition)
