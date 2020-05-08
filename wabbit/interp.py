@@ -55,7 +55,7 @@ from recordclass import recordclass
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-#logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -139,7 +139,7 @@ class Environment(UserDict):
     def child_env(self, for_function=False):
         try:
             env = self._child_env(for_function=for_function)
-            logger.debug(f"Yielding env: {repr(env)}")
+            logger.debug(f"Yielding env with keys: {repr(env.keys())}")
             yield env  # This is normally not used, but might as well send it along
         finally:
             self._teardown_env(for_function=for_function)
@@ -147,7 +147,6 @@ class Environment(UserDict):
 
     def _teardown_env(self, for_function=False):
         logger.debug("Tearing down env...")
-        
         assert len(self._scopes) > 1, "Attempted to teardown global scope"
         sc = self._scopes.popleft()
         if for_function:
@@ -161,16 +160,26 @@ class Environment(UserDict):
         logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
         if isinstance(value, Node):
             logger.debug("!!! Node has been set in environment !!!")
-        for scope in list(self._scopes):
-            # first check for existing declarations of a variable
-            if key in scope:
-                if scope is self:
-                    #  avoid recursion
-                    super().__setitem__(key, value)
-                else:
-                    scope[key] = value
+
+        try:
+            scope = self._get_lookup_scope(key)
+            if scope is self:
+                super().__setitem__(key, value)
                 return
-        else:
+            else:
+                scope[key] = value
+                return
+        except KeyError:
+        # for scope in self._scopes:
+        #     # first check for existing declarations of a variable
+        #     if key in scope:
+        #         if scope is self:
+        #             #  avoid recursion
+        #             super().__setitem__(key, value)
+        #         else:
+        #             scope[key] = value
+        #         return
+        # else:
             #  If the name isn't in any existing scope, create it in the closest scope
             if self._closest_scope is self:
                 super().__setitem__(key, value)
@@ -179,16 +188,10 @@ class Environment(UserDict):
             return
 
     def __getitem__(self, item):
-        for scope in self._scopes:
-            
-            if self._in_function and scope._is_function_scope and not scope is self._closest_function_scope:
-                continue  # don't allow lookups from function scopes that don't belong to the current function
-            if item in scope:
-                if scope is self:  # self should always be the last iteration, too
-                    return super().__getitem__(item)
-                else:
-                    return scope[item]
-        raise KeyError(item)
+        lookup_scope = self._get_lookup_scope(item)
+        if lookup_scope is self:
+            return super().__getitem__(item)
+        return lookup_scope[item]
 
     def declare(self, key, value):
         """
@@ -198,17 +201,26 @@ class Environment(UserDict):
             logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
         self._closest_scope[key] = value
 
+    def _get_lookup_scope(self, item):
+        for scope in self._scopes:
+            if item in scope:
+                return scope
+            if scope._is_function_scope:
+                break
+        if item in self:
+            return self
+        raise KeyError(item)
+
     def globals(self):
-        return dict(self.items())
+        return Scope(self.items())
 
     def locals(self):
-        locals_ = dict()
+        locals_ = Scope()
         for scope in reversed(self._scopes):
             if scope is self:
                 continue  # dont include globals in locals
             if scope._is_function_scope and not scope is self._closest_function_scope:
-                continue  # Don't include the scope from other functions
-
+                break
             locals_.update(scope)
         return locals_
 
@@ -432,7 +444,7 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
 @interpret.register(Clause)
 def interpret_clause_node(clause_node, env: Environment):
     logger.debug(f"Interpreting clause node: {repr(clause_node)}")
-    if env._closest_scope._is_function_scope:
+    if hasattr(clause_node, 'is_function_clause'):
         logger.debug("Closest scope was function scope (was already created) Skipping creating child env for this clause")
         retval = None
         for statement in clause_node.statements:
@@ -582,11 +594,15 @@ def interpret_function_call_node(function_or_struct_call_node, env):
     logger.debug("Call was not a struct, assuming is a function")
     func = func_or_struct
     func_clause = func.body
-    # inject argument values into the environment and then run the function clause
+    # evaluate argument values (in current scope) to later inject into the environment and then run the function clause
+    args = {}
+    for param, arg_expr in zip(func.parameters, arguments):
+        value = interpret(arg_expr, env)
+        args[param.name] = value
     with env.child_env(for_function=True):
         logger.debug('Injecting function parameters for function...')
-        for param, arg_expr in zip(func.parameters, arguments):
-            env.declare(key=param.name, value=interpret(arg_expr, env))
+        for key, value in args.items():
+            env.declare(key=key, value=value)
 
         try:
             return interpret(func_clause, env)

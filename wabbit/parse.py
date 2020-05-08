@@ -321,6 +321,7 @@ class WabbitParser(Parser):
 
     @_("FUNC NAME LPAREN [ parameters ] RPAREN type clause")
     def function_definition(self, p):
+        p.clause.is_function_clause = True  # HACKING to avoid making a dedicated clause model for funcs RE: dynamic scope
         return FunctionDefinition(name=p.NAME, parameters=p.parameters, rtype=p.type, body=p.clause)
 
     @_("expression")
