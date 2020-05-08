@@ -57,7 +57,6 @@ class DoContinue(Exception):
 class DoReturn(Exception):
     def __init__(self, value):
         self.value = value
-#        super()__init('')
 
 class DeepChainMap(ChainMap):
     'Variant of ChainMap that allows direct updates to inner scopes'
@@ -105,6 +104,7 @@ class Interpreter:
         self.env = None
         self.stdout = []
 
+    @property
     def current_scope(self):
         return self.env.maps[0]
 
@@ -115,7 +115,7 @@ class Interpreter:
             ret = self.visit(Call(Name('main'), []))
 
         assert self.env is not None and len(self.env.maps) == 1
-        return ret, self.current_scope(), self.stdout
+        return ret, self.current_scope, self.stdout
 
     def visit(self, node):
         assert node is not None
@@ -201,7 +201,7 @@ class Interpreter:
     def visit_Block(self, node, args=None):
         if args:
             # called with args, insert them into the current scope
-            self.current_scope().update(args)
+            self.current_scope.update(args)
 
         ret = None
         for n in node.statements:
@@ -219,7 +219,7 @@ class Interpreter:
 
     def visit_Const(self, node):
         name = node.name.value
-        self.current_scope()[name] = v = self.visit(node.arg)
+        self.current_scope[name] = v = self.visit(node.arg)
 
         if node.type is not None:
             t = self.visit(node.type)
@@ -237,7 +237,7 @@ class Interpreter:
             arg = typ()
 
         # set in the current scope
-        self.current_scope()[name] = arg
+        self.current_scope[name] = arg
 
     def visit_Assign(self, node):
         # FIXME, protect const somehow?
@@ -256,7 +256,7 @@ class Interpreter:
     def resolve_Attribute(self, node):
         if isinstance(node, Name):
             # we're updating an existing struct, so we don't need
-            # current_scope() here - update it in whatever scope it lives in...
+            # current_scope here - update it in whatever scope it lives in...
             return self.env[node.value]
         return self.resolve_Attribute(node.name)[node.attr]
 
@@ -278,7 +278,7 @@ class Interpreter:
     def visit_Func(self, node):
         # just store the function node into the current scope, see Call for
         # calling...
-        self.env[node.name.value] = node
+        self.current_scope[node.name.value] = node
 
     def visit_Return(self, node):
         raise DoReturn(self.visit(node.value))
