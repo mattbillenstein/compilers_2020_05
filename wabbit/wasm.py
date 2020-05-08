@@ -169,8 +169,65 @@ class WasmFunction:
     def iadd(self):
         self.code += b'\x6a'
 
+    def isub(self):
+        self.code += b'\x6b'
+
     def imul(self):
         self.code += b'\x6c'
+    
+    def idiv(self):
+        self.code += b'\x6d'
+
+    def ieq(self):
+        self.code += b'\x46'
+
+    def ine(self):
+        self.code += b'\x47'
+
+    def ilt(self):
+        self.code += b'\x48'
+
+    def ile(self):
+        self.code += b'\x4c'
+
+    def igt(self):
+        self.code += b'\x4a'
+
+    def ige(self):
+        self.code += b'\x4e'
+
+    def fconst(self, value):
+        self.code += b'\x44' + encode_f64(value)
+
+    def fadd(self):
+        self.code += b'\xa0'
+        
+    def fsub(self):
+        self.code += b'\xa1'
+
+    def fmul(self):
+        self.code += b'\xa2'
+
+    def fdiv(self):
+        self.code += b'\xa3'
+
+    def feq(self):
+        self.code += b'\x61'
+
+    def fne(self):
+        self.code += b'\x62'
+
+    def flt(self):
+        self.code += b'\x63'
+
+    def fle(self):
+        self.code += b'\x65'
+
+    def fgt(self):
+        self.code += b'\x64'
+
+    def fge(self):
+        self.code += b'\x66'
 
     def ret(self):
         self.code += b'\x0f'
@@ -260,11 +317,25 @@ class WabbitWasmModule:
         # Similar to the tutorial
         self.module = WasmModule('wabbit')
 
+        # Declare runtime functions (from javascript)
+        self._printi = WasmImportedFunction(self.module, 'runtime', '_printi', [i32], [])
+        self._printf = WasmImportedFunction(self.module, 'runtime', '_printf', [f64], [])
+        self._printb = WasmImportedFunction(self.module, 'runtime', '_printb', [i32], [])
+        self._printc = WasmImportedFunction(self.module, 'runtime', '_printc', [i32], [])
+
         # Current function (temporary hack. Set to main)
         self.function = WasmFunction(self.module, 'main', [], [])
 
         # Environment for tracking symbols
         self.env = ChainMap()
+
+# Mapping of Wabbit types to Wasm types
+_typemap = {
+    'int': i32,
+    'float': f64,
+    'bool': i32,
+    'char': i32
+}
 
 # Top-level function for generating code from the model
 def generate_program(model):
@@ -280,30 +351,107 @@ def generate(node, mod):
 
 rule = generate.register
 
+@rule(Statements)
+def generate_statements(node, mod):
+    for stmt in node.statements:
+        generate(stmt, mod)
+
 @rule(Integer)
 def generate_integer(node, mod: WabbitWasmModule):
     mod.function.iconst(node.value)
+
+# Instruction table for binops
+_ops = {
+    '+': 'add',
+    '-': 'sub',
+    '*': 'mul',
+    '/': 'div',
+    '<': 'lt',
+    '<=': 'le',
+    '>': 'gt',
+    '>=': 'ge',
+    '==': 'eq',
+    '!=': 'ne'
+}
 
 @rule(BinOp)
 def generate_binop(node, mod):
     generate(node.left, mod)
     generate(node.right, mod)
     # Emit the appropriate opcode
-    if node.left.type == 'int':
-        if node.op == '+':
-            mod.function.iadd()
-        elif node.op == '-':
-            mod.function.isub()
-        elif node.op == '*':
-            mod.function.imul()
-    elif node.left.type == 'float':
-        if node.op == '+':
-            mod.function.fadd()
-        ...
+    if node.left.type == 'float':
+        prefix = 'f'
+    else:
+        prefix = 'i'
+    inst = f'{prefix}{_ops[node.op]}'
+    getattr(mod.function, inst)()
 
 @rule(UnaryOp)
 def generate_unaryop(node, mod):
-    pass
+    # - op.   Could I recast as 0 - op?
+    if node.op == '-':
+        if node.operand.type == 'int':
+            left = Integer(0)
+        elif node.operand.type == 'float':
+            left = Float(0.0)
+        generate_binop(BinOp('-', left, node.operand), mod)
+        return
+    # + op    -- Does nothing
+    generate(node.operand, mod)
+    if node.op == '+':
+        return
+
+@rule(Grouping)
+def generate_grouping(node, mod):
+    generate(node.expression, mod)
+
+@rule(VarDefinition)
+@rule(ConstDefinition)
+def generate_var_definition(node, mod):
+    # Need to declare as a Wasm global variable
+    # (or local variable if in function)
+    wtype = _typemap[node.type]
+    vardecl = WasmGlobalVariable(mod.module, node.name, wtype, 0)
+    mod.env[node.name] = vardecl     
+    if node.value:
+        generate(node.value, mod)
+        mod.function.global_set(vardecl)
+
+@rule(LoadLocation)
+def generate_load_location(node, mod):
+    wdecl = generate(node.location, mod)
+    if isinstance(wdecl, WasmGlobalVariable):
+        mod.function.global_get(wdecl)
+    else:
+        assert False
+
+@rule(NamedLocation)
+def generate_named_location(node, mod):
+    return mod.env[node.name]
+
+@rule(AssignmentStatement)
+def generate_assignment(node, mod):
+    wdecl = generate(node.location, mod)
+    generate(node.value, mod)
+    if isinstance(wdecl, WasmGlobalVariable):
+        mod.function.global_set(wdecl)
+    else:
+        assert False
+
+@rule(PrintStatement)
+def generate_print_statement(node, mod):
+    generate(node.expression, mod)
+    ty = node.expression.type
+    if ty == 'int':
+        mod.function.call(mod._printi)     # These functions are imported from Javascript environment
+    elif ty == 'float':
+        mod.function.call(mod._printf)
+    elif ty == 'bool':
+        mod.function.call(mod._printb)
+    elif ty == 'char':
+        mod.function.call(mod._printc)
+    else:
+        assert False
 
 # if test {
 #    consequence;
@@ -324,7 +472,7 @@ def main(filename):
     from .parse import parse_file
     from .typecheck import check_program
     model = parse_file(filename)
-    check_program(model):
+    check_program(model)
     mod = generate_program(model)
     with open('out.wasm', 'wb') as file:
         file.write(encode_module(mod.module))
