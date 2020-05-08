@@ -163,19 +163,16 @@ def get_type_from_expr(env, expr):
     if isinstance(expr, tuple):
         (var_name, statements) = expr
         expr = var_name
-    if hasattr(expr, 'getType'):
-        return expr.getType()
+    key = None
+    if isinstance(expr, str):
+        key = expr
     else:
-        key = None
-        if isinstance(expr, str):
-            key = expr
-        else:
-            key = expr.name.name
-        maybe = get_var_type(env, key)
-        if maybe is not None:
-            return maybe
-        else:
-            raise Exception(f'get_type_from_expr no type: {expr}')
+        key = expr.name.name
+    maybe = get_var_type(env, key)
+    if maybe is not None:
+        return maybe
+    else:
+        raise Exception(f'get_type_from_expr no type: {expr}')
 
 NAMES_KEY = 'franfranfrannames'
 def get_unique_name(env, prefix):
