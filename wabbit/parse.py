@@ -394,7 +394,7 @@ class WabbitParser(Parser):
 
     @_("NAME [ LPAREN NAME RPAREN ]")
     def pattern(self, p):
-        return EnumChoice(name=p.NAME0, type=p.NAME1)
+        return Pattern(name=p.NAME0, type=p.NAME1)
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()

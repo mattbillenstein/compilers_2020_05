@@ -506,10 +506,17 @@ class MatchCase(Node):
     def __init__(self, pattern, consequent):
         super().__init__(pattern=pattern, consequent=consequent)
         assert isinstance(consequent, Expression)
-        assert isinstance(pattern, EnumChoice) # ??
+        assert isinstance(pattern, Pattern) # ??
+
 
     def to_source(self):
         return repr(self)
+
+class Pattern(Node):
+    def __init__(self, name, type):
+        assert isinstance(name, str), f"expected str got {type(name)}"
+        assert type is None or isinstance(type, str), f'expected None or str got {type(name)}'
+        super().__init__(name=name, type=type)
 
 class MatchExpression(Expression):
     def __init__(self, expression, cases=None):

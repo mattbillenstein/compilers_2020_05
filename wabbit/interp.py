@@ -55,7 +55,7 @@ from recordclass import recordclass
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+#logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -92,6 +92,8 @@ class Environment(UserDict):
         super().__init__(*args, **kwargs)
         self._scopes = deque()
         self._scopes.append(self)
+        self._const_registry = {}
+        self._enum_registry = {}
 
     @property
     def _closest_scope(self):
@@ -161,6 +163,8 @@ class Environment(UserDict):
     def locals(self):
         locals_ = dict()
         for scope in reversed(self._scopes):
+            if scope is self:
+                continue
             locals_.update(scope)
         return locals_
 
@@ -557,6 +561,9 @@ def interpret_struct_field_lookup_node(field_lookup_node, env):
     attr = getattr(struct, field_lookup_node.fieldname)
     return attr  # >?
 
+# @interpret.register(EnumChoice)
+# def interpret_enum_choice_node(enum_choice_node, env):
+#     ...
 
 @interpret.register(EnumLookup)
 def interpret_enum_lookup_node(enum_lookup_node, env):
@@ -610,15 +617,23 @@ def interpret_match_expression_node(match_expr_node, env):
     value_expression = match_expr_node.expression
     argument = interpret(value_expression, env)  # < -- can I get the type of this or what?
     logger.debug(f'match expression is {repr(argument)}')
+    ret = None
     for case in match_expr_node.cases:
         logger.debug(f'Testing case {repr(case)}')
-        if argument == case:
+        if argument[0].name == case.pattern.name:
             logger.debug(f'Matched case: {repr(case)}')
             with env.child_env():
-                return interpret(case.consequent, env)
+                ret = interpret(case.consequent, env)
+                if ret is None:
+                    return Unit()
+                else:
+                    return ret
     logger.debug("NO MATCHES!!!")
+    return Unit()  # not sure if this is right
 
-
+@interpret.register(MatchCase)
+def interpret_match_case_node(match_case_node, env):
+    ...
 
 if __name__ == "__main__":
     #logging.basicConfig(level=logging.DEBUG)
