@@ -140,3 +140,11 @@ while x {
 def test_while_condition_not_bool():
     model = parse_source(while_condition_not_bool)
     assert catch_error(model)
+
+print_int = """
+print int;
+"""
+
+def test_print_int():
+    model = parse_source(print_int)
+    assert catch_error(model)

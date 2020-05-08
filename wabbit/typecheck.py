@@ -36,7 +36,12 @@ from .model import *
 def check_program(model):
     # Make the initial environment (a dict)
     env = ChainMap()     # Use instead of dict
-    check(model, env, None)
+    try:
+        check(model, env, None)
+    except KeyError as e:
+        if e.args[0] in ['int', 'float', 'bool', 'char']:
+            ERRORS.append("#"*50 + "\n FATAL ERROR: " +
+            f"likely attempting to use the type name '{e.args[0]}' as variable name.")
     if ERRORS:
         raise TypeError("\n\n".join(ERRORS))
     return True
