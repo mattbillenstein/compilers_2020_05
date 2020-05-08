@@ -99,6 +99,15 @@ class WasmFunction:
     def igt(self):
         self.code += b"\x4a"
 
+    def ilt(self):
+        self.code += b"\x48"
+
+    def fgt(self):
+        self.code += b"\x56"
+
+    def flt(self):
+        self.code += b"\x54"
+
     # floored
     def idiv(self):
         self.code += b"\x6e"
@@ -203,40 +212,40 @@ _bin_op_methods = {
     ("-", "int", "int"): "int",
     ("*", "int", "int"): "int",
     ("/", "int", "int"): "int",
-    ("<", "int", "int"): "bool",
-    ("<=", "int", "int"): "bool",
-    (">", "int", "int"): "bool",
-    (">=", "int", "int"): "bool",
-    ("==", "int", "int"): "bool",
-    ("!=", "int", "int"): "bool",
+    ("<", "int", "int"): "ibool",
+    ("<=", "int", "int"): "ibool",
+    (">", "int", "int"): "ibool",
+    (">=", "int", "int"): "ibool",
+    ("==", "int", "int"): "ibool",
+    ("!=", "int", "int"): "ibool",
     # Float operations
     ("+", "float", "float"): "float",
     ("-", "float", "float"): "float",
     ("*", "float", "float"): "float",
     ("/", "float", "float"): "float",
-    ("<", "float", "float"): "bool",
-    ("<=", "float", "float"): "bool",
-    (">", "float", "float"): "bool",
-    (">=", "float", "float"): "bool",
-    ("==", "float", "float"): "bool",
-    ("!=", "float", "float"): "bool",
+    ("<", "float", "float"): "fbool",
+    ("<=", "float", "float"): "fbool",
+    (">", "float", "float"): "fbool",
+    (">=", "float", "float"): "fbool",
+    ("==", "float", "float"): "fbool",
+    ("!=", "float", "float"): "fbool",
     # Char operations
-    ("<", "char", "char"): "bool",
-    ("<=", "char", "char"): "bool",
-    (">", "char", "char"): "bool",
-    (">=", "char", "char"): "bool",
-    ("==", "char", "char"): "bool",
-    ("!=", "char", "char"): "bool",
+    ("<", "char", "char"): "ibool",
+    ("<=", "char", "char"): "ibool",
+    (">", "char", "char"): "ibool",
+    (">=", "char", "char"): "ibool",
+    ("==", "char", "char"): "ibool",
+    ("!=", "char", "char"): "ibool",
     # Bool operations
-    ("==", "bool", "bool"): "bool",
-    ("!=", "bool", "bool"): "bool",
-    ("&&", "bool", "bool"): "bool",
-    ("||", "bool", "bool"): "bool",
+    ("==", "ibool", "ibool"): "ibool",
+    ("!=", "ibool", "ibool"): "ibool",
+    ("&&", "ibool", "ibool"): "ibool",
+    ("||", "ibool", "ibool"): "ibool",
 }
 
 _type_methname_map = {"int": "iconst", "float": "fconst"}
 
-_type_type_map = {"int": INT32, "float": FLOAT64}
+_type_type_map = {"int": INT32, "float": FLOAT64, "ibool": INT32, "fbool": FLOAT64}
 
 _op_methname_map = {
     ("+", "int"): "iadd",
@@ -244,6 +253,9 @@ _op_methname_map = {
     ("/", "int"): "idiv",
     ("-", "int"): "isub",
     (">", "int"): "igt",
+    ("<", "int"): "ilt",
+    (">", "float"): "fgt",
+    ("<", "float"): "flt",
 }
 
 
@@ -335,12 +347,17 @@ def generate_Return(node, mod):
 # }
 @rule(If)
 def generate_If(node, mod):
+    # test
     generate(node.test, mod)
     mod.function._if()
-    mod.function.code += INT32
+    mod.function.code += _type_type_map.get(node.test.type)
+    # when_true
     generate(node.when_true, mod)
-    mod.function._else()
-    generate(node.when_false, mod)
+
+    if node.when_false:
+        mod.function._else()
+        generate(node.when_false, mod)
+
     mod.function.end()
 
 
@@ -351,6 +368,17 @@ def generate_BinOp(node, mod):
 
     print("methnaem", node.left, node.right)
     op_methname = _op_methname_map.get((node.op, node.left.type))
+
+    if op_methname is None:
+        op_type = _type_type_map.get(node.type)
+
+        if op_type is None:
+            raise SyntaxError(
+                f"Cannot perform {node.op} operation on {node.left.type} and {node.right.type}"
+            )
+
+        mod.function.code += op_type
+        return
 
     method = getattr(mod.function, op_methname)
     if method is None:

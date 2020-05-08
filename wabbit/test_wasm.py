@@ -42,88 +42,111 @@ def test_wasm_basic():
     # wasm_bytes = encode_module(mod.module)
     # instance = Instance(wasm_bytes)
 
-    # result = instance.exports.main()
-    # assert result == 2.2
+    #     # result = instance.exports.main()
+    #     # assert result == 2.2
 
-    # model = Statements([Var("naz", "char", Char("N")), Variable("naz")])
+    #     # model = Statements([Var("naz", "char", Char("N")), Variable("naz")])
 
-    # mod = generate_program(model)
+    #     # mod = generate_program(model)
 
-    # wasm_bytes = encode_module(mod.module)
-    # instance = Instance(wasm_bytes)
+    #     # wasm_bytes = encode_module(mod.module)
+    #     # instance = Instance(wasm_bytes)
 
-    # result = instance.exports.main()
-    # assert result == 78
+    #     # result = instance.exports.main()
+    #     # assert result == 78
 
-    # model = Statements([Integer(5)])
+    #     # model = Statements([Integer(5)])
 
-    # mod = generate_program(model)
+    #     # mod = generate_program(model)
 
-    # wasm_bytes = encode_module(mod.module)
-    # instance = Instance(wasm_bytes)
+    #     # wasm_bytes = encode_module(mod.module)
+    #     # instance = Instance(wasm_bytes)
 
-    # result = instance.exports.main()
-    # assert result == 7
+    #     # result = instance.exports.main()
+    #     # assert result == 7
 
-    model = Statements(
-        [Var("age", None, Integer(30)), BinOp("*", Variable("age"), Integer(2))]
-    )
+    #     model = Statements(
+    #         [Var("age", None, Integer(30)), BinOp("*", Variable("age"), Integer(2))]
+    #     )
 
-    mod = generate_program(model)
+    #     mod = generate_program(model)
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    #     wasm_bytes = encode_module(mod.module)
+    #     instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 60
+    #     result = instance.exports.main()
+    #     assert result == 60
 
-    # func square(x int) int {
-    #     return x*x;
-    # }
-    model = Statements(
-        [
-            FunctionDefinition(
-                "square",
-                Arguments(Argument("x", "int")),
-                "int",
-                Statements([BinOp("*", Variable("x"), Variable("x"))]),
-            ),
-            FunctionCall("square", Integer(17)),
-        ]
-    )
+    #     # func square(x int) int {
+    #     #     return x*x;
+    #     # }
+    #     model = Statements(
+    #         [
+    #             FunctionDefinition(
+    #                 "square",
+    #                 Arguments(Argument("x", "int")),
+    #                 "int",
+    #                 Statements([BinOp("*", Variable("x"), Variable("x"))]),
+    #             ),
+    #             FunctionCall("square", Integer(17)),
+    #         ]
+    #     )
 
-    mod = generate_program(model)
+    #     mod = generate_program(model)
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    #     wasm_bytes = encode_module(mod.module)
+    #     instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 17 * 17
+    #     result = instance.exports.main()
+    #     assert result == 17 * 17
 
-    # func mul(x int, y int) int {
-    #     return y*x;
-    # }
-    model = Statements(
-        [
-            FunctionDefinition(
-                "mul",
-                Arguments(Argument("x", "int"), Argument("y", "int")),
-                "int",
-                Statements([BinOp("*", Variable("y"), Variable("x"))]),
-            ),
-            FunctionCall("mul", Integer(17), Integer(2)),
-        ]
-    )
+    #     # func mul(x int, y int) int {
+    #     #     return y*x;
+    #     # }
+    #     model = Statements(
+    #         [
+    #             FunctionDefinition(
+    #                 "mul",
+    #                 Arguments(Argument("x", "int"), Argument("y", "int")),
+    #                 "int",
+    #                 Statements([BinOp("*", Variable("y"), Variable("x"))]),
+    #             ),
+    #             FunctionCall("mul", Integer(17), Integer(2)),
+    #         ]
+    #     )
 
-    mod = generate_program(model)
+    #     mod = generate_program(model)
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    #     wasm_bytes = encode_module(mod.module)
+    #     instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 17 * 2
+    #     result = instance.exports.main()
+    #     assert result == 17 * 2
 
-    # /* calculate square roots */
+    #     #     if 2 > 4 {
+    #     #         return 1;
+    #     #     } else {
+    #     #         return 2;
+    #     #     }
+    #     # }
+
+    #     model = Statements(
+    #         [
+    #             If(
+    #                 BinOp(">", Integer(2), Integer(4)),
+    #                 Statements([Return(Integer(1))]),
+    #                 Statements([Return(Integer(2))]),
+    #             )
+    #         ]
+    #     )
+
+    #     mod = generate_program(model)
+
+    #     wasm_bytes = encode_module(mod.module)
+    #     instance = Instance(wasm_bytes)
+
+    #     result = instance.exports.main()
+    #     assert result == 2
 
     # func fabs(x float) float {
     #     if x < 0.0 {
@@ -133,28 +156,23 @@ def test_wasm_basic():
     #     }
     # }
 
-    # func sqrt(x float) float {
-    #     var guess = 1.0;
-    #     var nextguess = 0.0;
-    #     if x == 0.0 {
-    #         return 0.0;
-    #     }
-    #     while true {
-    #         nextguess = (guess + (x / guess)) / 2.0;
-    # 	if (fabs(nextguess-guess)/guess) < 0.00000001 {
-    # 	    break;
-    #         }
-    # 	guess = nextguess;
-    #     }
-    #     return guess;
-    # }
     model = Statements(
         [
-            If(
-                BinOp(">", Integer(2), Integer(4)),
-                Statements([Integer(1)]),
-                Statements([Integer(2)]),
-            )
+            FunctionDefinition(
+                "fabs",
+                Arguments(Argument("x", "int")),
+                "int",
+                Statements(
+                    [
+                        If(
+                            BinOp("<", Variable("x"), Integer(1)),
+                            Statements([Return(Integer(1))]),
+                        ),
+                        Return(Variable("x")),
+                    ]
+                ),
+            ),
+            FunctionCall("fabs", Integer(3)),
         ]
     )
 
@@ -166,8 +184,43 @@ def test_wasm_basic():
     result = instance.exports.main()
     assert result == 17 * 2
 
-    # mod = generate_program(model)
-    # # Write to a file
-    # with open("out_runtime.wasm", "wb") as file:
-    #     file.write(encode_module(mod))
-    # assert encode_module(mod) == ""
+
+#     # func sqrt(x float) float {
+#     #     var guess = 1.0;
+#     #     var nextguess = 0.0;
+#     #     if x == 0.0 {
+#     #         return 0.0;
+#     #     }
+#     #     while true {
+#     #         nextguess = (guess + (x / guess)) / 2.0;
+#     # 	if (fabs(nextguess-guess)/guess) < 0.00000001 {
+#     # 	    break;
+#     #         }
+#     # 	guess = nextguess;
+#     #     }
+#     #     return guess;
+#     # }
+#     model = Statements(
+#         [
+#             If(
+#                 BinOp(">", Integer(2), Integer(4)),
+#                 Statements([Integer(1)]),
+#                 Statements([Integer(2)]),
+#             )
+#         ]
+#     )
+
+#     mod = generate_program(model)
+
+#     wasm_bytes = encode_module(mod.module)
+#     instance = Instance(wasm_bytes)
+
+#     result = instance.exports.main()
+#     assert result == 17 * 2
+
+# mod = generate_program(model)
+# # Write to a file
+# with open("out_runtime.wasm", "wb") as file:
+#     file.write(encode_module(mod))
+# assert encode_module(mod) == ""
+
