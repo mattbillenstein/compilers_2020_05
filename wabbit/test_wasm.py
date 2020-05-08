@@ -86,10 +86,9 @@ def test_wasm_basic():
                 "square",
                 Arguments(Argument("x", "int")),
                 "int",
-                Statements([Return(Integer(5))]),
-                # Statements([BinOp("*", Variable("x"), Variable("x"))]),
+                Statements([BinOp("*", Variable("x"), Variable("x"))]),
             ),
-            FunctionCall("square", Integer(2)),
+            FunctionCall("square", Integer(17)),
         ]
     )
 

@@ -267,15 +267,17 @@ def generate_Var(node, mod):
     generate(node.value, mod)
 
     mod.function.local_set(v_idx)
-    mod.function.local_get(v_idx)
     mod.env[node.name] = v_idx
 
 
 @rule(Variable)
 def generate_Variable(node, mod):
     idx = mod.env.get(node.name)
-    if idx:
-        mod.function.local_get(idx)
+    print("idx", node.name, idx)
+    if idx is None:
+        raise SyntaxError(f"Cannot find variable {node.name} in scope")
+
+    mod.function.local_get(idx)
 
 
 @rule(FunctionDefinition)
