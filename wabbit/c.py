@@ -132,6 +132,8 @@
 from functools import singledispatch
 from .model import *
 
+#TODO do I need the whole adding the type to the string thing any more?
+
 class S(str):
     def setType(self, varType):
         self.varType = varType
@@ -166,6 +168,9 @@ def make_variable_declarations(env): # TODO OOOOO scope???
     return '\n'.join(declarations)
 
 def get_type_from_expr(env, expr):
+    if isinstance(expr, tuple):
+        (var_name, statements) = expr
+        expr = var_name
     if hasattr(expr, 'getType'):
         return expr.getType()
     else:
@@ -180,99 +185,169 @@ def get_type_from_expr(env, expr):
         else:
             raise Exception(f'get_type_from_expr no type: {expr}')
 
+NAMES_KEY = 'franfranfrannames'
+def get_unique_name(env, prefix):
+    if NAMES_KEY not in env:
+        env[NAMES_KEY] = {}
+    if prefix not in env[NAMES_KEY]:
+        env[NAMES_KEY][prefix] = -1
+    env[NAMES_KEY][prefix] += 1
+    return f'{prefix}{env[NAMES_KEY][prefix]}'
+
+def make_temp_var(env, prefix, varType):
+    name = get_unique_name(env, prefix)
+    add_var(env, name, varType)
+    return name
+
 @singledispatch
 def ccompile(node, env):
     raise RuntimeError(f"Can't compile {node}")
 
 @ccompile.register(Statements)
 def _(node, env):
-    compiled = []
+    statements = []
     for node in node.children:
-        compiledNode = ccompile(node, env)
-        if compiledNode is not None and not isinstance(node, Var): # if a statement is only a Var we don't want it to be a line of code
-            compiled.append(compiledNode + ';') # TODO if, while, this should prob be in Statement, which... doesn't exist
-
-    return '\n'.join(compiled)
+        what = ccompile(node, env)
+        (var_name, child_statements) = (None, None)
+        if isinstance(what, tuple):
+            (var_name, child_statements) = ccompile(node, env)
+        else:
+            raise Exception(f'what {what}')
+        if child_statements is not None and len(child_statements) > 0 and not isinstance(node, Var):
+            statements += child_statements
+    return '\n'.join([f'{s};' for s in statements])
 
 @ccompile.register(BinOp)
 def _(node, env):
-    left = ccompile(node.left, env)
-    right = ccompile(node.right, env)
+    (right_var_name, right_statements) = ccompile(node.right, env)
+    (left_var_name, left_statements) = ccompile(node.left, env)
+    statements = right_statements + left_statements
+    result_type = get_type_from_expr(env, left_var_name) # TODO it's not always the left type
+    var_name = make_temp_var(env, '_BinOp', result_type)
+
     def withType(s):
         s1 = S(s)
-        s1.setType(get_type_from_expr(env, left))
+        s1.setType(result_type)
         return s1
+
     if node.op == '+':
-        return withType(f'{left} + {right}')
+        statements.append(f'{var_name} = {left_var_name} + {right_var_name}')
+        return (withType(var_name), statements)
     elif node.op == '*':
-        return withType(f'{left} * {right}')
+        statements.append(f'{var_name} = {left_var_name} * {right_var_name}')
+        return (withType(var_name), statements)
     elif node.op == '/':
-        return withType(f'{left} / {right}')
+        statements.append(f'{var_name} = {left_var_name} / {right_var_name}')
+        return (withType(var_name), statements)
     elif node.op == '-':
-        return withType(f'{left} - {right}')
+        statements.append(f'{var_name} = {left_var_name} - {right_var_name}')
+        return (withType(var_name), statements)
     elif node.op == '<':
-        return withType(f'{left} < {right}')
+        statements.append(f'{var_name} = {left_var_name} < {right_var_name}')
+        return (withType(var_name), statements)
+    elif node.op == '>':
+        statements.append(f'{var_name} = {left_var_name} > {right_var_name}')
+        return (withType(var_name), statements)
+    elif node.op == '>=':
+        statements.append(f'{var_name} = {left_var_name} >= {right_var_name}')
+        return (withType(var_name), statements)
     else:
         raise RuntimeError(f'unsupported op: {node.op}')
 
 @ccompile.register(Integer)
 def _(node, env):
-    s = S(f'{node.value}')
+    var_name = make_temp_var(env, "_I", "int")
+    s = S(f'{var_name} = {node.value}')
     s.setType('int')
-    return s
+    return (var_name, [s])
 
 @ccompile.register(Float)
 def _(node, env):
-    s = S(f'{node.value}')
+    var_name = make_temp_var(env, "_F", "float")
+    s = S(f'{var_name} = {node.value}')
+    s.setType('float')
+    return (var_name, [s])
+
+@ccompile.register(Char)
+def _(node, env):
+    var_name = make_temp_var(env, "_C", "char")
+    s = S(f'{var_name} = {node.value}')
+    s.setType('char')
+    return (var_name, [s])
+
+@ccompile.register(Boolean)
+def _(node, env):
+    var_name = make_temp_var(env, "_B", "int")
+    val = 0
+    if node.value is True:
+        val = 1
+    s = S(f'{var_name} = {val}')
     s.setType('int')
-    return s
+    return (var_name, [s])
 
 @ccompile.register(Var)
 def _(node, env):
-    # put the name and type (if any) into the env
-    add_var(env, node.name, node.myType)
-    return f'{node.name}'
+    myType = {
+        'int': 'int',
+        'float': 'float',
+        'bool': 'int',
+        }[node.myType]
+    add_var(env, node.name, myType)
+    return (node.name, [])
 
 @ccompile.register(Assign)
 def _(node, env):
-    left = ccompile(node.name, env)
-    right = ccompile(node.value, env)
+    (right_var_name, right_statements) = ccompile(node.value, env)
+    (left_var_name, left_statements) = ccompile(node.name, env)
     # NOW! wabbit allows typeless vars and you can assign to them, so let's maybe infer type
     # remember we can assume correctness because of the typechecker (haw haw) so let's not even
     # check if there's already a type or anything, and heck let's not even worry about if it was
     # a var or a const.
-    myType = get_type_from_expr(env, right)
+    myType = get_type_from_expr(env, right_var_name)
     if myType is not None:
         add_var(env, node.name.name, myType) # TODO location name.name
     else:
         raise Exception(f'whoops, doing an assign and dunno the type left:{left} right:{right}')
-    return f'{left} = {right}'
+
+    statements = right_statements + left_statements
+    statements.append(f'{left_var_name} = {right_var_name}')
+    return (left_var_name, statements)
 
 @ccompile.register(Variable) # TODO implement location?
 def _(node, env):
-    return f'{node.name}'
+    return (node.name, [])
 
 @ccompile.register(Const)
 def _(node, env):
-    left = node.name
-    if isinstance(node.value, Integer):
-        add_var(env, left, 'int')
-    elif isinstance(node.value, Float):
-        add_var(env, left, 'float')
-    else:
-        raise RuntimeError(f'unsupported type const: {type(right)}')
-    # TODO so I guess we're not making this an S with a type because it's only a statement, not part
-    # of an expression?
-    return f'{node.name} = {ccompile(node.value, env)}'
+    name = node.name
+    (right_var_name, right_statements) = ccompile(node.value, env)
+    add_var(env, name, get_var_type(env, right_var_name))
+    statements = right_statements + [f'{node.name} = {right_var_name}']
+    return ({node.name}, statements)
+
+@ccompile.register(UnaryOp)
+def _(node, env):
+    (right_var_name, right_statements) = ccompile(node.right, env)
+    var_name = make_temp_var(env, '_UnaryOp', get_var_type(env, right_var_name))
+    statements = right_statements + [f'{var_name} = {node.op}{right_var_name}']
+    return (var_name, statements)
+
+@ccompile.register(Grouping)
+def _(node, env):
+    # grouping has already done its job in the model, pass through
+    return ccompile(node.node, env)
 
 @ccompile.register(PrintStatement)
 def _(node, env):
-    child = ccompile(node.child, env)
+    (var_name, statements) = ccompile(node.child, env)
     type_child = None
     if isinstance(node.child, Variable):
         type_child = get_var_type(env, node.child.name)
     else:
-        type_child = child.getType()
+        if hasattr(var_name, 'getType'):
+            type_child = var_name.getType()
+        else:
+            type_child = get_var_type(env, var_name)
     type_s = None
     if type_child == 'int':
         type_s = '%i\\n'
@@ -281,48 +356,109 @@ def _(node, env):
     elif type_child == 'char':
         type_s = '%c'
     else:
-        raise RuntimeError(f'unsupported type print: {child}, {type_child}')
-    return f'printf("{type_s}", {child})'
+        raise RuntimeError(f'unsupported type print: {var_name}, {type_child}')
+    statements.append(f'printf("{type_s}", {var_name})')
+    return (None, statements)
+
+@ccompile.register(If)
+def _(node, env):
+    '''
+    goto Lcondition;
+
+    Lconsequence:
+    {consequence_statements}
+    goto Lafter;
+
+    Lcondition:
+    {condition_statements}
+    if({condition_var_name}) goto Lconsequence;
+
+    Lafter:
+
+    '''
+    (cond_var_name, cond_statements) = ccompile(node.condition, env)
+    body = ccompile(node.consequence, env) # TODO see the comment on body in While
+    l_condition_name = get_unique_name(env, 'Lcondition')
+    l_consequence_name = get_unique_name(env, 'Lconsequence')
+    l_after_name = get_unique_name(env, 'Lafter')
+
+    s1 = [
+        f'goto {l_condition_name};',
+        f'''{l_consequence_name}:
+{body}
+''',
+        f'goto {l_after_name};',
+        f'{l_condition_name}:',
+    ]
+    s2 = [
+        f'if({cond_var_name}) goto {l_consequence_name};',
+        f'{l_after_name}:',
+    ]
+    return (None, s1 + cond_statements + s2)
+
+@ccompile.register(IfElse)
+def _(node, env):
+    '''
+    goto Lcondition;
+
+    Lconsequence:
+    {consequence_statements}
+    goto Lafter;
+
+    Lotherwise:
+    {otherwise_statements}
+    goto Lafter;
+
+    Lcondition:
+    {condition_statements}
+    if({condition_var_name}) goto Lconsequence;
+    goto Lotherwise;
+
+    Lafter:
+
+    '''
+    (cond_var_name, cond_statements) = ccompile(node.condition, env)
+    consequence = ccompile(node.consequence, env) # TODO see the comment on body in While
+    otherwise = ccompile(node.otherwise, env) # TODO see the comment on body in While
+    l_condition_name = get_unique_name(env, 'Lcondition')
+    l_consequence_name = get_unique_name(env, 'Lconsequence')
+    l_otherwise_name = get_unique_name(env, 'Lotherwise')
+    l_after_name = get_unique_name(env, 'Lafter')
+
+    s1 = [
+        f'goto {l_condition_name};',
+        f'''{l_consequence_name}:
+{consequence}
+''',
+        f'goto {l_after_name};',
+        f'''{l_otherwise_name}:
+{otherwise}
+''',
+        f'goto {l_after_name};',
+        f'{l_condition_name}:',
+    ]
+    s2 = [
+        f'if({cond_var_name}) goto {l_consequence_name};',
+        f'goto {l_otherwise_name};',
+        f'{l_after_name}:',
+    ]
+    return (None, s1 + cond_statements + s2)
 
 @ccompile.register(While)
 def _(node, env):
-    """
-     TODO this needs to be gotos, how does that work?
-     wellllllllllllllllll so it's labels
-     before
-     while (blah) {
-        body
-     }
-     after
-
-    becomes
-
-    before
-    goto Lcondition
-
-    L1:
-      body
-
-    Lcondition:
-        if (blah) goto L1
-
-    after
-    """
-    condition = ccompile(node.condition, env)
-    body = ccompile(node.body, env)
-    # TODO these labels need to be unique for multiple whiles
-    # TODO that variable for the condition needs to be unique too
-    condition_var_name = 'todo_fix_me'
-    add_var(env, condition_var_name, 'int')
-    return f'''
-goto Lcondition;
-
-L1:
+    (condition_var_name, condition_statements) = ccompile(node.condition, env)
+    body = ccompile(node.body, env) # this is a statements node, it's a string when compiled... should that be different???? TODO for now just lump it in with the Lwhilebody, but yeah. it should be different
+    label_while_body = get_unique_name(env, 'L')
+    label_condition = get_unique_name(env, 'Lcondition')
+    statements = []
+    statements.append(f'goto {label_condition};')
+    statements.append(f'''{label_while_body}:
 {body}
-Lcondition:
-{condition_var_name} = {condition};
-if ({condition_var_name}) goto L1;
-'''
+''')
+    statements.append(f'{label_condition}:')
+    statements += condition_statements
+    statements.append(f'if ({condition_var_name}) goto {label_while_body};')
+    return (None, statements)
 
 
 
@@ -357,7 +493,15 @@ def main(filename):
         file.write(code)
     print('Wrote: out.c')
 
+def compile_file(filename):
+    from .parse import parse_file
+    model = parse_file(filename)
+    code = compile_program(model)
+    print(code)
+
 if __name__ == '__main__':
     import sys
-    main(sys.argv[1])
+    # main(sys.argv[1])
+    compile_file(sys.argv[1])
+
 
