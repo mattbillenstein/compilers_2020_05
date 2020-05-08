@@ -139,7 +139,7 @@ class WabbitLexer(Lexer):
         #LOOKUP,
         DCOLON,
         DOT, FUNC, ARROW, MATCH, STRUCT, TRUE, FALSE, LOR, LAND, LNOT,
-        RETURN
+        RETURN, ENUM
         }
     ignore = ' \t'       # Ignore these (between tokens)
 
@@ -167,7 +167,7 @@ class WabbitLexer(Lexer):
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    DCOLON = r':'
+    DCOLON = r'::'
     FLOAT = r'(\d+\.\d*)|(\d*\.\d+)'      # 23.45
     INTEGER = r'\d+'
     CHAR = r'\'(.|' + '|'.join(_escape_sequences) + r')\''
@@ -189,6 +189,7 @@ class WabbitLexer(Lexer):
     NAME['true'] = TRUE
     NAME['false'] = FALSE
     NAME['return'] = RETURN
+    NAME['enum'] = ENUM
 
 
 
