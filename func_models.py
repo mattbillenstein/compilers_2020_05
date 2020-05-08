@@ -81,14 +81,14 @@ model6 = Program(
                 consequent=Clause(ReturnStatement(expression=Integer(1))),
                 alternative=Clause(
                     ReturnStatement(
-                        expression=FunctionCall(
+                        expression=FunctionOrStructCall(
                             name="mul",
                             arguments=(
                                 Identifier("n"),
-                                FunctionCall(
+                                FunctionOrStructCall(
                                     name="factorial",
                                     arguments=(
-                                        FunctionCall(
+                                        FunctionOrStructCall(
                                             name="add",
                                             arguments=(Identifier("n"), Integer(-1)),
                                         ),
@@ -111,13 +111,13 @@ model6 = Program(
                 condition=Compare.lt(left=Identifier("x"), right=Identifier("last")),
                 body=Clause(
                     PrintStatement(
-                        expression=FunctionCall(
+                        expression=FunctionOrStructCall(
                             name="factorial", arguments=(Identifier("x"),)
                         )
                     ),
                     Assignment(
                         location=Identifier("x"),
-                        value=FunctionCall(
+                        value=FunctionOrStructCall(
                             name="add", arguments=(Identifier("x"), Integer(1))
                         ),
                     ),
@@ -133,7 +133,7 @@ model6 = Program(
             VariableDefinition(
                 name="result",
                 type=None,
-                value=FunctionCall(name="print_factorials", arguments=(Integer(10),)),
+                value=FunctionOrStructCall(name="print_factorials", arguments=(Integer(10),)),
             ),
             ReturnStatement(expression=Integer(0)),
         ),

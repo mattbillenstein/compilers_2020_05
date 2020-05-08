@@ -54,7 +54,7 @@ import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+#logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -81,14 +81,25 @@ OPERATIONS = {
     "<": operator.lt,
     ">=": operator.ge,
     "<=": operator.le,
-    '||': operator.or_,
-    '&&': operator.and_
+    '||': lambda a, b: bool(operator.or_(a, b)),
+    '&&': lambda a, b: bool(operator.and_(a, b)),
 }
 
 class WabbitUnit:
     def __bool__(self):
         return False
 
+    def __hash__(self):
+        return hash(None)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __repr__(self):
+        return 'WabbitUnit()'
+
+    def __str__(self):
+        return '()'
 
 class Environment(UserDict):
     def __init__(self, *args, **kwargs):
@@ -115,11 +126,15 @@ class Environment(UserDict):
             self._teardown_env()
 
     def _teardown_env(self):
-        logger.debug("Tearing down env")
         assert len(self._scopes) > 1
-        self._scopes.popleft()
+        sc = self._scopes.popleft()
+        logger.debug(f"Tore down env: {sc}")
+
 
     def __setitem__(self, key, value):
+        logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
+        if isinstance(value, Node):
+            logger.debug("!!! Node has been set in environment !!!")
         for scope in list(self._scopes):
             # first check for existing declarations of a variable
             if key in scope:
@@ -150,6 +165,8 @@ class Environment(UserDict):
         """
         Declarations (e.g. var foo | const foo) should always go to the closest scope
         """
+        if not self._closest_scope is self:
+            logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
         self._closest_scope[key] = value
 
     def globals(self):
@@ -210,8 +227,18 @@ def interpret_binop_node(binop_node: BinOp, env: Environment):
     op = binop_node.op
     left = binop_node.left
     right = binop_node.right
+    logger.debug('Evaluating expressions before op')
+
+    logger.debug(f'Evaluating Left: {repr(left)}')
     leftval = interpret(left, env)
+    logger.debug(f'Left value: {repr(leftval)}')
+    if op == '&&' and not bool(leftval):
+        return False
+    elif op == '||' and bool(leftval):
+        return True
+    logger.debug(f'Evaluating right: {repr(right)}')
     rightval = interpret(right, env)
+    logger.debug(f'Right value: {repr(rightval)}')
     operation = OPERATIONS.get(op)
     if not operation:
         raise RuntimeError(f"Cannot interpret operation {op}")
@@ -289,12 +316,16 @@ def interpret_const_definition(const_def_node: ConstDefinition, env: Environment
 def interpret_print_statement(print_stmt_node, env):
     expr = print_stmt_node.expression
     value = interpret(expr, env)
-    print(value)
+    if isinstance(value, str):
+        print(value, end='')
+    else:
+        print(value)
 
 
 @interpret.register(Identifier)
 def interpret_identifier_node(identifier_node: Identifier, env: Environment):
     name = identifier_node.name  # Probably going to have to change for structs
+
     return env[name]
 
 
@@ -401,6 +432,7 @@ def interpret_return_statement(return_statement_node, env):
     retval = interpret(return_expr, env)
 
     # Hack to make sure illegal usage of return is not used
+    logger.debug(f'raising return encountered with piggybacked value: {repr(retval)}')
     raise ReturnEncountered(
         "return statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
         "Did you use continue outside a while loop?",
@@ -418,68 +450,95 @@ def interpret_param_node(param_node, env):
 def interpret_function_definition_node(func_def_node: FunctionDefinition, env):
     env[func_def_node.name] = func_def_node
 
+@interpret.register(StructDefinition)
+def interpret_struct_definition_node(struct_def_node, env):
+    logger.debug(f"Interpreting struct def {repr(struct_def_node)}")
 
-@interpret.register(FunctionCall)
-def interpret_function_call_node(function_call_node, env):
-    func_name = function_call_node.name
-    arguments = function_call_node.arguments
-    func = env[func_name]
+    env[struct_def_node.name] = struct_def_node
+
+@interpret.register(FunctionOrStructCall)
+def interpret_function_call_node(function_or_struct_call_node, env):
+    logger.debug("Handling struct/func call")
+    obj_name = function_or_struct_call_node.name
+    arguments = function_or_struct_call_node.arguments
+    func_or_struct = env[obj_name]
+    if isinstance(func_or_struct, StructDefinition):
+        logger.debug("The call is for a struct")
+
+        struct_def = func_or_struct
+        arg_values = []
+        # first evaluate the argument expressions
+        for arg_expr in arguments:
+            arg_values.append(interpret(arg_expr, env))
+
+        struct = NamedTuple(struct_def.name, [(field.name, field.type) for field in struct_def.fields])
+        struct_obj = struct(*arg_values)
+        return struct_obj
+
+    logger.debug("Call was not a struct, assuming is a function")
+    func = func_or_struct
     func_clause = func.body
-    arg_values = []
-    # first evaluate the argument expressions
-    for arg_expr in arguments:
-        arg_values.append(interpret(arg_expr, env))
     # inject argument values into the environment and then run the function clause
     with env.child_env():
-        for param, arg_val in zip(func.parameters, arguments):
-            env[param.name] = arg_val
+        for param, arg_expr in zip(func.parameters, arguments):
+            env[param.name] = interpret(arg_expr, env)
+
         try:
             return interpret(func_clause, env)
         except ReturnEncountered as ret_exception:
+            logger.debug('Caught return encoutner exception')
             #  we use a hack of raising an error on return statements
             #  so we pull the return value out of the exception object
             retval = ret_exception.args[1]
-            return retval
+            logger.debug(f"retval: {repr(retval)}")
+        return retval
+
+#
+# @interpret.register(StructField)
+# def interpret_struct_field_node(struct_field_node, env):
+#     Field = namedtuple("Field", ["name", "type"])
+#     f = Field(struct_field_node.name, struct_field_node.type)
+#     env[f.name] = f
+#     return f
+#
+
+@interpret.register(FieldLookup)
+def interpret_struct_field_lookup_node(field_lookup_node, env):
+    logger.debug(f"Interpreting struct field lookup node: {repr(field_lookup_node)}")
+    location = field_lookup_node.location
+    struct = interpret(location, env)
+    attr = getattr(struct, field_lookup_node.fieldname)
+    return attr  # >?
 
 
 
-@interpret.register(StructField)
-def interpret_struct_field_node(struct_field_node, env):
-    Field = namedtuple("Field", ["name", "type"])
-    return Field(struct_field_node.name, struct_field_node.type)
+class WabbitStruct(NamedTuple):
+    pass
 
-
-@interpret.register(StructDefinition)
-def interpret_struct_definition_node(struct_def_node, env):
-    fields = []
-    for field in struct_def_node.fields:
-        field = interpret(field, env)
-        type_ = field.type
-        t = TypeVar(f"{type_}")
-        # Maybe do some better type conversions later instead for bool/int/float/str/etc
-        fields.append((field.name, t))
-    struct = NamedTuple(struct_def_node.name, fields)
-    env[struct_def_node.name] = struct
-
-
-@interpret.register(StructInstantiate)
-def interpret_struct_instantiation_node(struct_inst_node, env):
-    struct = env[struct_inst_node.struct_name]
-    arguments = struct_inst_node.arguments
-    arg_values = []
-    # first evaluate the argument expressions
-    for arg_expr in arguments:
-        arg_values.append(interpret(arg_expr, env))
+# @interpret.register(StructInstantiate)
+# def interpret_struct_instantiation_node(struct_inst_node, env):
+#     struct = env[struct_inst_node.struct_name]
+#     arguments = struct_inst_node.arguments
+#     arg_values = []
+#     # first evaluate the argument expressions
+#     for arg_expr in arguments:
+#         arg_values.append(interpret(arg_expr, env))
 
 
 @interpret.register(CompoundExpr)
 def interpret_compound_expr(compound_expr_node, env):
     return interpret(compound_expr_node.clause, env)
 
+@interpret.register(Grouping)
+def interpret_grouping_node(group_node, env):
+    logger.debug(f'Interpreting grouping {repr(group_node)}')
+    grouping_value = interpret(group_node.expression, env)
+    logger.debug(f'Group value: {grouping_value}')
+    return grouping_value
 
 @interpret.register(Unit)
 def interpret_unit_node(unit_node, env):
-    return None #WabbitUnit()
+    return WabbitUnit()
 
 
 @interpret.register(Bool)

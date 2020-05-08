@@ -298,7 +298,7 @@ class WabbitParser(Parser):
 
     @_("location DOT NAME")
     def expression(self, p):
-        return FieldLookup(struct=p.location, fieldname=p.NAME)
+        return FieldLookup(location=p.location, fieldname=p.NAME)
 
     @_("NAME type SEMI")
     def struct_field(self, p):
@@ -306,7 +306,7 @@ class WabbitParser(Parser):
 
     @_("STRUCT NAME LBRACE { struct_field } RBRACE")
     def struct_definition(self, p):
-        return StructDefinition(name=p.NAME, *p.struct_field)
+        return StructDefinition(p.NAME, *p.struct_field)
 
     @_("NAME type")
     def parameter(self, p):
@@ -333,7 +333,12 @@ class WabbitParser(Parser):
     def expression(self, p):
         arguments = p.arguments
         funcname = p[0]
-        return FunctionCall(name=funcname, arguments=arguments)
+        return FunctionOrStructCall(name=funcname, arguments=arguments)
+
+    @_("LPAREN expression RPAREN")
+    def expression(self, p):
+        return Grouping(expression=p.expression)
+
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()

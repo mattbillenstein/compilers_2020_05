@@ -109,20 +109,36 @@ class ExpressionStatement(Expression, Statement):
 
 
 class StructDefinition(Definition):
+    """
+    STRUCT NAME LBRACE { struct_field } RBRACE
+    """
     def __init__(self, name, *fields):
         super().__init__(name=name, fields=tuple(fields))
+        for field in self.fields:
+            assert isinstance(field, StructField), f"Expected StructField, got {type(field)}"
+
         assert all(isinstance(field, StructField) for field in self.fields)
         c = Counter(field.name for field in self.fields)
         for name, count in c.items():
             if count > 1:
                 raise AssertionError("StructField names must be unique")
 
+    def to_source(self):
+        fields = '\n'.join(str(field) for field in self.fields)
+        return f"struct {self.name} {{ {fields}\n}}"
+
 
 class StructField(Node):
+    """
+    NAME type SEMI
+    """
     def __init__(self, name, type):
         assert isinstance(name, str)
         assert isinstance(type, str)
         super().__init__(name=name, type=type)
+
+    def to_source(self):
+        return f"{self.name} {self.type};"
 
 
 class FieldLookup(Location):
@@ -131,15 +147,13 @@ class FieldLookup(Location):
     p.y
     """
 
-    def __init__(self, struct, fieldname):
-        assert isinstance(struct, StructDefinition)
-        assert isinstance(fieldname, str)
-        assert any(
-            field.name == fieldname for field in struct.fields
-        ), f"Struct {struct} has no field {fieldname}"  # Maybe this isn't the right place for this
+    def __init__(self, location, fieldname):
+        assert isinstance(location, Location), f"Expected Location. got {type(location)} {repr(location)}"
+        assert isinstance(fieldname, str), f"Expected str. got {type(fieldname)}"
+        super().__init__(location=location, fieldname=fieldname)
 
     def to_source(self):
-        return f"self."
+        return f"{self.location}.{self.fieldname}"
 
 class Integer(Expression):
     """
@@ -448,7 +462,7 @@ class ReturnStatement(Statement):
         return f"return {self.expression};"
 
 
-class FunctionCall(Expression):
+class FunctionOrStructCall(Expression):
     def __init__(self, name, arguments):
         assert isinstance(name, str)  # can functions be stored at locations?
         assert arguments is None or isinstance(arguments, Iterable)
@@ -460,16 +474,16 @@ class FunctionCall(Expression):
         return f"{self.name}({', '.join(str(arg) for arg in self.arguments)})"
 
 
-class StructInstantiate(Expression):
-    def __init__(self, struct_name, arguments):
-        assert isinstance(struct_name, str)
-        assert arguments is None or isinstance(arguments, Iterable)
-        arguments = tuple(arguments) if arguments else tuple()
-        assert all(isinstance(arg, Expression) for arg in arguments)
-        super().__init__(struct_name=struct_name, arguments=arguments)
-
-    def to_source(self):
-        return f"{self.struct_name}({', '.join(str(arg) for arg in self.arguments)})"
+# class StructInstantiate(Expression):
+#     def __init__(self, struct_name, arguments):
+#         assert isinstance(struct_name, str)
+#         assert arguments is None or isinstance(arguments, Iterable)
+#         arguments = tuple(arguments) if arguments else tuple()
+#         assert all(isinstance(arg, Expression) for arg in arguments)
+#         super().__init__(struct_name=struct_name, arguments=arguments)
+#
+#     def to_source(self):
+#         return f"{self.struct_name}({', '.join(str(arg) for arg in self.arguments)})"
 
 
 class BreakStatement(Statement):
@@ -486,6 +500,16 @@ class ContinueStatement(Statement):
 class NodeVisitor:
     ...  # We'll be removing to_source methods soon
 
+class Grouping(Expression):
+    """
+    LPAREN expression RPAREN
+    """
+    def __init__(self, expression):
+        assert isinstance(expression, Expression)
+        super().__init__(expression=expression)
+
+    def to_source(self):
+        return f'({self.expression})'
 
 def to_source(node):
     return node.to_source()
