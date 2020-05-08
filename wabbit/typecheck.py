@@ -121,10 +121,18 @@ valid_binop = {
 
 @add(BinOp)
 def check_BinOp(node, env, statement_info):
+    if isinstance(node.left, Name):
+        left = env[node.left.name].type
+    else:
+        left = check(node.left, env, statement_info)
+
+    if isinstance(node.right, Name):
+        right = env[node.right.name].type
+    else:
+        right = check(node.right, env, statement_info)
+
     try:
-        return valid_binop[(node.op,
-                            check(node.left, env, statement_info),
-                            check(node.right, env, statement_info))]
+        return valid_binop[(node.op, left, right)]
     except KeyError:
         record_error("Incompatible types for operation:\n" +
             f"     {to_source(node.left)} {node.op} {to_source(node.right)}",

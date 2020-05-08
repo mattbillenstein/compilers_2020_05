@@ -164,3 +164,16 @@ var x complex;
 def test_not_a_type():
     model = parse_source(not_a_type)
     assert catch_error(model)
+
+while_compare_cond = """
+var n = 1;
+
+while n < 10 {
+    n = n - 1;
+}
+print n;
+"""
+
+def test_while_cond():
+    model = parse_source(while_compare_cond)
+    assert check_program(model) # no error should be raised
