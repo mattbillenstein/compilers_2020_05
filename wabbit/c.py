@@ -158,9 +158,14 @@ class TypeVisitor:
         if type is not None:
             type = self.typemap.get(type, type)
             self.types[id(node)] = (node, type)
+            print('SET', node, type, file=sys.stderr)
+        else:
+            assert 0, (node, type)
 
     def get(self, node):
-        return self.types.get(id(node), (None, None))[1]
+        x = self.types.get(id(node), (None, None))[1]
+        print('GET', node, x, file=sys.stderr)
+        return x
 
     def visit(self, node):
         m = getattr(self, f'visit_{node.__class__.__name__}')
@@ -187,7 +192,7 @@ class TypeVisitor:
 
         type = ltype = self.get(node.left)
         rtype = self.get(node.right)
-        assert ltype == rtype
+        assert ltype == rtype, (node.left, ltype, node.right, rtype)
 
         if node.op in ('||', '&&'):
             type = bool
@@ -209,6 +214,18 @@ class TypeVisitor:
     def visit_Print(self, node):
         self.visit(node.arg)
 
+    def visit_Var(self, node):
+        if node.arg:
+            self.visit(node.arg)
+            type = self.get(node.arg)
+        elif node.type:
+            type = self.visit(node.type)
+
+        self.set(node.name, type)
+
+    def visit_Name(self, node):
+        return self.get(node)
+
 class CTypeVisitor(TypeVisitor):
     typemap = {
         int: 'int',
@@ -219,8 +236,20 @@ class CTypeVisitor(TypeVisitor):
 
 class CCompilerVisitor:
 
+    def __init__(self):
+        self.var_ids = {}
+
     def var(self, node):
-        return f'v{node.__class__.__name__}_{hex(id(node))[2:]}'
+        if hasattr(node, 'name'):
+            name = node.name.value
+        else:
+            name = node.__class__.__name__
+
+        i = self.var_ids.get(id(node))
+        if i is None:
+            self.var_ids[id(node)] = i = len(self.var_ids)
+
+        return f'v{name}_{i}'
 
     def get(self, node):
         # get type
@@ -243,14 +272,15 @@ class CCompilerVisitor:
         return s
 
     def visit_BinOp(self, node):
-        return f'''
-{self.var(node.left)} = {self.visit(node.left)};
-{self.var(node.right)} = {self.visit(node.right)};
-{self.var(node)} = {self.var(node.left)} {node.op} {self.var(node.right)};
-'''
+        s = self.visit(node.left) + self.visit(node.right)
+        return s + f'{self.var(node)} = {self.var(node.left)} {node.op} {self.var(node.right)};\n'
 
     def visit_Integer(self, node):
-        return str(node.value)
+        return f'{self.var(node)} = {node.value};\n';
+
+    def visit_Var(self, node):
+        s = self.visit(node.arg)
+        return s + f'{self.var(node)} = {self.var(node.arg)};\n';
 
     def visit_Print(self, node):
         s = self.visit(node.arg)
@@ -273,6 +303,14 @@ def compile_c(text_or_node):
         node = parse(text_or_node)
     return CCompilerVisitor().compile_c(node)
 
+def cc(text_or_node):
+    code = compile_c(text_or_node)
+    print(code)
+    with open('/tmp/foo.c', 'w') as f:
+        f.write(code)
+    ret = os.system('clang /tmp/foo.c')
+    assert ret == 0, ret
+
 def main(args):
     if args:
         if os.path.isfile(args[0]):
@@ -287,7 +325,7 @@ def main(args):
             print(compile_c(text))
     else:
         text = sys.stdin.read()
-        print(compile_ch(text))
+        print(compile_c(text))
 
 if __name__ == '__main__':
     main(sys.argv[1:])

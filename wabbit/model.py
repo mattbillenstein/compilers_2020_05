@@ -50,6 +50,7 @@ NoneType = type(None)
 
 class Node:
     is_statement = False
+    _type = None
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

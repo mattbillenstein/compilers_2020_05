@@ -22,6 +22,7 @@
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitScript.md
 
 
+from wabbit.c import cc
 from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.parse import parse
@@ -46,6 +47,7 @@ compare_source(model0, source0)
 x, env, stdout = interpret(model0)
 assert x == 14, x
 compare_model(parse(source0), model0)
+cc(model0)
 
 # ----------------------------------------------------------------------
 # Program 1: Printing
