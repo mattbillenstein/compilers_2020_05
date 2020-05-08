@@ -344,20 +344,21 @@ class Parser(BaseParser):
         parse_andterm = self._make_expression_parser(["LAND"], parse_relterm)
         parse_orterm = self._make_expression_parser(["LOR"], parse_andterm)
 
-        return parse_orterm(self)
+        left = parse_orterm(self)
+        if self.accept("ASSIGN"):
+            if not isinstance(left, Name):
+                raise WabbitError("Expected Name on LHS of assignment.")
+            _assert(right := self.expression())
+            left = Assign(Location(left.value), right)
+        return left
 
     def _make_expression_parser(self, operators, child_parser):
         def parser(self) -> Optional[Expression]:
             print(blue(f"expression({operators}): next = {self.peek()}"))
             left = child_parser(self)
-            while tok := self.accept("ASSIGN", *operators):
+            while tok := self.accept(*operators):
                 _assert(right := child_parser(self))
-                if tok.type_ == "ASSIGN":
-                    if not isinstance(left, Name):
-                        raise WabbitError("Expected Name on LHS of assignment.")
-                    left = Assign(Location(left.value), right)
-                else:
-                    left = BinOp(tok.token, left, right)
+                left = BinOp(tok.token, left, right)
             print(green(f"    parsed {left}"))
             return left
 
