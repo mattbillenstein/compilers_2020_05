@@ -181,7 +181,7 @@ class TypeVisitor:
             # first return wins?
             if isinstance(n, Return):
                 if not node._type:
-                    node._type = n.arg._type
+                    node._type = n.value._type
 
         # else, last node type
         if not node._type:
@@ -190,6 +190,9 @@ class TypeVisitor:
     def visit_Compound(self, node):
         # same as Block really
         self.visit_Block(node)
+
+    def visit_Return(self, node):
+        self.visit(node.value)
 
     def visit_UnaOp(self, node):
         self.visit(node.arg)
@@ -287,6 +290,26 @@ class TypeVisitor:
         node._type = node.cond._type
         self.visit(node.block)
 
+    def visit_Func(self, node):
+        # save off the function so we can lookup in call
+        self.current_scope[node.name.value] = node
+
+        # set name for args, we'll call the function by setting these from Call
+        # and jumping...
+        for argdef in node.args:
+            self.set_Name(self.current_scope, argdef.name, argdef.type.type)
+
+        self.visit(node.block)
+
+    def visit_Call(self, node):
+        func = self.env[node.name.value]
+
+        # fixme, return unit -- just return -1
+        node._type = 'int'
+        if func.ret_type:
+            node._type = func.ret_type.type
+
+        # return goto??
 
 class CTypeVisitor(TypeVisitor):
     typemap = {
@@ -360,7 +383,7 @@ class CCompilerVisitor:
     def visit_Print(self, node):
         s = self.visit(node.arg)
 
-#        print(node.arg, file=sys.stderr)
+        print(node.arg, file=sys.stderr)
         format = {
             'int': '%d',
             'float': '%f',  # we emit double
@@ -398,6 +421,18 @@ class CCompilerVisitor:
         s += f'goto {node._var};\n'
         s += f'{node._var}_End:\n'
         return s
+
+    def visit_Func(self, node):
+        s = f'{node._var}:\n'
+        s += self.visit(node.block)
+        s += f'{node._var}_End:\n'
+        return s
+
+    def visit_Return(self, node):
+        return ''
+
+    def visit_Call(self, node):
+        return ''
 
 def compile_c(text_or_node):
     node = text_or_node

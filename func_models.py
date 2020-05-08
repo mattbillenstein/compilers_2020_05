@@ -15,6 +15,7 @@
 #
 # https://github.com/dabeaz/compilers_2020_05/wiki/WabbitFunc.md
 
+from wabbit.c import cc
 from wabbit.interp import interpret
 from wabbit.model import *
 from wabbit.parse import parse
@@ -120,6 +121,7 @@ compare_source(model6, source6)
 x, env, stdout = interpret(model6)
 assert stdout == [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
 compare_model(parse(source6), model6)
+cc(model6, '/tmp/model6.c')
 
 # ----------------------------------------------------------------------
 # Bring it!  If you're here wanting even more, proceed to the file 

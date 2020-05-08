@@ -263,7 +263,7 @@ class Func(Node):
         assert isinstance(block, Block)
         args = args or []
         assert isinstance(args, list)
-        assert all(isinstance(_, Node) for _ in args)
+        assert all(isinstance(_, ArgDef) for _ in args)
         assert isinstance(ret_type, (Type, NoneType))
         self.name = name
         self.args = args

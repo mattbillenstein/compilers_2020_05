@@ -96,7 +96,8 @@ class WabbitLexer(sly.Lexer):
 
     tokens = {
         NAME, FLOAT, INTEGER, CHAR,
-        ASSIGN, LPAREN, RPAREN, SEMI, LBRACE, RBRACE, DOT, COMMA, COLONCOLON,
+        ASSIGN, LPAREN, RPAREN, SEMI, LBRACE, RBRACE, DOT, COMMA,
+        #COLONCOLON,
     } | _unaop | _binop | _kw
 
     ignore = ' \t'
@@ -144,7 +145,7 @@ class WabbitLexer(sly.Lexer):
     NE = r'!='
     LAND = r'&&'
     LOR = r'\|\|'
-    COLONCOLON = r'::'
+    #COLONCOLON = r'::'
     LT = r'<'
     GT = r'>'
     LNOT = r'!'
