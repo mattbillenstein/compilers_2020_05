@@ -41,6 +41,9 @@ OPERATORS = {
     "<=": operator.le,
     "==": operator.eq,
     "!=": operator.ne,
+    # TODO: these python operators operate bitwise, is this ok?
+    "&&": operator.and_,
+    "||": operator.or_,
 }
 
 UNARY_OPERATORS = {
