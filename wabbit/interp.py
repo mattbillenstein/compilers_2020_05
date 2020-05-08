@@ -341,10 +341,11 @@ class Interpreter:
         for k, v in args.items():
             self.env.define(k, v)
 
+        ret = None
+
         try:
-            ret = None
             for n in node.statements:
-                ret = self.visit(n)
+                self.visit(n)
         except DoReturn as e:
             ret = e.value
 
