@@ -17,6 +17,7 @@ from wabbit.model import (
     Integer,
     Name,
     Node,
+    ParenthesizedExpression,
     Print,
     Statements,
     UnaryOp,
@@ -90,6 +91,10 @@ class Interpreter:
         left_val = self.interpret(node.left, env)
         right_val = self.interpret(node.right, env)
         return OPERATORS[node.op](left_val, right_val)
+
+    @typechecked
+    def interpret_ParenthesizedExpression(self, node: ParenthesizedExpression, env):
+        return self.interpret(node.expression, env)
 
     @typechecked
     def interpret_ConstDef(self, node: ConstDef, env):

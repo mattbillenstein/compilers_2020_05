@@ -34,6 +34,11 @@ class Expression(Statement):
 
 
 @dataclass
+class ParenthesizedExpression(Statement):
+    expression: Expression
+
+
+@dataclass
 class Block(Expression):
     statements: Statements
 

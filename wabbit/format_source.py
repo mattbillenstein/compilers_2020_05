@@ -11,6 +11,7 @@ from wabbit.model import (
     If,
     Integer,
     Name,
+    ParenthesizedExpression,
     Print,
     Statements,
     UnaryOp,
@@ -60,6 +61,10 @@ class SourceFormatter:
     @typechecked
     def visit_BinOp(self, node: BinOp) -> str:
         return " ".join([self.visit(node.left), node.op, self.visit(node.right)])
+
+    @typechecked
+    def visit_ParenthesizedExpression(self, node: ParenthesizedExpression):
+        return f"({self.visit(node.expression)})"
 
     @typechecked
     def visit_ConstDef(self, node: ConstDef) -> str:
