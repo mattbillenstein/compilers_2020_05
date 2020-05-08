@@ -32,9 +32,10 @@
 # Wasm module in various ways.
 #
 
+from collections import ChainMap
+from functools import singledispatch
 from wabbit.model import *
 from wabbit.wasm_helpers import *
-from functools import singledispatch
 
 
 class WasmModule:
@@ -137,20 +138,21 @@ class WasmGlobalVariable:
 
 # Class representing the world of Wasm
 class WabbitWasmModule:
-    pass
+    def __init__(self):
+        self.module = WasmModule("wabbit")
+        # Current function (temporary hack. Set to main)
+        self.function = WasmFunction(self.module, "main", [], [FLOAT64])
+
+        # Environment for tracking symbols
+        self.env = ChainMap()
 
 
 # Top-level function for generating code from the model
 def generate_program(model):
-    mod = WasmModule("example")
-    _print = WasmImportedFunction(mod, "runtime", "_print", [FLOAT64], [])
-    main = WasmFunction(mod, "main", [], [])
+    module = WabbitWasmModule()
 
-    generate(model, main)
-
-    main.call(_print)
-    main.ret()
-    return mod
+    generate(model, module)
+    return module
 
 
 # Internal function for generating code on each node
@@ -162,30 +164,63 @@ def generate(node, func):
 rule = generate.register
 
 
+@rule(If)
+def generate_If(node, func):
+    # do the test
+    generate(node.test)
+
+
 @rule(Statements)
 def generate_Statements(node, func):
     for s in node.statements:
         generate(s, func)
 
 
+@rule(Integer)
+def generate_Integer(node, mod):
+    mod.function.iconst(node.value)
+
+
 @rule(Float)
-def generate_Float(node, func):
-    func.fconst(float(node.value))
+def generate_Float(node, mod):
+    mod.function.fconst(float(node.value))
 
 
 @rule(Char)
-def generate_Char(node, func):
-    func.fconst(ord(node.char))
+def generate_Char(node, mod):
+    mod.function.fconst(ord(node.char))
 
 
 @rule(Var)
-def generate_Var(node, func):
-    v_idx = func.alloca(FLOAT64)
+def generate_Var(node, mod):
+    v_idx = mod.function.alloca(FLOAT64)
     # e.g. put float on stack
-    generate(node.value, func)
+    generate(node.value, mod)
 
-    func.local_set(v_idx)
-    func.local_get(v_idx)
+    mod.function.local_set(v_idx)
+    mod.function.local_get(v_idx)
+    mod.env[node.name] = v_idx
+
+
+@rule(Variable)
+def generate_Variable(node, mod):
+    idx = mod.env.get(node.name)
+    if idx:
+        mod.function.local_get(idx)
+
+
+# if test {
+#    when_true
+# } else {
+#    when_false
+# }
+@rule(If)
+def generate_If(node, mod):
+    generate(node.test, mod)
+    mod.function._if()
+    generate(node.when_true, mod)
+    mod.function._else()
+    generate(node.when_false, mod)
 
 
 @rule(BinOp)

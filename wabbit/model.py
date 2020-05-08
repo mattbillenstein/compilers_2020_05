@@ -140,6 +140,7 @@ class Char(Expression):
     def __init__(self, char):
         assert isinstance(char, str)
         self.char = char
+        self.type = "char"
 
     def __repr__(self):
         return f"Char({self.char})"
@@ -495,6 +496,7 @@ class Float(Expression):
 
     def __init__(self, value):
         self.value = str(value)
+        self.type = "float"
 
     def __repr__(self):
         return f"Float({self.value})"
@@ -599,6 +601,7 @@ class Integer(Expression):
     def __init__(self, value):
         assert isinstance(value, int)
         self.value = value
+        self.type = "int"
 
     def __repr__(self):
         return f"Integer({self.value})"

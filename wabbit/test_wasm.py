@@ -1,9 +1,9 @@
 # from wabbit.wasm import *
 # from wabbit.was# wasm.py
 
+from wasmer import Instance
 from wabbit.wasm import *
 from wabbit.model import *
-
 
 # def test_wasm():
 # mod = WasmModule("example")
@@ -35,10 +35,50 @@ def test_wasm_basic():
     #     file.write(encode_module(mod))
     # assert encode_module(mod) == ""
 
-    model = Statements([Var("name", "str", Char("N"))])
+    model = Statements([Float("2.2")])
 
     mod = generate_program(model)
-    # Write to a file
-    with open("out_runtime.wasm", "wb") as file:
-        file.write(encode_module(mod))
-    assert encode_module(mod) == ""
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 2.2
+
+    model = Statements([Var("naz", "char", Char("N")), Variable("naz")])
+
+    mod = generate_program(model)
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 78
+
+    model = Statements(
+        [Var("naz", "int", Integer(2)), BinOp("+", Integer(5), Variable("Naz"))]
+    )
+
+    mod = generate_program(model)
+
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    result = instance.exports.main()
+    assert result == 7
+
+    # model = Statements(
+    #     [
+    #         If(
+    #             BinOp(">", Integer(5), Integer(4)),
+    #             Statements([Print(Integer(3))]),
+    #             Statements([Print(Integer(2))]),
+    #         )
+    #     ]
+    # )
+
+    # mod = generate_program(model)
+    # # Write to a file
+    # with open("out_runtime.wasm", "wb") as file:
+    #     file.write(encode_module(mod))
+    # assert encode_module(mod) == ""
