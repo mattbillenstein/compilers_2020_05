@@ -1,0 +1,12 @@
+var x = 13;
+
+func spam() unit {
+  print x;
+}
+
+func foo() int {
+  var x = 42;
+  spam();
+}
+
+foo(); // 13
