@@ -383,6 +383,18 @@ class WabbitParser(Parser):
     # def enum_choice(self, p):
     #     ...
 
+    @_("MATCH expression LBRACE { matchcase } RBRACE")
+    def expression(self, p):
+        return MatchExpression(expression=p.expression, cases=p.matchcase)
+
+
+    @_("pattern ARROW expression SEMI")
+    def matchcase(self, p):
+        return MatchCase(pattern=p.pattern, consequent=p.expression)
+
+    @_("NAME [ LPAREN NAME RPAREN ]")
+    def pattern(self, p):
+        return EnumChoice(name=p.NAME0, type=p.NAME1)
 
 def parse_tokens(raw_tokens):
     parser = WabbitParser()

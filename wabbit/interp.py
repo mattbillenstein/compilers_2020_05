@@ -603,6 +603,23 @@ def interpret_unit_node(unit_node, env):
 def interpret_bool_node(bool_node, env):
     return bool_node.value
 
+
+@interpret.register(MatchExpression)
+def interpret_match_expression_node(match_expr_node, env):
+    logger.debug(f'Interpreting match expression node: {repr(match_expr_node)}')
+    value_expression = match_expr_node.expression
+    argument = interpret(value_expression, env)  # < -- can I get the type of this or what?
+    logger.debug(f'match expression is {repr(argument)}')
+    for case in match_expr_node.cases:
+        logger.debug(f'Testing case {repr(case)}')
+        if argument == case:
+            logger.debug(f'Matched case: {repr(case)}')
+            with env.child_env():
+                return interpret(case.consequent, env)
+    logger.debug("NO MATCHES!!!")
+
+
+
 if __name__ == "__main__":
     #logging.basicConfig(level=logging.DEBUG)
     print('-'*80)

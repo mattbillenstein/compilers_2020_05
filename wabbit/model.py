@@ -479,6 +479,9 @@ class EnumChoice(Node):
         assert type is None or isinstance(type, str)
         super().__init__(name=name, type=type)
 
+    def to_source(self):
+        return repr(self)
+
 
 class EnumDefinition(Definition):
     def __init__(self, name, enum_choices):
@@ -486,6 +489,8 @@ class EnumDefinition(Definition):
         for choice in self.enum_choices:
             assert isinstance(choice, EnumChoice)
 
+    def to_source(self):
+        return repr(self)
 
 class EnumLookup(Location):
     def __init__(self, enum_location, choice_name, value_expression=None):
@@ -494,6 +499,25 @@ class EnumLookup(Location):
         assert value_expression is None or isinstance(value_expression, Expression)
         super().__init__(enum_location=enum_location, choice_name=choice_name, value_expression=value_expression)
 
+    def to_source(self):
+        return repr(self)
+
+class MatchCase(Node):
+    def __init__(self, pattern, consequent):
+        super().__init__(pattern=pattern, consequent=consequent)
+        assert isinstance(consequent, Expression)
+        assert isinstance(pattern, EnumChoice) # ??
+
+    def to_source(self):
+        return repr(self)
+
+class MatchExpression(Expression):
+    def __init__(self, expression, cases=None):
+        super().__init__(expression=expression, cases=cases)
+        assert cases is None or all(isinstance(case, MatchCase) for case in cases)
+
+    def to_source(self):
+        return repr(self)
 
 # class StructInstantiate(Expression):
 #     def __init__(self, struct_name, arguments):
