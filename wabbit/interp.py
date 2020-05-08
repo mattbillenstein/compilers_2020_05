@@ -62,6 +62,11 @@ logger.setLevel(logging.DEBUG)
 #logging.basicConfig(level=logging.DEBUG)
 
 
+class Scope(UserDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._is_function_scope = False
+
 def wabbit_divide(a, b):
     if isinstance(a, int) and isinstance(b, int):
         return operator.floordiv(a, b)
@@ -94,28 +99,61 @@ class Environment(UserDict):
         self._scopes.append(self)
         self._const_registry = {}
         self._enum_registry = {}
+        self._in_function = 0  # how many nested call stacks we're in
+        self._is_function_scope = False
 
     @property
     def _closest_scope(self):
         return self._scopes[0]
 
-    def _child_env(self):
+    @property
+    def _closest_function_scope(self):
+        for scope in self._scopes:
+            if scope._is_function_scope:
+                return scope
+
+    def _child_env(self, for_function=False):
         logger.debug("Creating child env")
-        new_env = dict()
+        new_env = Scope()
+        if for_function:
+            logger.debug(f'Creating child env for function. Incrementing call stack from {self._in_function} to'
+                         f'{self._in_function + 1}')
+            self._in_function += 1
+        if for_function:  # Hack on "_is_function_scope" -- Used internally only
+            logger.debug('Tagging new env with _is_function_scope TRUE')
+            new_env._is_function_scope = True
+        else:
+            logger.debug('Tagging new env with _is_function_scope FALSE')
+            new_env._is_function_scope = False
         self._scopes.appendleft(new_env)
         return self
 
-    @contextmanager
-    def child_env(self):
-        try:
-            env = self._child_env()
-            yield env
-        finally:
-            self._teardown_env()
+    @property
+    def in_function(self):
+        """
+        Whether or not the
+        """
+        return bool(self._in_function)
 
-    def _teardown_env(self):
-        assert len(self._scopes) > 1
+    @contextmanager
+    def child_env(self, for_function=False):
+        try:
+            env = self._child_env(for_function=for_function)
+            logger.debug(f"Yielding env: {repr(env)}")
+            yield env  # This is normally not used, but might as well send it along
+        finally:
+            self._teardown_env(for_function=for_function)
+
+
+    def _teardown_env(self, for_function=False):
+        logger.debug("Tearing down env...")
+        
+        assert len(self._scopes) > 1, "Attempted to teardown global scope"
         sc = self._scopes.popleft()
+        if for_function:
+            logger.debug(f'Decrementing call stack count from {self._in_function} to {self._in_function - 1}')
+            assert self._in_function > 0
+            self._in_function -= 1
         logger.debug(f"Tore down env: {sc}")
 
 
@@ -142,8 +180,11 @@ class Environment(UserDict):
 
     def __getitem__(self, item):
         for scope in self._scopes:
+            
+            if self._in_function and scope._is_function_scope and not scope is self._closest_function_scope:
+                continue  # don't allow lookups from function scopes that don't belong to the current function
             if item in scope:
-                if scope is self:
+                if scope is self:  # self should always be the last iteration, too
                     return super().__getitem__(item)
                 else:
                     return scope[item]
@@ -164,7 +205,10 @@ class Environment(UserDict):
         locals_ = dict()
         for scope in reversed(self._scopes):
             if scope is self:
-                continue
+                continue  # dont include globals in locals
+            if scope._is_function_scope and not scope is self._closest_function_scope:
+                continue  # Don't include the scope from other functions
+
             locals_.update(scope)
         return locals_
 
@@ -302,7 +346,7 @@ def interpret_assignment_node(assignment_node: Assignment, env: Environment):
         #         #  Now create a new object of the same type, all the same values EXCEPT for the new one we're reassigning
         #         new_value = obj_class(**new_attrs)  # this will work recursively
         #         logger.debug(f'NEW VALUE: {repr(new_value)}')
-        #         breakpoint()
+        #         
         #         obj = new_value
         # return
 
@@ -387,6 +431,14 @@ def interpret_if_statement_node(if_statement_node: IfStatement, env: Environment
 
 @interpret.register(Clause)
 def interpret_clause_node(clause_node, env: Environment):
+    logger.debug(f"Interpreting clause node: {repr(clause_node)}")
+    if env._closest_scope._is_function_scope:
+        logger.debug("Closest scope was function scope (was already created) Skipping creating child env for this clause")
+        retval = None
+        for statement in clause_node.statements:
+            retval = interpret(statement, env)
+        return retval  # Most callers won't need this, but Compound Expressions do need the last thing
+    logger.debug("Closest scope was not function scope, creating new one!")
     with env.child_env():
         retval = None
         for statement in clause_node.statements:
@@ -508,6 +560,7 @@ def interpret_enum_definition_node(enum_def_node, env):
 @interpret.register(FunctionOrStructCall)
 def interpret_function_call_node(function_or_struct_call_node, env):
     logger.debug("Handling struct/func call")
+    
     obj_name = function_or_struct_call_node.name
     arguments = function_or_struct_call_node.arguments
     func_or_struct = env[obj_name]
@@ -530,7 +583,8 @@ def interpret_function_call_node(function_or_struct_call_node, env):
     func = func_or_struct
     func_clause = func.body
     # inject argument values into the environment and then run the function clause
-    with env.child_env():
+    with env.child_env(for_function=True):
+        logger.debug('Injecting function parameters for function...')
         for param, arg_expr in zip(func.parameters, arguments):
             env.declare(key=param.name, value=interpret(arg_expr, env))
 
@@ -620,7 +674,7 @@ def interpret_match_expression_node(match_expr_node, env):
     ret = None
     for case in match_expr_node.cases:
         logger.debug(f'Testing case {repr(case)}')
-        if argument[0].name == case.pattern.name:
+        if argument[0].name == case.pattern.name:  #  Still need to account for type?
             logger.debug(f'Matched case: {repr(case)}')
             with env.child_env():
                 ret = interpret(case.consequent, env)
@@ -631,9 +685,6 @@ def interpret_match_expression_node(match_expr_node, env):
     logger.debug("NO MATCHES!!!")
     return Unit()  # not sure if this is right
 
-@interpret.register(MatchCase)
-def interpret_match_case_node(match_case_node, env):
-    ...
 
 if __name__ == "__main__":
     #logging.basicConfig(level=logging.DEBUG)
