@@ -103,8 +103,10 @@ class Interpreter:
     @typechecked
     def interpret_Print(self, node: Print, env):
         value = self.interpret(node.expression, env)
-        if isinstance(node.expression, Char):
+        if isinstance(value, str):
             sys.stdout.write(value)
+        elif isinstance(value, float):
+            sys.stdout.write(f"{value:.6f}\n")
         else:
             sys.stdout.write(f"{value}\n")
         sys.stdout.flush()
