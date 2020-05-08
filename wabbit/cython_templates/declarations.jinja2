@@ -1,0 +1,4 @@
+{% for type, varnames in declarations %}
+cdef {{ type }} {% for varname in varnames %}{% if loop.index0 > 0 %},{% endif %} {{ varname }}{% endfor %}
+{% endfor %}
+
