@@ -199,15 +199,9 @@ def ccompile(node, env):
 def _(node, env):
     statements = []
     for node in node.children:
-        what = ccompile(node, env)
-        (var_name, child_statements) = (None, None)
-        if isinstance(what, tuple):
-            (var_name, child_statements) = ccompile(node, env)
-        else:
-            raise Exception(f'what {what}')
-        if child_statements is not None and len(child_statements) > 0 and not isinstance(node, Var):
-            statements += child_statements
-    return '\n'.join([f'{s};' for s in statements])
+        (ignored, child_statements) = ccompile(node, env)
+        statements += child_statements
+    return (None, statements)
 
 @ccompile.register(BinOp)
 def _(node, env):
@@ -218,32 +212,25 @@ def _(node, env):
     var_name = make_temp_var(env, '_BinOp', result_type)
 
     if node.op == '+':
-        statements.append(f'{var_name} = {left_var_name} + {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} + {right_var_name};')
         return (var_name, statements)
     elif node.op == '*':
-        statements.append(f'{var_name} = {left_var_name} * {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} * {right_var_name};')
         return (var_name, statements)
     elif node.op == '/':
-        statements.append(f'{var_name} = {left_var_name} / {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} / {right_var_name};')
         return (var_name, statements)
     elif node.op == '-':
-        statements.append(f'{var_name} = {left_var_name} - {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} - {right_var_name};')
         return (var_name, statements)
     elif node.op == '<':
-        statements.append(f'{var_name} = {left_var_name} < {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} < {right_var_name};')
         return (var_name, statements)
     elif node.op == '>':
-        statements.append(f'{var_name} = {left_var_name} > {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} > {right_var_name};')
         return (var_name, statements)
     elif node.op == '>=':
-        statements.append(f'{var_name} = {left_var_name} >= {right_var_name}')
-        # return (withType(var_name), statements)
+        statements.append(f'{var_name} = {left_var_name} >= {right_var_name};')
         return (var_name, statements)
     else:
         raise RuntimeError(f'unsupported op: {node.op}')
@@ -251,19 +238,19 @@ def _(node, env):
 @ccompile.register(Integer)
 def _(node, env):
     var_name = make_temp_var(env, "_I", "int")
-    s = f'{var_name} = {node.value}'
+    s = f'{var_name} = {node.value};'
     return (var_name, [s])
 
 @ccompile.register(Float)
 def _(node, env):
     var_name = make_temp_var(env, "_F", "float")
-    s = f'{var_name} = {node.value}'
+    s = f'{var_name} = {node.value};'
     return (var_name, [s])
 
 @ccompile.register(Char)
 def _(node, env):
     var_name = make_temp_var(env, "_C", "char")
-    s = f'{var_name} = {node.value}'
+    s = f'{var_name} = {node.value};'
     return (var_name, [s])
 
 @ccompile.register(Boolean)
@@ -272,7 +259,7 @@ def _(node, env):
     val = 0
     if node.value is True:
         val = 1
-    s = f'{var_name} = {val}'
+    s = f'{var_name} = {val};'
     return (var_name, [s])
 
 @ccompile.register(Var)
@@ -300,7 +287,7 @@ def _(node, env):
         raise Exception(f'whoops, doing an assign and dunno the type left:{left} right:{right}')
 
     statements = right_statements + left_statements
-    statements.append(f'{left_var_name} = {right_var_name}')
+    statements.append(f'{left_var_name} = {right_var_name};')
     return (left_var_name, statements)
 
 @ccompile.register(Variable) # TODO implement location?
@@ -312,14 +299,14 @@ def _(node, env):
     name = node.name
     (right_var_name, right_statements) = ccompile(node.value, env)
     add_var(env, name, get_var_type(env, right_var_name))
-    statements = right_statements + [f'{node.name} = {right_var_name}']
+    statements = right_statements + [f'{node.name} = {right_var_name};']
     return ({node.name}, statements)
 
 @ccompile.register(UnaryOp)
 def _(node, env):
     (right_var_name, right_statements) = ccompile(node.right, env)
     var_name = make_temp_var(env, '_UnaryOp', get_var_type(env, right_var_name))
-    statements = right_statements + [f'{var_name} = {node.op}{right_var_name}']
+    statements = right_statements + [f'{var_name} = {node.op}{right_var_name};']
     return (var_name, statements)
 
 @ccompile.register(Grouping)
@@ -347,7 +334,7 @@ def _(node, env):
         type_s = '%c'
     else:
         raise RuntimeError(f'unsupported type print: {var_name}, {type_child}')
-    statements.append(f'printf("{type_s}", {var_name})')
+    statements.append(f'printf("{type_s}", {var_name});')
     return (None, statements)
 
 @ccompile.register(If)
@@ -367,16 +354,15 @@ def _(node, env):
 
     '''
     (cond_var_name, cond_statements) = ccompile(node.condition, env)
-    body = ccompile(node.consequence, env) # TODO see the comment on body in While
+    (ignored, body_statements) = ccompile(node.consequence, env)
     l_condition_name = get_unique_name(env, 'Lcondition')
     l_consequence_name = get_unique_name(env, 'Lconsequence')
     l_after_name = get_unique_name(env, 'Lafter')
 
     s1 = [
         f'goto {l_condition_name};',
-        f'''{l_consequence_name}:
-{body}
-''',
+        f'{l_consequence_name}:',
+        ] + body_statements + [
         f'goto {l_after_name};',
         f'{l_condition_name}:',
     ]
@@ -408,8 +394,8 @@ def _(node, env):
 
     '''
     (cond_var_name, cond_statements) = ccompile(node.condition, env)
-    consequence = ccompile(node.consequence, env) # TODO see the comment on body in While
-    otherwise = ccompile(node.otherwise, env) # TODO see the comment on body in While
+    (ignored, consequence_statements) = ccompile(node.consequence, env)
+    (ignored, otherwise_statements) = ccompile(node.otherwise, env)
     l_condition_name = get_unique_name(env, 'Lcondition')
     l_consequence_name = get_unique_name(env, 'Lconsequence')
     l_otherwise_name = get_unique_name(env, 'Lotherwise')
@@ -417,13 +403,11 @@ def _(node, env):
 
     s1 = [
         f'goto {l_condition_name};',
-        f'''{l_consequence_name}:
-{consequence}
-''',
+        f'{l_consequence_name}:',
+        ] + consequence_statements + [
         f'goto {l_after_name};',
-        f'''{l_otherwise_name}:
-{otherwise}
-''',
+        f'{l_otherwise_name}:',
+        ] + otherwise_statements + [
         f'goto {l_after_name};',
         f'{l_condition_name}:',
     ]
@@ -437,14 +421,13 @@ def _(node, env):
 @ccompile.register(While)
 def _(node, env):
     (condition_var_name, condition_statements) = ccompile(node.condition, env)
-    body = ccompile(node.body, env) # this is a statements node, it's a string when compiled... should that be different???? TODO for now just lump it in with the Lwhilebody, but yeah. it should be different
+    (ignored, body_statements) = ccompile(node.body, env)
     label_while_body = get_unique_name(env, 'L')
     label_condition = get_unique_name(env, 'Lcondition')
     statements = []
     statements.append(f'goto {label_condition};')
-    statements.append(f'''{label_while_body}:
-{body}
-''')
+    statements.append(f'{label_while_body}:')
+    statements += body_statements
     statements.append(f'{label_condition}:')
     statements += condition_statements
     statements.append(f'if ({condition_var_name}) goto {label_while_body};')
@@ -454,18 +437,28 @@ def _(node, env):
 # Top-level function to handle an entire program.
 def compile_program(model):
     env = { }
-    ccode = ccompile(model, env)
+    (ignored, statements) = ccompile(model, env)
+    ccode = statements_to_c_lines(statements)
     variable_declarations = make_variable_declarations(env)
-    return f'''
-/* TODO_NAME.c */
+    return f'''/* TODO_NAME.c */
 #include <stdio.h>
 
 int main() {{
 {variable_declarations}
 {ccode}
 return 0;
-}}
-    '''
+}}'''
+
+def statements_to_c_lines(statements):
+    return '\n'.join(statements)
+
+def compile_statements_as_string(model):
+    env = {}
+    (ignored, statements) = ccompile(model, env)
+    variable_declarations = make_variable_declarations(env)
+    return f'''{variable_declarations}
+{statements_to_c_lines(statements)}'''
+
 
 def main(filename):
     from .parse import parse_file
