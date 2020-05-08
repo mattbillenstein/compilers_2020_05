@@ -138,8 +138,21 @@ class CFunction:
 		self.name = name
 		self.locals = ""			# local variables
 		self.statements = ""		# statements 
+		self.stack = [ ]			# stack for variables/values
+		self.labelNum = 0			# index for labels
 
-
+		
+	def push(self, value):
+		self.stack.append(value)
+		
+	def pop(self):
+		return self.stack.pop()
+		
+	def convertType(self, t):
+		if t in ("float", "char"):
+			return t
+		return "int"
+		
 	def __str__(self):
 		return (f"int {self.name}()" + "{\n" + self.locals + "\n" + self.statements + "}\n")
 		
@@ -147,9 +160,9 @@ class CFunction:
 	
 class WabbitToC:
 
-	def __init__(self, env):
-		self.env = env	
-		self.out = CFunction("main")
+	def __init__(self):
+		self.c = CFunction("main")
+		self.labelIndex = 0
 		
 	def compile(self, node):
 		methname = f'compile_{node.__class__.__name__}'   
@@ -171,19 +184,19 @@ class WabbitToC:
 	###
 			
 	def compile_Integer(self, node):
-		return node.value
+		self.c.push(node.value)
 		
 	def compile_Float(self, node):
-		return node.value
+		self.c.push(node.value)
 		
 	def compile_Char(self, node):
-		return node.value
+		node.valtype = "int"
+		self.c.push(ord(node.value))
 	
 	def compile_Bool(self, node):
-		return node.value
+		node.valtype = "int"
+		self.c.push(int(node.value))
 		
-	def compile_Unit(self, node):
-		return "()\n"
 
 
 	###
@@ -191,75 +204,36 @@ class WabbitToC:
 	###
 	
 	def compile_BinOp(self, node):
-		
-		# special case for eval short circuiting
-		if node.op == "&&":
-			leftval = self.compile(node.left)
-			if not leftval:
-				return False
-			return self.compile(node.right)	
-		if node.op == "||":
-			leftval = self.compile(node.left)
-			if leftval:
-				return True
-			return self.compile(node.right)
-			
-		leftval = self.compile(node.left)
-		rightval = self.compile(node.right)
-		
-		# Do the operation
-		if node.op == "+":
-			return leftval + rightval
-		elif node.op == "-":
-			return leftval - rightval
-		elif node.op == "*":
-			return leftval * rightval
-		elif node.op == "/":
-			val = leftval / rightval
-			if isinstance(leftval, int):
-				val = int(val)
-			return val
-		elif node.op == '<':
-			return leftval < rightval
-		elif node.op == '<=':
-			return leftval <= rightval
-		elif node.op == '>':
-			return leftval > rightval
-		elif node.op == '>=':
-			return leftval >= rightval
-		elif node.op == '==':
-			return leftval == rightval
-		elif node.op == '!=':
-			return leftval != rightval	
-			
-		raise RuntimeError(f"Unknown op {node.op}")
+		self.compile(node.left)			# pushes result to stack
+		self.compile(node.right)		# pushes result to stack
+		rightval = self.c.pop()			# get the right side from the stack
+		leftval = self.c.pop()			# get the left side from the stack
+		lvar = f"_t{node.nodename}"
+		self.c.locals += f"{self.c.convertType(node.valtype)} {lvar};\n"
+		self.c.statements += f"{lvar} = {leftval} {node.op} {rightval};\n"
+		self.c.push(lvar);
+
 		
 	def compile_UnaryOp(self, node):
-		if node.op == "+":
-			return self.compile(node.right)
-		elif node.op == "-":
-			return -self.compile(node.right)
-		elif node.op == "!":
-			return not self.compile(node.right)
-		else:
-			raise RuntimeError(f"Invalid UnaryOp: {node.op}")
+		self.compile(node.right)		# pushes result to stack
+		rightval = self.c.pop()			# get the right side from the stack
+		lvar = f"_t{node.nodename}"
+		self.c.locals += f"{self.c.convertType(node.valtype)} {lvar};\n"
+		self.c.statements += f"{lvar} = {node.op}{rightval};\n"
+		self.c.push(lvar);
 
-	
+
 	def compile_LocationLookup(self, node):
-		return self.env.get(node.var.name)
+		self.c.push(f"_t{node.var.nodename}")
 		
-	
+		
 	def compile_Grouping(self, node):
-		return self.compile(node.expr)
+		self.compile(node.expr)
 		
 		
 	def compile_Compound(self, node):
-		retval = None
-		self.env.increaseScope()
-		retval = self.compile(node.stmts)
-		self.env.decreaseScope()
-		return retval
-					
+		self.compile(node.stmts);
+
 	
 	###
 	### Locations
@@ -274,80 +248,121 @@ class WabbitToC:
 	###
 	
 	def compile_ExpressionStatement(self, node):
-		return self.compile(node.expr)
+		self.compile(node.expr)
 		
 		
 	def compile_Assignment(self, node):
-		self.env.setValue(node.left.name, self.compile(node.right))
+		self.compile(node.right)
+		self.c.statements += f"_t{node.left.name} = {self.c.pop()};\n"
 
 		
 	def compile_PrintStatement(self, node):
-		value = self.compile(node.expr)
-		if isinstance(value, str):
-			print(value, end = '')
-		else:
-			print(value)
+		self.compile(node.expr)
+		exprval = self.c.pop()
+		if node.expr.valtype == "int":
+			self.c.statements += f"printf(\"%d)\", {exprval});\n"
+		elif node.expr.valtype == "float":
+			self.c.statements += f"printf(\"%f)\", {exprval});\n"
+		elif node.expr.valtype == "char":
+			self.c.statements += f"printf(\"%c)\", {exprval});\n"
+		elif node.expr.valtype == "bool":
+			self.c.statements += f"printf(\"%i)\", {exprval});\n"
 
 
 	def compile_Statements(self, node):
 		result = None
 		for stmt in node.stmts:
-			result = self.compile(stmt)
-		return result
-		
+			self.compile(stmt)
+			if isinstance(stmt, ExpressionStatement):
+				result = self.c.pop()
+			else:
+				result = None
+		if result:
+			self.c.push(result)
+			
+
 	def compile_Block(self, node):
+		self.compile(stmt)
+		"""
 		result = None
 		self.env.increaseScope()
 		for stmt in node.stmts:
 			result = self.compile(stmt)
 		self.env.decreaseScope()
 		return result
-	
+		"""
 
 	def compile_ConstDef(self, node):
-		self.env.addConst(node.name, self.compile(node.value))
+		self.c.locals += f"const {self.c.convertType(node.valtype)} _t{node.nodename};\n"
+		if node.value is not None:
+			self.compile(node.value)
+			val = self.c.pop()
+			self.c.statements += f"_t{node.nodename} = {val};\n"
+		#self.env.addConst(node.name, self.compile(node.value))
 		
 		
 	def compile_VarDef(self, node):
-		value = 0
+		self.c.locals += f"{self.c.convertType(node.valtype)} _t{node.nodename};\n"
 		if node.value is not None:
-			value = self.compile(node.value)
-		self.env.addValue(node.name, value)
+			self.compile(node.value)
+			val = self.c.pop()
+			self.c.statements += f"_t{node.nodename} = {val};\n"
+		#self.env.addValue(node.name, value)
 		
 
 	def compile_IfConditional(self, node):
-		condition = self.compile(node.condition)
-		if condition:
-			self.env.increaseScope()
-			self.compile(node.istrue)
-			self.env.decreaseScope()
-
-		else:
-			if node.isfalse is not None:
-				self.env.increaseScope()
-				self.compile(node.isfalse)
-				self.env.decreaseScope()
-
-
+		self.compile(node.condition)				# conditional statement is now on the stack
+		if node.isfalse is not None:
+			istrueLabel = f"L{self.labelIndex}"
+			self.labelIndex += 1
+			isfalseLabel = f"L{self.labelIndex}"
+			self.labelIndex += 1
+			completionLabel = f"L{self.labelIndex}"
+			self.labelIndex += 1
+			
+		self.c.statements += f"if ({self.c.pop()})\n"
+		if node.isfalse is not None:
+			self.c.statements += f"goto {istrueLabel}\ngoto {isfalseLabel}\n"
+			self.c.statements += f"{istrueLabel}:\n"
+			
+		self.compile(node.istrue)
+		self.c.statements += f"{self.c.pop()}\n" 
+		
+		if node.isfalse is not None:
+			self.c.statements += f"goto {completionLabel}\n"
+			self.c.statements += f"{isfalseLabel}:\n"
+			
+			self.compile(node.isfalse)
+			self.c.statements +=f"{self.c.pop()}\n"
+			self.c.statements +=f"{completionLabel}:\n"
+			
 
 	def compile_While(self, node):
-		condition = self.compile(node.condition)
-		while condition:
-			try:			
-				self.env.increaseScope()
-				self.compile(node.todo)
-				self.env.decreaseScope()
-			except BreakException:
-				break
-			except ContinueException:
-				continue
-			condition = self.compile(node.condition)
+		self.compile(node.condition)				# conditional statement is now on the stack
+		condLabel = f"L{self.labelIndex}"
+		self.labelIndex += 1
+		bodyLabel = f"L{self.labelIndex}"
+		self.labelIndex += 1
+		exitLabel = f"L{self.labelIndex}"
+		self.labelIndex += 1
+			
+		self.c.statements += f"{condLabel}:\n"
+		self.compile(node.condition)				# push condition expression to stack
+		
+		self.c.statements += f"if (_t{node.condition.nodename}) goto {bodyLabel}\ngoto {exitLabel}\n"
+		self.c.statements += f"{bodyLabel}:\n"
+			
+		self.compile(node.todo)
+		self.c.statements += f"goto {condLabel}\n" 
+		
+		self.c.statements += f"{exitLabel}:\n"
+		
 		
 	def compile_BreakStatement(self, node):
-		self.statements += "break;\n"
+		self.c.statements += "break;\n"
 		
 	def compile_ContinueStatement(self, node):
-		self.statements += 
+		self.c.statements += "continue;\n"
 		
 	###
 	### The meta container ... Program
@@ -359,8 +374,8 @@ class WabbitToC:
 # Top-level function to handle an entire program.
 def compile_program(model):
 	compiler = WabbitToC()
-	output = compiler.compile(model)
-	return output
+	compiler.compile(model)
+	return str(compiler.c)
     
 
 def main(filename):

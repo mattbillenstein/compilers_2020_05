@@ -300,7 +300,7 @@ class Statements(Statement):
 		self.stmts = stmts
 		
 	def __repr__(self):
-		return r"Statements([id={self.nodename}]" + ",".join([repr(x) for x in self.stmts]) + ")"
+		return f"Statements([id={self.nodename}]" + ",".join([repr(x) for x in self.stmts]) + ")"
 		
 	def to_source(self):
 		return "\n".join([x.to_source() for x in self.stmts])
@@ -360,42 +360,42 @@ class ConstDef(Statement):
 	const a
 	'''
 	
-	def __init__(self, name, vartype, value, **kwargs):
+	def __init__(self, name, valtype, value, **kwargs):
 		super().__init__(**kwargs)
 		assert isinstance(name, str)
-		assert vartype is None or isinstance(vartype, str)
+		assert valtype is None or isinstance(valtype, str)
 		assert isinstance(value, Expression)
 		self.name = name
-		self.vartype = vartype
+		self.valtype = valtype
 		self.value = value		
 
 	def __repr__(self):
-		return f"ConstDef({self.name}, {self.vartype}, {self.value})"
+		return f"ConstDef({self.name}, {self.valtype}, {self.value})"
 		
 	def to_source(self):
-		if self.vartype is None:
+		if self.valtype is None:
 			return f"const {self.name} = {self.value.to_source()};"
-		return f"const {self.name} {self.vartype} = {self.value.to_source()};"
+		return f"const {self.name} {self.valtype} = {self.value.to_source()};"
 
 
 class VarDef(Statement):
-	def __init__(self, name, vartype, value = None, **kwargs):
+	def __init__(self, name, valtype, value = None, **kwargs):
 		super().__init__(**kwargs)
 		assert isinstance(name, str)
-		assert vartype is None or isinstance(vartype, str)
+		assert valtype is None or isinstance(valtype, str)
 		assert value is None or isinstance(value, Expression)
-		assert not (vartype is None and value is None)
-		self.name = name
-		self.vartype = vartype
-		self.value = value
+		assert not (valtype is None and value is None)
+		self.name = name				# name of the variable
+		self.valtype = valtype			# the type of variable (int, float, etc...)
+		self.value = value				# if the value had an assignment, this is the expr assigned to .name variable
 		
 	def __repr__(self):
-		return f"VarDef({self.name}, {self.vartype}, {self.value})"
+		return f"VarDef({self.name}, {self.valtype}, {self.value})"
 		
 	def to_source(self):
 		src = f"var {self.name}"
-		if self.vartype is not None:
-			src += f" {self.vartype}"
+		if self.valtype is not None:
+			src += f" {self.valtype}"
 		if self.value is not None:
 			src += f" = {self.value.to_source()}"
 		src += ";"

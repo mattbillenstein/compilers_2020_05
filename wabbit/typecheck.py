@@ -40,8 +40,10 @@ class Environment:
 	def get(self, name):
 		for i in range(self.scopeLevel, -1, -1):		# start at the top of the stack, work down
 			if name in self.variables[i]:
+				#print(f"get({name}) = {self.variables[i][name]} @ {i})")
 				return self.variables[i][name]
 			elif name in self.consts[i]:
+				#print(f"getC({name}) = {self.consts[i][name]} @ {i})")
 				return self.consts[i][name]
 		
 		# if you get down here, you didnt find the variable
@@ -62,6 +64,7 @@ class Environment:
 		for i in range(self.scopeLevel, constLevel, -1):
 			if name in self.variables[i]:				
 				self.variables[i][name] = value
+				#print(f"set({name}, {value}) @ {i})")
 				return None
 		
 		# if we get here, we hit an error
@@ -69,6 +72,7 @@ class Environment:
 
 		
 	def addValue(self, name, value):
+		#print (f"[{self.scopeLevel}] var {name} = {value}")
 		# see if we have already defined a const with the same name in the current scope
 		if name in self.consts[self.scopeLevel]:
 			return f"{name} is a const at scope level {self.scopeLevel} and cannot be modified"
@@ -80,12 +84,15 @@ class Environment:
 		return None
 		
 	def addConst(self, name, value):
+		#print (f"[{self.scopeLevel}] const {name} = {value}")
 		# see if we have already defined a const with the same name in the current scope
 		if name in self.consts[self.scopeLevel]:
-			print(f"{name} is a const and cannot be modified")
+			return f"{name} is a const and cannot be modified"
+			
 			
 		# add the new name/value to the current consts scope
 		self.consts[self.scopeLevel][name] = value		
+		return None
 		
 	def increaseScope(self):
 		# increase the scope level
@@ -112,22 +119,55 @@ class Environment:
 class WabbitChecker:
 	
 	_bin_ops = {
+				# int ops
 				('+', 'int', 'int') : 'int',
 				('-', 'int', 'int') : 'int',
-				('+', 'float', 'float') : 'float',
-				('-', 'float', 'float') : 'float',
+				('*', 'int', 'int') : 'int',
+				('/', 'int', 'int') : 'int',
 				('<', 'int', 'int') : 'bool',
 				('<=', 'int', 'int') : 'bool',
 				('>', 'int', 'int') : 'bool',
 				('>=', 'int', 'int') : 'bool',
 				('==', 'int', 'int') : 'bool',
 				('!=', 'int', 'int') : 'bool',
+					
+				# float ops
+				('+', 'float', 'float') : 'float',
+				('-', 'float', 'float') : 'float',
+				('*', 'float', 'float') : 'float',
+				('/', 'float', 'float') : 'float',
 				('<', 'float', 'float') : 'bool',
 				('<=', 'float', 'float') : 'bool',
 				('>', 'float', 'float') : 'bool',
 				('>=', 'float', 'float') : 'bool',
 				('==', 'float', 'float') : 'bool',
 				('!=', 'float', 'float') : 'bool',
+					
+				# char ops
+				('<', 'char', 'char') : 'bool',
+				('<=', 'char', 'char') : 'bool',
+				('>', 'char', 'char') : 'bool',
+				('>=', 'char', 'char') : 'bool',
+				('==', 'char', 'char') : 'bool',
+				('!=', 'char', 'char') : 'bool',
+					
+				# unit ops
+				('==', 'unit', 'int') : 'bool',				# unit/int
+				('!=', 'unit', 'int') : 'bool',
+				('==', 'int', 'unit') : 'bool',
+				('!=', 'int', 'unit') : 'bool',
+				('==', 'unit', 'float') : 'bool',			# unit/float
+				('!=', 'unit', 'float') : 'bool',
+				('==', 'float', 'unit') : 'bool',
+				('!=', 'float', 'unit') : 'bool',
+				('==', 'unit', 'char') : 'bool',			# unit/char
+				('!=', 'unit', 'char') : 'bool',
+				('==', 'char', 'unit') : 'bool',	
+				('!=', 'char', 'unit') : 'bool',
+				('==', 'unit', 'unit') : 'bool',			# unit/unit
+				('!=', 'unit', 'unit') : 'bool',
+
+				# bool ops
 				("&&", "bool", "bool") : 'bool',
 				("!", "bool", "bool") : 'bool',
 				("||", "bool", "bool") : "bool"
@@ -163,15 +203,15 @@ class WabbitChecker:
 		return "int"
 		
 	def check_Float(self, node):
-		node.valtype = "int"
+		node.valtype = "float"
 		return "float"
 		
 	def check_Char(self, node):
-		node.valtype = "int"
+		node.valtype = "char"
 		return "char"
 	
 	def check_Bool(self, node):
-		node.valtype = "int"
+		node.valtype = "bool"
 		return "bool"
 
 	def check_Unit(self, node):
@@ -187,10 +227,11 @@ class WabbitChecker:
 		lefttype = self.check(node.left)
 		righttype = self.check(node.right)
 		
+		#print(node)
 		valtype = self._bin_ops.get((node.op, lefttype, righttype))
 		if valtype is None:
 			self.correct = False
-			print(f"type error: {lefttype} {node.op} {righttype} is illegal")
+			print(f"type error: {lefttype} {node.op} {righttype} is illegal ({node.to_source()})")
 
 		# set the type for the node
 		node.valtype = valtype
@@ -229,14 +270,13 @@ class WabbitChecker:
 		return valtype
 
 		
-		
 	def check_Compound(self, node):
 		valtype = None
 		self.env.increaseScope()
 		valtype = self.check(node.stmts)
 		self.env.decreaseScope()
 		node.valtype = valtype
-		return retval
+		return valtype
 					
 	
 	###
@@ -244,7 +284,7 @@ class WabbitChecker:
 	###
 	
 	def check_Var(self, node):
-		print(f"How did you get to a Var node? {node.name}")
+		return self.env.get(node.name)
 	
 	
 	###
@@ -256,12 +296,20 @@ class WabbitChecker:
 		
 		
 	def check_Assignment(self, node):
-		rightval = self.check(node.right)
-		leftval = self.check(node.left)
-		if rightval is None:
-			print(f"Error in expression: {node.right.to_source}")
+		rightvaltype = self.check(node.right)
+		leftvaltype = self.check(node.left)
+		
+		# validate that the left and right are the same type
+		if leftvaltype != rightvaltype:
+			self.correct = False
+			print(f"Error in expression: {node.right.to_source()} Type mismatch: {node.left.valtype}, {node.right.valtype}")
 			
-		self.env.setValue(node.left.name, node.right)
+		if rightvaltype is None:
+			self.correct = False
+			print(f"Error in expression: {node.right.to_source()}")
+			
+		#print(f"[....] {node.left.valtype} {node.left.name} {node.right.valtype} {node.right.to_source()}")
+		self.env.setValue(node.left.name, node.right.valtype)
 
 		
 	def check_PrintStatement(self, node):
@@ -285,41 +333,45 @@ class WabbitChecker:
 	
 
 	def check_ConstDef(self, node):
-		vartype = "unit"
-		valtype = "unit"
-
-		if node.value is not None:
+		valtype = None
+		if node.value:
 			valtype = self.check(node.value)
-
-		if node.vartype is not None:
-			vartype = node.vartype
-		
-		if valtype != node.vartype:
+			
+			if node.valtype and node.valtype != valtype:
+				print(f"Type error {node.valtype} = {valtype}")
+				self.correct = False
+			
+			if not node.valtype:
+				node.valtype = valtype
+				
+		# variable has to have a type assigned
+		if not node.valtype:
 			self.correct = False
-			print(f"Type Error: Unable to assign {valtype} type object to {vartype} object")
-		
-		err = self.env.addConst(node.name, vartype)
+			print(f"Type error {node.to_source()} has no type")
+					
+		err = self.env.addConst(node.name, node.valtype)
 		if err is not None:
 			self.correct = False
 			print (f"Syntax Error: {err}")		
 		
 	def check_VarDef(self, node):
-
-		vartype = "unit"
-		valtype = "unit"
-
-		if node.value is not None:
+		valtype = None
+		if node.value:
 			valtype = self.check(node.value)
-
-		if node.vartype is not None:
-			vartype = node.vartype
-		
-		print(node, vartype, valtype)
-		if node.value is not None and valtype != node.vartype:
+			
+			if node.valtype and node.valtype != valtype:
+				print(f"Type error {node.valtype} = {valtype}")
+				self.correct = False
+			
+			if not node.valtype:
+				node.valtype = valtype
+				
+		# variable has to have a type assigned
+		if not node.valtype:
 			self.correct = False
-			print(f"Type Error: Unable to assign {valtype} type object to {vartype} object")
+			print(f"Type error {node.to_source()} has no type")
 		
-		err = self.env.addValue(node.name, vartype)
+		err = self.env.addValue(node.name, node.valtype)
 		if err is not None:
 			self.correct = False
 			print (f"Syntax Error: {err}")
@@ -382,6 +434,7 @@ def check_program(model):
 def main(filename):
 	from .parse import parse_file
 	model = parse_file(filename)
+	#print(model)
 	print(check_program(model))
 
 if __name__ == '__main__':
