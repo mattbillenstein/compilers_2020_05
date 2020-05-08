@@ -226,7 +226,6 @@ class Parser(BaseParser):
             or self.constdef()
             or self.if_()
             or self.while_()
-            or self.assign()
             or self.expression()
         )
 
@@ -285,23 +284,6 @@ class Parser(BaseParser):
         self.expect("SEMICOLON")
         node = Print(expression)
 
-        print(green(f"    parsed Print: {node}"))
-        return node
-
-    def assign(self) -> Optional[Statement]:
-        print(blue(f"assign(): next = {self.peek()}"))
-
-        if not (tok := self.accept("NAME")):  # TODO: location
-            return None
-        location = Location(tok.token)
-
-        self.expect("ASSIGN")
-
-        _assert(expression := self.expression())
-        self.expect("SEMICOLON")
-        node = Assign(location, expression)
-
-        print(green(f"    Parsed Assign: {node}"))
         return node
 
     def vardef(self) -> Optional[VarDef]:
@@ -368,9 +350,14 @@ class Parser(BaseParser):
         def parser(self) -> Optional[Expression]:
             print(blue(f"expression({operators}): next = {self.peek()}"))
             left = child_parser(self)
-            while tok := self.accept(*operators):
+            while tok := self.accept("ASSIGN", *operators):
                 _assert(right := child_parser(self))
-                left = BinOp(tok.token, left, right)
+                if tok.type_ == "ASSIGN":
+                    if not isinstance(left, Name):
+                        raise WabbitError("Expected Name on LHS of assignment.")
+                    left = Assign(Location(left.value), right)
+                else:
+                    left = BinOp(tok.token, left, right)
             print(green(f"    parsed {left}"))
             return left
 
