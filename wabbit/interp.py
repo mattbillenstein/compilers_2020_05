@@ -85,21 +85,6 @@ OPERATIONS = {
     '&&': lambda a, b: bool(operator.and_(a, b)),
 }
 
-class WabbitUnit:
-    def __bool__(self):
-        return False
-
-    def __hash__(self):
-        return hash(None)
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-    def __repr__(self):
-        return 'WabbitUnit()'
-
-    def __str__(self):
-        return '()'
 
 class Environment(UserDict):
     def __init__(self, *args, **kwargs):
@@ -318,6 +303,10 @@ def interpret_print_statement(print_stmt_node, env):
     value = interpret(expr, env)
     if isinstance(value, str):
         print(value, end='')
+    elif isinstance(value, float):
+        print(WabbitFloat(value))
+    elif isinstance(value, bool):
+        print(str(value).lower())
     else:
         print(value)
 

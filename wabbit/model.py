@@ -513,12 +513,36 @@ class Grouping(Expression):
 
 def to_source(node):
     return node.to_source()
-    # if isinstance(node, Integer):
-    #     return repr(node.value)
-    # elif isinstance(node, BinOp):
-    #     return f"{to_source(node.left)} {node.op} {to_source(node.right)}"
-    # else:
-    #     raise RuntimeError(f"Can't convert {node} to source")
+
+
+#  Implement some classes to better represent wabbit objects as Python objects
+#  Mostly, just for printing
+
+
+class WabbitUnit:
+    def __bool__(self):
+        return False
+
+    def __hash__(self):
+        return hash(None)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __repr__(self):
+        return 'WabbitUnit()'
+
+    def __str__(self):
+        return '()'
+
+class WabbitFloat(float):
+    def __str__(self):
+        return "{:.6f}".format(self)
+        # not sure if 6 this is actually significant/correct...
+        # but that's what is in the output files, so ¯\_(ツ)_/¯
+
+    def __repr__(self):
+        return f'WabbitFloat({self})'
 
 
 def black_format_code(source):
