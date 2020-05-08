@@ -187,6 +187,10 @@ class TypeVisitor:
         if not node._type:
             node._type = n._type
 
+    def visit_Compound(self, node):
+        # same as Block really
+        self.visit_Block(node)
+
     def visit_UnaOp(self, node):
         self.visit(node.arg)
         node._type = node.arg._type
@@ -312,8 +316,16 @@ class CCompilerVisitor:
         for n in node.statements:
             s += self.visit(n)
 
+        # assign the last statement in the block if it returns something...
+        # Used by compound really...
+        if n._type:
+            s += f'{node._var} = {n._var};\n'
+
         s += f'{node._var}_End:\n'
         return s
+
+    def visit_Compound(self, node):
+        return self.visit_Block(node)
 
     def visit_UnaOp(self, node):
         s = self.visit(node.arg)
@@ -327,6 +339,12 @@ class CCompilerVisitor:
         return f'{node._var} = {node.value};\n';
 
     def visit_Float(self, node):
+        return f'{node._var} = {node.value};\n';
+
+    def visit_Char(self, node):
+        return f'''{node._var} = '{node.value}';\n''';
+
+    def visit_Bool(self, node):
         return f'{node._var} = {node.value};\n';
 
     def visit_Var(self, node):
@@ -387,12 +405,11 @@ def compile_c(text_or_node):
         node = parse(text_or_node)
     return CCompilerVisitor().compile_c(node)
 
-def cc(text_or_node):
+def cc(text_or_node, filename):
     code = compile_c(text_or_node)
-    print(code)
-    with open('/tmp/foo.c', 'w') as f:
+    with open(filename, 'w') as f:
         f.write(code)
-    ret = os.system('clang /tmp/foo.c')
+    ret = os.system(f'clang {filename} -o {filename.replace(".c", "")}')
     assert ret == 0, ret
 
 def main(args):
