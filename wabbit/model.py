@@ -161,7 +161,6 @@ class Float(ScalarNode):
     value: float
 
 
-
 binop_typemap = {
     # Integer operations
     ('+', 'int', 'int') : 'int',

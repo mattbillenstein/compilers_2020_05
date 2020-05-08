@@ -37,6 +37,8 @@ class WabbitParser(Parser):
        'break_statement',
        'continue_statement',
        'expr_statement',
+       'func_statement',
+       'return_statement',
        )
     def statement(self, p):
         return p[0]
@@ -66,6 +68,22 @@ class WabbitParser(Parser):
     @_('WHILE expr LBRACE statements RBRACE')
     def while_statement(self, p):
         return ConditionalLoopStatement(p.expr, p.statements)
+
+    @_('RETURN expr SEMI')
+    def return_statement(self, p):
+        return ReturnStatement(p.expr)
+
+    @_('FUNC funcname LPAREN [ paramdefs ] RPAREN type LBRACE statements RBRACE')
+    def func_statement(self, p):
+        return FuncDeclStatement(p.funcname, p.paramdefs, p.type, p.statements)
+
+    @_('paramdef { COMMA paramdef }')
+    def paramdefs(self, p):
+        return p.paramdef0, p.paramdef1
+
+    @_('NAME type')
+    def paramdef(self, p):
+        return  DeclStorageLocation(p.NAME, p.type)
 
     @_('expr SEMI')
     def expr_statement(self, p):
@@ -97,6 +115,14 @@ class WabbitParser(Parser):
     @_('LPAREN expr RPAREN')
     def expr(self, p):
         return Grouping(p.expr)
+
+    @_('funcname LPAREN params RPAREN')
+    def expr(self, p):
+        return FuncCall(p.funcname, p.params)
+
+    @_('expr { COMMA expr }')
+    def params(self, p):
+        return p.expr0, p.expr1
 
     @_('PLUS expr %prec UNARY',
        'MINUS expr %prec UNARY',
@@ -146,6 +172,10 @@ class WabbitParser(Parser):
 
     @_('NAME')
     def type(self, p):
+        return p.NAME
+
+    @_('NAME')
+    def funcname(self, p):
         return p.NAME
 
 #    @_('')

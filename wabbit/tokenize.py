@@ -24,21 +24,23 @@ class Token(Token):
 class WabbitLexer(Lexer):
     tokens = { NAME, CONST, VAR, PRINT, BREAK, CONTINUE, IF, ELSE, WHILE, TRUE, FALSE, INTEGER, FLOAT, CHAR,
             PLUS, MINUS, TIMES, DIVIDE, LE, LT, GE, GT, EQ, NE, LAND, LOR, LNOT, ASSIGN, SEMI, LPAREN, RPAREN,
-            LBRACE, RBRACE}
+            LBRACE, RBRACE, FUNC, COMMA, RETURN}
     ignore = ' \t\n'
     ignore_multilinecomments = r'\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/'
     ignore_midlinecomments = r'\/\/.*'
 
-    CONST = r'const'
-    VAR = r'var'
-    PRINT = r'print'
-    BREAK = r'break'
-    CONTINUE = r'continue'
-    IF = r'if'
-    ELSE = r'else'
-    WHILE = r'while'
-    TRUE = r'true'
-    FALSE = r'false'
+    FUNC = r'\bfunc\b'
+    CONST = r'\bconst\b'
+    VAR = r'\bvar\b'
+    PRINT = r'\bprint\b'
+    BREAK = r'\bbreak\b'
+    CONTINUE = r'\bcontinue\b'
+    IF = r'\bif\b'
+    ELSE = r'\belse\b'
+    WHILE = r'\bwhile\b'
+    TRUE = r'\btrue\b'
+    FALSE = r'\bfalse\b'
+    RETURN = r'\breturn\b'
     NAME = r'[A-Za-z_][A-Za-z0-9_]*'
 
     FLOAT = r'[0-9]*\.[0-9]*'
@@ -61,6 +63,7 @@ class WabbitLexer(Lexer):
 
     ASSIGN = r'='
     SEMI = r';'
+    COMMA = r','
     LPAREN = r'\('
     RPAREN = r'\)'
     LBRACE = r'{'

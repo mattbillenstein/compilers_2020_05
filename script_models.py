@@ -42,9 +42,8 @@ class ScriptModels(unittest.TestCase):
     def programs_match(self, wabbit, tokens, statements, stdout, errors, minc, llvm):
         self.assertEqual(list(to_tokens(wabbit)), tokens)
         self.assertEqual(to_model(iter(tokens)), statements)
-        # XXX skip this test for now as the checker's implementation is paused
-        # self.assertEqual(check_statements(statements), errors)
-        self.assertEqual(interpret_program(Program(statements)), stdout)
+#        self.assertEqual(check_statements(statements), errors)
+#        self.assertEqual(interpret_program(Program(statements)), stdout)
         self.assertEqual('\n'.join(to_wabbit(statements)), wabbit)
         self.assertEqual('\n'.join(to_minc(Program(statements))), minc)
 #        self.assertEqual('\n'.join(to_llvm(Program(statements)), llvm)
@@ -356,6 +355,7 @@ class ScriptModels(unittest.TestCase):
         llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
+    @unittest.skip
     def test_compexpr(self):
         # ----------------------------------------------------------------------
         # Program 5: Compound Expressions.  This program swaps the values of
@@ -373,7 +373,7 @@ class ScriptModels(unittest.TestCase):
         var y int = 42;
         var t = y; 
         y = x; 
-        x = t
+        x = t;
         kill T
         printf("%i\\n", x);
         printf("%i\\n", y);''')
@@ -430,14 +430,13 @@ class ScriptModels(unittest.TestCase):
         llvm = ''
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
-    @unittest.skip
     def test_func(self):
         # ----------------------------------------------------------------------
         # Program 6: Functions.  The program prints out the first factorials
         # with various function definitions.
         #
         
-        source = dedent('''\
+        wabbit = dedent('''\
         func add(x int, y int) int {
         \treturn x + y;
         }
@@ -462,8 +461,136 @@ class ScriptModels(unittest.TestCase):
         \tvar result = print_factorials(10);
         \treturn 0;
         }''')
-        output = ''
-        tokens = []
+        minc = dedent('''\
+        ''')
+        llvm = ''
+        tokens = [
+            Token(type='FUNC', value='func', lineno=1, index=0),
+            Token(type='NAME', value='add', lineno=1, index=5),
+            Token(type='LPAREN', value='(', lineno=1, index=8),
+            Token(type='NAME', value='x', lineno=1, index=9),
+            Token(type='NAME', value='int', lineno=1, index=11),
+            Token(type='COMMA', value=',', lineno=1, index=14),
+            Token(type='NAME', value='y', lineno=1, index=16),
+            Token(type='NAME', value='int', lineno=1, index=18),
+            Token(type='RPAREN', value=')', lineno=1, index=21),
+            Token(type='NAME', value='int', lineno=1, index=23),
+            Token(type='LBRACE', value='{', lineno=1, index=27),
+            Token(type='RETURN', value='return', lineno=1, index=30),
+            Token(type='NAME', value='x', lineno=1, index=37),
+            Token(type='PLUS', value='+', lineno=1, index=39),
+            Token(type='NAME', value='y', lineno=1, index=41),
+            Token(type='SEMI', value=';', lineno=1, index=42),
+            Token(type='RBRACE', value='}', lineno=1, index=44),
+            Token(type='FUNC', value='func', lineno=1, index=46),
+            Token(type='NAME', value='mul', lineno=1, index=51),
+            Token(type='LPAREN', value='(', lineno=1, index=54),
+            Token(type='NAME', value='x', lineno=1, index=55),
+            Token(type='NAME', value='int', lineno=1, index=57),
+            Token(type='COMMA', value=',', lineno=1, index=60),
+            Token(type='NAME', value='y', lineno=1, index=62),
+            Token(type='NAME', value='int', lineno=1, index=64),
+            Token(type='RPAREN', value=')', lineno=1, index=67),
+            Token(type='NAME', value='int', lineno=1, index=69),
+            Token(type='LBRACE', value='{', lineno=1, index=73),
+            Token(type='RETURN', value='return', lineno=1, index=76),
+            Token(type='NAME', value='x', lineno=1, index=83),
+            Token(type='TIMES', value='*', lineno=1, index=85),
+            Token(type='NAME', value='y', lineno=1, index=87),
+            Token(type='SEMI', value=';', lineno=1, index=88),
+            Token(type='RBRACE', value='}', lineno=1, index=90),
+            Token(type='FUNC', value='func', lineno=1, index=92),
+            Token(type='NAME', value='factorial', lineno=1, index=97),
+            Token(type='LPAREN', value='(', lineno=1, index=106),
+            Token(type='NAME', value='n', lineno=1, index=107),
+            Token(type='NAME', value='int', lineno=1, index=109),
+            Token(type='RPAREN', value=')', lineno=1, index=112),
+            Token(type='NAME', value='int', lineno=1, index=114),
+            Token(type='LBRACE', value='{', lineno=1, index=118),
+            Token(type='IF', value='if', lineno=1, index=121),
+            Token(type='NAME', value='n', lineno=1, index=124),
+            Token(type='EQ', value='==', lineno=1, index=126),
+            Token(type='INTEGER', value='0', lineno=1, index=129),
+            Token(type='LBRACE', value='{', lineno=1, index=131),
+            Token(type='RETURN', value='return', lineno=1, index=135),
+            Token(type='INTEGER', value='1', lineno=1, index=142),
+            Token(type='SEMI', value=';', lineno=1, index=143),
+            Token(type='RBRACE', value='}', lineno=1, index=146),
+            Token(type='ELSE', value='else', lineno=1, index=148),
+            Token(type='LBRACE', value='{', lineno=1, index=153),
+            Token(type='RETURN', value='return', lineno=1, index=157),
+            Token(type='NAME', value='mul', lineno=1, index=164),
+            Token(type='LPAREN', value='(', lineno=1, index=167),
+            Token(type='NAME', value='n', lineno=1, index=168),
+            Token(type='COMMA', value=',', lineno=1, index=169),
+            Token(type='NAME', value='factorial', lineno=1, index=171),
+            Token(type='LPAREN', value='(', lineno=1, index=180),
+            Token(type='NAME', value='add', lineno=1, index=181),
+            Token(type='LPAREN', value='(', lineno=1, index=184),
+            Token(type='NAME', value='n', lineno=1, index=185),
+            Token(type='COMMA', value=',', lineno=1, index=186),
+            Token(type='MINUS', value='-', lineno=1, index=188),
+            Token(type='INTEGER', value='1', lineno=1, index=189),
+            Token(type='RPAREN', value=')', lineno=1, index=190),
+            Token(type='RPAREN', value=')', lineno=1, index=191),
+            Token(type='RPAREN', value=')', lineno=1, index=192),
+            Token(type='SEMI', value=';', lineno=1, index=193),
+            Token(type='RBRACE', value='}', lineno=1, index=196),
+            Token(type='RBRACE', value='}', lineno=1, index=198),
+            Token(type='FUNC', value='func', lineno=1, index=200),
+            Token(type='NAME', value='print_factorials', lineno=1, index=205),
+            Token(type='LPAREN', value='(', lineno=1, index=221),
+            Token(type='NAME', value='last', lineno=1, index=222),
+            Token(type='NAME', value='int', lineno=1, index=227),
+            Token(type='RPAREN', value=')', lineno=1, index=230),
+            Token(type='NAME', value='int', lineno=1, index=232),
+            Token(type='LBRACE', value='{', lineno=1, index=236),
+            Token(type='VAR', value='var', lineno=1, index=239),
+            Token(type='NAME', value='x', lineno=1, index=243),
+            Token(type='ASSIGN', value='=', lineno=1, index=245),
+            Token(type='INTEGER', value='0', lineno=1, index=247),
+            Token(type='SEMI', value=';', lineno=1, index=248),
+            Token(type='WHILE', value='while', lineno=1, index=251),
+            Token(type='NAME', value='x', lineno=1, index=257),
+            Token(type='LT', value='<', lineno=1, index=259),
+            Token(type='NAME', value='last', lineno=1, index=261),
+            Token(type='LBRACE', value='{', lineno=1, index=266),
+            Token(type='PRINT', value='print', lineno=1, index=270),
+            Token(type='NAME', value='factorial', lineno=1, index=276),
+            Token(type='LPAREN', value='(', lineno=1, index=285),
+            Token(type='NAME', value='x', lineno=1, index=286),
+            Token(type='RPAREN', value=')', lineno=1, index=287),
+            Token(type='SEMI', value=';', lineno=1, index=288),
+            Token(type='NAME', value='x', lineno=1, index=292),
+            Token(type='ASSIGN', value='=', lineno=1, index=294),
+            Token(type='NAME', value='add', lineno=1, index=296),
+            Token(type='LPAREN', value='(', lineno=1, index=299),
+            Token(type='NAME', value='x', lineno=1, index=300),
+            Token(type='COMMA', value=',', lineno=1, index=301),
+            Token(type='INTEGER', value='1', lineno=1, index=303),
+            Token(type='RPAREN', value=')', lineno=1, index=304),
+            Token(type='SEMI', value=';', lineno=1, index=305),
+            Token(type='RBRACE', value='}', lineno=1, index=308),
+            Token(type='RBRACE', value='}', lineno=1, index=310),
+            Token(type='FUNC', value='func', lineno=1, index=312),
+            Token(type='NAME', value='main', lineno=1, index=317),
+            Token(type='LPAREN', value='(', lineno=1, index=321),
+            Token(type='RPAREN', value=')', lineno=1, index=322),
+            Token(type='NAME', value='int', lineno=1, index=324),
+            Token(type='LBRACE', value='{', lineno=1, index=328),
+            Token(type='VAR', value='var', lineno=1, index=331),
+            Token(type='NAME', value='result', lineno=1, index=335),
+            Token(type='ASSIGN', value='=', lineno=1, index=342),
+            Token(type='NAME', value='print_factorials', lineno=1, index=344),
+            Token(type='LPAREN', value='(', lineno=1, index=360),
+            Token(type='INTEGER', value='10', lineno=1, index=361),
+            Token(type='RPAREN', value=')', lineno=1, index=363),
+            Token(type='SEMI', value=';', lineno=1, index=364),
+            Token(type='RETURN', value='return', lineno=1, index=367),
+            Token(type='INTEGER', value='0', lineno=1, index=374),
+            Token(type='SEMI', value=';', lineno=1, index=375),
+            Token(type='RBRACE', value='}', lineno=1, index=377),
+        ]
         model = [
                 FuncDeclStatement('add', [['x', 'int'], ['y', 'int']], 'int', [
                     ReturnStatement(BinOp('+', StorageLocation('x'), StorageLocation('y'))),
@@ -479,17 +606,19 @@ class ScriptModels(unittest.TestCase):
                     ]),
                 ]),
                 FuncDeclStatement('print_factorials', [['last', 'int']], 'int', [
-                    DeclStorageLocation('x', False, Int(0)),
+                    DeclStorageLocation('x', None, False, Int(0)),
                     ConditionalLoopStatement(BinOp('<', StorageLocation('x'), StorageLocation('last')), [
                         PrintStatement(FuncCall('factorial', [StorageLocation('x')])),
                         AssignStatement(StorageLocation('x'), FuncCall('add', [StorageLocation('x'), Int(1)]))
                     ])
                 ]),
                 FuncDeclStatement('main', [], 'int', [
-                    DeclStorageLocation('result', False, FuncCall('print_factorials', [Int(10)])),
+                    DeclStorageLocation('result', None, False, FuncCall('print_factorials', [Int(10)])),
                     ReturnStatement(Int(0))
                 ]),
         ]
+        stdout = []
+        errors = []
         self.programs_match(wabbit, tokens, model, stdout, errors, minc, llvm)
 
 
