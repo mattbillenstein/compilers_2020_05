@@ -357,6 +357,62 @@ class DottedLocation(Location):
     a.b = 23
     '''
 
+
+# ------- Functions
+class FunctionDefinition(Definition):
+    '''
+    func square(x int) int { ... }
+    '''
+    def __init__(self, name, parameters, return_type, statements, **options):
+        self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
+        self.statements = statements
+        super().__init__(**options)
+
+    def __repr__(self):
+        return f'FunctionDefinition({self.name}, {self.parameters}, {self.return_type}, {self.statements})'
+
+class FunctionApplication(Expression):
+    '''
+    square(10);
+    '''
+    def __init__(self, name, arguments, **options):
+        self.name = name
+        self.arguments = arguments
+        super().__init__(**options)
+
+    def __repr__(self):
+        return f'FunctionApplication({self.name}, {self.arguments})'
+
+class Parameter(Definition):
+    '''
+    func square(x int) int { ... }
+                ^^^^^
+    '''
+    def __init__(self, name, type, **options):
+        self.name = name
+        self.type = type
+        super().__init__(**options)
+
+    def __repr__(self):
+        return f'Parameter({self.name}, {self.type})'
+
+class ReturnStatement(Statement):
+    '''
+    return expression ;
+    '''
+    def __init__(self, expression, **options):
+        self.expression = expression
+        super().__init__(**options)
+
+    def __repr__(self):
+        return f'ReturnStatement({self.expression})'
+
+        
+
+
+
 # ------ Debugging function to convert a model into source code (for easier viewing)
 
 # Could this be a method on the classes?  Maybe. 

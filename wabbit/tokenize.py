@@ -81,7 +81,7 @@ class WabbitLexer(Lexer):
         PLUS, MINUS, TIMES, DIVIDE, LT, LE, GT, GE, EQ, NE, LAND, LOR, LNOT,
           
         # Other symbols
-        ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI, DOT, 
+        ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI, COMMA,
 
         # Numbers and characters
         INTEGER, FLOAT, CHAR,
@@ -90,7 +90,7 @@ class WabbitLexer(Lexer):
         NAME,
 
         # Special keywords
-        CONST, VAR, PRINT, IF, WHILE, ELSE, CONTINUE, BREAK, TRUE, FALSE,
+        CONST, VAR, PRINT, IF, WHILE, ELSE, CONTINUE, BREAK, TRUE, FALSE, RETURN, FUNC, 
         }
 
     ignore = ' \t'       # Ignore these (between tokens)
@@ -126,6 +126,8 @@ class WabbitLexer(Lexer):
     NAME['continue'] = CONTINUE
     NAME['true'] = TRUE
     NAME['false'] = FALSE
+    NAME['func'] = FUNC
+    NAME['return'] = RETURN
 
     # Character constants.   'x', '\'', '\n', '\xhh'.  Hard because of escape codes.
     CHAR = r"'(\\'|.)*?'"    # This matches any group of characters in-between '...' 
@@ -137,7 +139,6 @@ class WabbitLexer(Lexer):
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    DOT = r'\.'
 
     # Put longer patterns first
     LE = r'<='
@@ -155,6 +156,7 @@ class WabbitLexer(Lexer):
     RPAREN = r'\)'
     LBRACE = r'{'
     RBRACE = r'}'
+    COMMA = r','
 
     def error(self, tok):
         # Error function.  Called on illegal characters

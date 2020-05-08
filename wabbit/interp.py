@@ -49,7 +49,11 @@ from collections import ChainMap
 def interpret_program(model):
     # Make the initial environment (a dict)
     env = ChainMap()     # Use instead of dict
-    return interpret(model, env)
+    result = interpret(model, env)
+    # Problem : Kicking the program off. If there's a main, perhaps we just run it?
+    # Kind of a hack. This makes it look like the user slapped a main() call at the end of their code.
+    if 'main' in env:
+        return interpret(FunctionApplication('main', []), env)
 
 @singledispatch
 def interpret(node, env):
@@ -243,6 +247,43 @@ def interpret_continue_statement(node, env):
 @rule(ExpressionStatement)
 def interpret_expr_statement(node, env):
     return interpret(node.expression, env)
+
+class WabbitFunc:
+    def __init__(self, defn, env):
+        self.defn = defn     # Model
+        self.env = env       # Definition env
+
+    def __call__(self, *args):
+        # Make a new environment based on the definition environment of the function
+        newenv = self.env.new_child()   # This is the "stack frame".  Use defn env (otherwise you get dynamic scope) 
+        # Bind function arguments
+        for parm, arg in zip(self.defn.parameters, args):
+            newenv[parm.name] = arg
+
+        # Interpret the function body in the new environment
+        try:
+            return interpret(self.defn.statements, newenv)
+        except Return as e:
+            return e.result
+
+class Return(Exception):
+    def __init__(self, result):
+        self.result = result
+
+@rule(FunctionDefinition)
+def interpret_func_definition(node, env):
+    env[node.name] = WabbitFunc(node, env)     # WasmFunction object 
+
+@rule(FunctionApplication)
+def interpret_func_application(node, env):
+    # Evaluate each of the arguments in the environment
+    args = [ interpret(arg, env) for arg in node.arguments ]    # Put on stack (in WASM)
+    # Call the function object (assumed to be a Python callable of some kind)
+    return env[node.name](*args)    # Wasm:  mod.function.call(env[node.name])
+
+@rule(ReturnStatement)
+def interpret_return_statement(node, env):
+    raise Return(interpret(node.expression, env))
 
 # Live dangerously - parse and run!
 def main(filename):

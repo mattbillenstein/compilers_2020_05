@@ -162,6 +162,8 @@ class WabbitParser(Parser):
        'break_statement',
        'continue_statement',
        'expression_statement',
+       'function_definition',
+       'return_statement',
        )
     def statement(self, p):
         return p[0]               # Just return whatever the thing is
@@ -285,6 +287,34 @@ class WabbitParser(Parser):
     @_('NAME')
     def type(self, p):
         return p.NAME
+
+    # ----- Functions
+    @_('FUNC NAME LPAREN [ parameters ] RPAREN [ type ] LBRACE statements RBRACE')
+    def function_definition(self, p):
+        parameters = p.parameters if p.parameters else []
+        type = p.type if p.type else "unit"
+        return FunctionDefinition(p.NAME, parameters, type, p.statements, lineno=p.lineno)
+
+    @_('parameter { COMMA parameter }')
+    def parameters(self, p):
+        return [ p.parameter0 ] + p.parameter1
+
+    @_('NAME type')
+    def parameter(self, p):
+        return Parameter(p.NAME, p.type, lineno=p.lineno)
+
+    @_('NAME LPAREN [ arguments ] RPAREN')
+    def expression(self, p):
+        arguments = p.arguments if p.arguments else []
+        return FunctionApplication(p.NAME, arguments, lineno=p.lineno)
+
+    @_('expression { COMMA expression }')
+    def arguments(self, p):
+        return [ p.expression0 ] + p.expression1
+
+    @_('RETURN expression SEMI')
+    def return_statement(self, p):
+        return ReturnStatement(p.expression, lineno=p.lineno)
 
 def parse_tokens(raw_tokens):  
     parser = WabbitParser()
