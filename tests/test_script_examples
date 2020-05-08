@@ -4,6 +4,7 @@ set -u
 set -o pipefail
 
 for infile in tests/Script/*.wb; do
+    [[ "$infile" = *mandel_loop.wb ]] && continue  # too slow
     expected_outfile="${infile%%.wb}.out"
     [[ -e "$infile" ]] && [[ -e "$expected_outfile" ]] || {
         echo "Missing files: $infile" 1>&2
