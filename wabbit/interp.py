@@ -3,7 +3,6 @@ from collections import ChainMap
 from dataclasses import dataclass
 import operator
 
-from typeguard import typechecked
 
 from wabbit.model import (
     Assign,
@@ -56,62 +55,49 @@ UNARY_OPERATORS = {
 
 @dataclass
 class Interpreter:
-    @typechecked
     def interpret(self, node: Node, env: ChainMap, **kwargs):
         method_name = "interpret_" + node.__class__.__name__
         return getattr(self, method_name)(node, env, **kwargs)
 
-    @typechecked
     def interpret_Bool(self, node: Bool, env) -> bool:
         return node.value
 
-    @typechecked
     def interpret_Char(self, node: Char, env) -> str:
         return node.value
 
-    @typechecked
     def interpret_Float(self, node: Float, env) -> float:
         return node.value
 
-    @typechecked
     def interpret_Integer(self, node: Integer, env) -> int:
         return node.value
 
-    @typechecked
     def interpret_Name(self, node: Name, env):
         return env[node.value]
 
-    @typechecked
     def interpret_UnaryOp(self, node: UnaryOp, env):
         right_val = self.interpret(node.right, env)
         return UNARY_OPERATORS[node.op](right_val)
 
-    @typechecked
     def interpret_BinOp(self, node: BinOp, env):
         left_val = self.interpret(node.left, env)
         right_val = self.interpret(node.right, env)
         return OPERATORS[node.op](left_val, right_val)
 
-    @typechecked
     def interpret_ParenthesizedExpression(self, node: ParenthesizedExpression, env):
         return self.interpret(node.expression, env)
 
-    @typechecked
     def interpret_ConstDef(self, node: ConstDef, env):
         env[node.left.value] = self.interpret(node.right, env)
 
-    @typechecked
     def interpret_VarDef(self, node: VarDef, env):
         if node.right is not None:
             env[node.left.value] = self.interpret(node.right, env)
 
-    @typechecked
     def interpret_Assign(self, node: Assign, env):
         value = node.left.value
         receiving_env = next((env for env in env.maps if value in env), env)
         receiving_env[value] = self.interpret(node.right, env)
 
-    @typechecked
     def interpret_Print(self, node: Print, env):
         value = self.interpret(node.expression, env)
         if isinstance(value, str):
@@ -127,24 +113,20 @@ class Interpreter:
             sys.stdout.write(f"{value}\n")
         sys.stdout.flush()
 
-    @typechecked
     def interpret_If(self, node: If, env):
         if self.interpret(node.test, env):
             return self.interpret(node.then, env)
         elif node.else_:
             return self.interpret(node.else_, env)
 
-    @typechecked
     def interpret_While(self, node: While, env):
         while self.interpret(node.test, env):
             self.interpret(node.then, env)
 
-    @typechecked
     def interpret_Statements(self, node: Statements, env):
         for statement in node.statements:
             self.interpret(statement, env)
 
-    @typechecked
     def interpret_Block(self, node: Block, env):
         env = env.new_child()
         for statement in node.statements.statements:
@@ -152,7 +134,6 @@ class Interpreter:
         return val
 
 
-@typechecked
 def interpret_program(node: Statements):
     env: ChainMap = ChainMap()
     return Interpreter().interpret(node, env)
