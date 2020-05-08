@@ -128,7 +128,7 @@ class Interpreter:
     def interpret_If(self, node: If, env):
         if self.interpret(node.test, env):
             return self.interpret(node.then, env)
-        else:
+        elif node.else_:
             return self.interpret(node.else_, env)
 
     @typechecked
