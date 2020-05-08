@@ -60,13 +60,13 @@ class CFunction:
         c_type = WB_TYPE_TO_C_TYPE[node.type]
         c_name = self._get_or_create_name(node, prefix=c_type)
         self.declarations.append(f"{c_type} {c_name};")
-        if node.value:
-            self.instructions.append(f"{c_name} = {node.value};")
+        if node.right:
+            self.instructions.append(f"{c_name} = {node.right.value};")
 
     def _compile_def_without_type(self, node, env):
         c_name = self._get_or_create_name(node)
-        assert node.value
-        self.instructions.append(f"{c_name} = {node.value};")
+        assert node.right
+        self.instructions.append(f"{c_name} = {node.right.value};")
 
     def _get_or_create_name(self, node, prefix="", should_exist=None):
         uid = id(node)
