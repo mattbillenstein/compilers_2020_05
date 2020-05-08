@@ -470,7 +470,7 @@ def interpret_function_call_node(function_or_struct_call_node, env):
     # inject argument values into the environment and then run the function clause
     with env.child_env():
         for param, arg_expr in zip(func.parameters, arguments):
-            env[param.name] = interpret(arg_expr, env)
+            env.declare(key=param.name, value=interpret(arg_expr, env))
 
         try:
             return interpret(func_clause, env)
