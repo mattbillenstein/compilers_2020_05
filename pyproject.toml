@@ -8,6 +8,7 @@ authors = ["Naz <n@naz.io>"]
 python = "^3.7"
 flake8 = "^3.7.9"
 black = "^19.10b0"
+wasmer = "^0.4.1"
 
 [tool.poetry.dev-dependencies]
 sly = "^0.4"
