@@ -374,7 +374,7 @@ class While(Statement):
 
     def is_valid(self):
         try:
-            assert isinstance(self.condition, Expression)
+            assert isinstance(self.condition, (Expression, Name, Bool))
             assert isinstance(self.statements, (Statement, Statements))
         except AssertionError:
             print("self.condition = ", self.condition)

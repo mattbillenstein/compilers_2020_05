@@ -44,7 +44,7 @@ def check_program(model):
 ERRORS = []
 
 def record_error(message, statement_info):
-    ERRORS.append(statement_info + message)
+    ERRORS.append(statement_info + message +"\n" + "="*60 + "\n")
 
 def clear_errors():
     '''Used by testing framework when calling multiple times
@@ -73,8 +73,6 @@ def check_Assignment(node, env, statement_info):
     if var.type != expression_type:
         record_error(f"Incompatible types: {var.type} != {expression_type}",
                      statement_info)
-
-    print("Done checking assignment")
 
 valid_binop = {
     # Integer operations
@@ -208,7 +206,8 @@ def check_Print(node, env, statement_info):
 def check_Statements(node, env, statement_info):
     for s in node.statements:
         statement = to_source(s)
-        statement_info = f"TypeError found on line {s.lineno}:\n\n{statement}\n"
+        statement_info = (f"TypeError found for statement on line {s.lineno}:\n" +
+                          "-"*20 + f"\n\n{statement}\n\n" + "-"*20 +"\n")
         check(s, env, statement_info)
 
 
@@ -250,12 +249,12 @@ def check_Var(node, env, statement_info):
 
 @add(While)
 def check_While(node, env, statement_info):
-    while True:
-        condition = check(node.condition, env, statement_info)
-        if condition:
-            check(node.statements, env.new_child(), statement_info)
-        else:
-            break
+    condition = check(node.condition, env, statement_info)
+    if condition != 'bool':
+        record_error(f"Expected a boolean for while condition; got {condition}",
+                     statement_info)
+    check(node.statements, env.new_child(), statement_info)
+
 
 # Sample main program
 def main(filename):

@@ -130,3 +130,13 @@ def test_if_multiple_errors():
     model = parse_source(if_multiple_errors)
     assert catch_error(model)
 
+while_condition_not_bool = """
+var x = 2.5;
+while x {
+   x = false;
+}
+"""
+
+def test_while_condition_not_bool():
+    model = parse_source(while_condition_not_bool)
+    assert catch_error(model)
