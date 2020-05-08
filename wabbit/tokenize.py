@@ -11,6 +11,7 @@ import utils
 class Token(NamedTuple):
     type_: str
     token: str
+    line_num: int
 
     def __repr__(self):
         return f"Token({self.type_}, '{self.token}')"
@@ -59,7 +60,7 @@ TOKEN_TYPES: List[Union[Tuple[str, str], Tuple[str, str, int]]] = [
     ("CHAR", r"'(\\?[^\\]|\'[^\\]|\\x[^\\]{2})'", 1),
 ]
 
-IGNORE = r"[ \n]"
+IGNORE = r"[ ]"
 # Errors: Your lexer may optionally recognize and report the following
 # error messages:
 #
@@ -70,7 +71,12 @@ IGNORE = r"[ \n]"
 
 
 def tokenize(text: str) -> TokenStream:
+    line_num = 1
     while text:
+        if text[0] == "\n":
+            line_num += 1
+            text = text[1:]
+            continue
         # Ignore white space
         if match := re.match(IGNORE, text):
             text = text[match.end() :]  # noqa
@@ -78,9 +84,12 @@ def tokenize(text: str) -> TokenStream:
         # Comments
         if text[:2] == "//":
             text = text[text.find("\n") :]  # noqa
+            line_num += 1
             continue
         if text[:2] == "/*":
-            text = text[text.find("*/") + len("*/") :]  # noqa
+            next_pos = text.find("*/") + len("*/")
+            line_num += text[:next_pos].count("\n")
+            text = text[next_pos :]  # noqa
             continue
 
         for type_, *regexp in TOKEN_TYPES:
@@ -97,7 +106,7 @@ def tokenize(text: str) -> TokenStream:
                         type_ = matched.upper()
                     if matched in TYPES:
                         type_ = "TYPE"
-                yield Token(type_, matched)
+                yield Token(type_, matched, line_num)
                 break
         else:
             raise RuntimeError(f"Unrecognized input: __{text[:10]}__...")
@@ -151,7 +160,7 @@ def test_tokenizer():
         ("/* COMMENT */+", [("ADD", "+")]),
     ]
     for source, expected_tokens in test_cases:
-        actual_tokens = list(tokenize(source))
+        actual_tokens = list(tok[:2] for tok in tokenize(source))
         if actual_tokens != expected_tokens:
             utils.print_diff(expected_tokens, actual_tokens)
         assert actual_tokens == expected_tokens
