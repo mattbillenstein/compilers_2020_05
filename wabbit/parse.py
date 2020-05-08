@@ -135,9 +135,12 @@ green = lambda s: __import__("clint").textui.colored.green(s, always=True, bold=
 
 _print = print
 
+DEBUG = False
 
-def print(*args):
-    pass
+
+def print(*args, **kwargs):
+    if DEBUG:
+        _print(*args, **kwargs)
 
 
 @dataclass
@@ -418,26 +421,31 @@ def parse_source_debug(source):
 
 
 def parse_source(source, debug=False):
-    if debug:
+    global DEBUG
+    DEBUG |= debug
+
+    if DEBUG:
         return parse_source_debug(source)
     else:
         return Parser(tokenize(source)).statements()
 
 
 def parse_file(path, debug=False):
+    global DEBUG
+    DEBUG |= debug
+
     with open(path) as file:
         source = file.read()
 
-    return parse_source(source, debug)
+    return parse_source(source)
 
 
 if __name__ == "__main__":
     import sys
 
-    n_args = len(sys.argv[1:])
-    if n_args not in [1, 2]:
-        raise SystemExit("Usage: wabbit.parse filename [debug]")
+    args = sys.argv[1:]
+    if args[0] == "-d":
+        DEBUG = True
+        args = args[1:]
 
-    debug = n_args == 2
-
-    parse_file(sys.argv[1], debug)
+    parse_file(args[0])
