@@ -51,10 +51,11 @@ from typing import NamedTuple
 from collections import namedtuple
 from typing import TypeVar
 import sys
+from recordclass import recordclass
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-#logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # Top level function that interprets an entire program. It creates the
 # initial environment that's used for storing variables.
@@ -255,7 +256,53 @@ def interpret_compare_node(compare_node: Compare, env: Environment) -> bool:
 @interpret.register(Assignment)
 def interpret_assignment_node(assignment_node: Assignment, env: Environment):
     logger.debug('Interpreting assignment statement')
-    name = assignment_node.location.name  # will probably have to change for structs
+    location = assignment_node.location
+    logger.debug(f'Processing location {repr(location)}')
+    while hasattr(location, 'nested') and location.nested:
+        logger.debug('Location is nested. Digging deeper...')
+        location = interpret(location, env)
+        logger.debug(f'Retrieved nested location: {repr(location)}')
+    logger.debug(f'Resolved nested location. Final location: {repr(location)}')
+    if isinstance(location, FieldLookup):
+        attr_name = location.fieldname
+        obj = interpret(location.location, env)
+        value_expr = assignment_node.value
+        new_value = value = interpret(value_expr, env)
+        setattr(obj, attr_name, new_value)
+        return
+
+        #  Well. I tried _really_ hard to keep using the typed NamedTuple.
+
+
+        # # setattr(obj, attr_name, assignment_node.value) #  <-- This doesn't work because we made a poor choice making structs NamedTuples
+        # # DARN YOU IMMUTABILITY!
+        # # Time to get hacking...
+        # obj_class = type(obj)
+        # obj_attrs = list(obj_class.__annotations__)  # All the namedtuple field names for this type of struct
+        # while True:
+        #     try:
+        #         setattr(obj, attr_name, new_value)
+        #         break
+        #     except AttributeError as attr_error:
+        #         logger.exception('attribute error encountered, trying to compensate', exc_info=True)
+        #         obj_class = type(obj)
+        #         obj_attrs = list(obj_class.__annotations__)
+        #         new_attrs = {}
+        #         for attr in obj_attrs:
+        #             if attr == attr_name:
+        #                 value_expr = assignment_node.value
+        #                 value = interpret(value_expr, env)
+        #             else:
+        #                 value = getattr(obj, attr)
+        #             new_attrs[attr] = value
+        #         #  Now create a new object of the same type, all the same values EXCEPT for the new one we're reassigning
+        #         new_value = obj_class(**new_attrs)  # this will work recursively
+        #         logger.debug(f'NEW VALUE: {repr(new_value)}')
+        #         breakpoint()
+        #         obj = new_value
+        # return
+
+    name = location.name
     value_expr = assignment_node.value
     value = interpret(value_expr, env)
     logger.debug(f'Assigning name {name} with value {value}')
@@ -421,6 +468,7 @@ def interpret_return_statement(return_statement_node, env):
     retval = interpret(return_expr, env)
 
     # Hack to make sure illegal usage of return is not used
+    # We attach the return value to the exception, so the catcher can receive the value
     logger.debug(f'raising return encountered with piggybacked value: {repr(retval)}')
     raise ReturnEncountered(
         "return statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
@@ -460,7 +508,9 @@ def interpret_function_call_node(function_or_struct_call_node, env):
         for arg_expr in arguments:
             arg_values.append(interpret(arg_expr, env))
 
-        struct = NamedTuple(struct_def.name, [(field.name, field.type) for field in struct_def.fields])
+        #struct = NamedTuple(struct_def.name, [(field.name, field.type) for field in struct_def.fields])
+        struct = recordclass(struct_def.name, [field.name for field in struct_def.fields])
+
         struct_obj = struct(*arg_values)
         return struct_obj
 
@@ -501,8 +551,6 @@ def interpret_struct_field_lookup_node(field_lookup_node, env):
 
 
 
-class WabbitStruct(NamedTuple):
-    pass
 
 # @interpret.register(StructInstantiate)
 # def interpret_struct_instantiation_node(struct_inst_node, env):

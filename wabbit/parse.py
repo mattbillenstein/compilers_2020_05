@@ -117,6 +117,7 @@
 from .model import *
 from .tokenize import tokenize, WabbitLexer
 from sly import Parser
+from collections import deque
 
 # Grammar for Wabbit  (Specificiation of syntax)
 #
@@ -168,6 +169,7 @@ class WabbitParser(Parser):
         'struct_definition',
         'return_statement',
         'function_definition',
+        'field_assignment_statement',
     )
     def statement(self, p):
         return p[0]  # Just return whatever the thing is
@@ -296,9 +298,9 @@ class WabbitParser(Parser):
     def expression(self, p):
         return Bool(False)
 
-    @_("location DOT NAME")
-    def expression(self, p):
-        return FieldLookup(location=p.location, fieldname=p.NAME)
+    # @_("location DOT NAME")
+    # def expression(self, p):
+    #     return FieldLookup(location=p.location, fieldname=p.NAME)
 
     @_("NAME type SEMI")
     def struct_field(self, p):
@@ -338,6 +340,27 @@ class WabbitParser(Parser):
     @_("LPAREN expression RPAREN")
     def expression(self, p):
         return Grouping(expression=p.expression)
+
+    @_('field_lookup')
+    def expression(self, p):
+        return p[0]
+
+    @_('location DOT NAME { DOT NAME }')
+    def field_lookup(self, p):
+        root = p.location
+        fieldname = p.NAME0
+        nested_fieldnames = p.NAME1
+        ret = FieldLookup(location=root, fieldname=fieldname, nested=bool(nested_fieldnames))
+        if nested_fieldnames:
+            nested_fieldnames = deque(nested_fieldnames)
+            while nested_fieldnames:
+                nested_fieldname = nested_fieldnames.popleft()
+                ret = FieldLookup(location=ret, fieldname=nested_fieldname, nested=bool(nested_fieldnames))
+        return ret
+
+    @_('field_lookup ASSIGN expression SEMI')
+    def field_assignment_statement(self, p):
+        return Assignment(location=p.field_lookup, value=p.expression)
 
 
 def parse_tokens(raw_tokens):

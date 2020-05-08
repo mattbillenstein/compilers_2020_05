@@ -147,10 +147,10 @@ class FieldLookup(Location):
     p.y
     """
 
-    def __init__(self, location, fieldname):
+    def __init__(self, location, fieldname, nested=False):
         assert isinstance(location, Location), f"Expected Location. got {type(location)} {repr(location)}"
         assert isinstance(fieldname, str), f"Expected str. got {type(fieldname)}"
-        super().__init__(location=location, fieldname=fieldname)
+        super().__init__(location=location, fieldname=fieldname, nested=nested)
 
     def to_source(self):
         return f"{self.location}.{self.fieldname}"
