@@ -385,7 +385,6 @@ def infer_type(obj):
 @transpile.register(Assignment)
 def transpile_assignment_node(assignment_node: Assignment, env: Environment):
     name = assignment_node.location.name  # will have to adjust for nesting lookups
-    breakpoint()
     scope = env.get_lookup_scope(name)
     scoped_varname = scope.get_scoped_cython_name(name)
     transpile(assignment_node.location, env)
@@ -467,12 +466,7 @@ def transpile_print_statement(print_stmt_node, env):
 
     env.writeline('wabbitprint(')
     value = transpile(expr, env)
-    if isinstance(expr, CharacterLiteral) or isinstance(value, CharacterLiteral):
-        env.writeline(f', end="")\n')
-    elif False:
-        ...  # Still need to be able to get type from identifiers/lookups
-    else:
-        env.writeline(f')\n')
+    env.writeline(f')\n')
 
 @transpile.register(Identifier)
 def transpile_identifier_node(identifier_node: Identifier, env: Environment):
