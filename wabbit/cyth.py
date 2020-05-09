@@ -77,9 +77,26 @@ class Scope(UserDict):
     def get_scoped_cython_name(self, key):
         return Identifier(f'cython_scoped_var_{id(self)}_{key}')
 
+    def declare(self, key, value, type_, node=None):
+        logger.debug(f"Declating {key} {value} {type_}")
+
+        if not type_ and node:
+            type_ = infer_type(node)
+        elif value is not None and type_ is None:
+            type_ = infer_type(value)
+
+        varname = self.get_scoped_cython_name(key)
+        self.env.writeline(f'cdef {type_} {varname}')
+        if value is not None:
+            self.env.writeline(f" = {value}\n")
+        else:
+            self.env.writeline('\n')
+        super().__setitem__(key, value)
+
     def __setitem__(self, key, value):
         varname = self.get_scoped_cython_name(key)
-        self.env.writeline(f'{varname} = {value}\n')
+        # self.env.writeline(f'{varname} = {value}\n')
+
         super(Scope, self).__setitem__(key, value)
 
 
@@ -167,7 +184,7 @@ class Environment(Scope):
         if isinstance(value, Node):
             logger.debug("!!! Node has been set in environment !!!")
         try:
-            scope = self._get_lookup_scope(key)
+            scope = self.get_lookup_scope(key)
             if scope is self:
                 super().__setitem__(key, value)
                 return
@@ -184,20 +201,22 @@ class Environment(Scope):
             return
 
     def __getitem__(self, item):
-        lookup_scope = self._get_lookup_scope(item)
+        lookup_scope = self.get_lookup_scope(item)
         if lookup_scope is self:
             return super().__getitem__(item)
         return lookup_scope[item]
 
-    def declare(self, key, value, type_=None):
+    def declare(self, key, value, type_=None, node=None):
         """
         Declarations (e.g. var foo | const foo) should always go to the closest scope
         """
-        if not self._closest_scope is self:
-            logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
-        self._closest_scope[key] = value
+        logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
+        if self._closest_scope is not self:
+            self._closest_scope.declare(key, value, type_, node)
+        else:
+            super().declare(key, value, type_, node)
 
-    def _get_lookup_scope(self, item):
+    def get_lookup_scope(self, item):
         for scope in self._scopes:
             if item in scope:
                 return scope
@@ -258,7 +277,7 @@ class Environment(Scope):
     def retrieve_scoped_name_from_node(self, node):
         if isinstance(node, Identifier):
             name = node.name
-            scope = self._get_lookup_scope(name)
+            scope = self.get_lookup_scope(name)
             return scope.get_scoped_cython_name(name)
 
 
@@ -331,8 +350,8 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
             op = 'or'
     else:
         raise ValueError(f"Unsupported op: {op}")
-
-    return f'{left} {op} {right}'
+    env.writeline(f'{left} {op} {right}')
+    return
 
 @transpile.register(Compare)
 def transpile_compare_node(compare_node: Compare, env: Environment) -> bool:
@@ -345,14 +364,19 @@ def transpose_type(wabbit_type):
 def infer_type(obj):
     if isinstance(obj, CharacterLiteral):
         return 'char'
-    logger.debug(f"Can't infer type of object {repr(obj)} ({obj})")
+    logger.debug(f"Can't infer type of object {type(obj)} ({obj})")
     return
 
 @transpile.register(Assignment)
 def transpile_assignment_node(assignment_node: Assignment, env: Environment):
     name = assignment_node.location.name  # will have to adjust for nesting lookups
+    scope = env.get_lookup_scope(name)
+    scoped_varname = scope.get_scoped_cython_name(name)
+    env.writeline(f'{scoped_varname} = ')
     rhs = transpile(assignment_node.value, env)
+    env.writeline('\n')
     env[name] = rhs
+
 
 
 @transpile.register(VariableDefinition)
@@ -366,7 +390,7 @@ def transpile_variable_definition_node(
         value = None
     else:
         value = transpile(value_expr, env)
-    env.declare(name, value, type_)
+    env.declare(name, value, type_, value_expr)
 
 
 
@@ -386,7 +410,7 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
     type_ = const_def_node.type
     value_expr = const_def_node.value
     value = transpile(value_expr, env)
-    env.declare(name, value, type_)
+    env.declare(name, value, type_, value_expr)
 
     # type_ = const_def_node.type
     # name = const_def_node.name
@@ -421,20 +445,26 @@ def transpile_print_statement(print_stmt_node, env):
 
 @transpile.register(Identifier)
 def transpile_identifier_node(identifier_node: Identifier, env: Environment):
+    logger.debug(f"TRANSPILING IDENTIFIER NODE {repr(identifier_node)}")
     name = identifier_node.name
-    return env[name]
+    scope = env.get_lookup_scope(name)
+    varname = scope.get_scoped_cython_name(name)
+    return varname
 
 @transpile.register(IfStatement)
 def transpile_if_statement_node(if_statement_node: IfStatement, env: Environment):
     condition = if_statement_node.condition
     consequent = if_statement_node.consequent
     alternative = if_statement_node.alternative
+    env.writeline('if ')
     condition_result = transpile(condition, env)
+    env.writeline(':\n')
+
     # if not isinstance(condition_result, bool):
     #     raise RuntimeError(
     #         f"Expected bool from Condition result. Got {type(condition_result)}"
     #     )
-    env.writeline(f'if {condition_result}:\n')
+    breakpoint()
     env.scope_level += 1
     logger.debug(f'Got condition: {condition_result}')
     # if condition_result is True:

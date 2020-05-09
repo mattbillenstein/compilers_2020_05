@@ -41,13 +41,11 @@ def test_wabbits(fp):
     with open(expected_file) as f:
         expected_out = f.read()
     model = parse_file(fp)
-    output = io.StringIO()
     transpile_program(model)
-    with contextlib.redirect_stdout(new_target=output):
-        subprocess.run('python setup.py build_ext --inplace', check=True)
-        subprocess.run(['python', '-c', 'import out'], check=True)
-    output.seek(0)
-    assert expected_out == output.read()
+    subprocess.run('python setup.py build_ext --inplace', check=True)
+    res = subprocess.run(['python', '-c', 'import out'], check=True, capture_output=True)
+    output = res.stdout.decode('utf-8')
+    assert expected_out == output.replace('\r\n', '\n')
 
 @pytest.mark.parametrize('fp', func_files + silly_wabbit_files)
 def test_funcs(fp):
