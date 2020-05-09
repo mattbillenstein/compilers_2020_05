@@ -167,6 +167,8 @@ class Integer(Expression):
     def to_source(self):
         return f"{self.value}"
 
+    def __str__(self):
+        return str(self.value)
 
 class Float(Expression):
     """
@@ -180,6 +182,9 @@ class Float(Expression):
     def to_source(self):
         return f"{self.value}"
 
+    def __str__(self):
+        return "{:.6f}".format(self.value)
+
 
 class Bool(Expression):
     def __init__(self, value):
@@ -187,6 +192,9 @@ class Bool(Expression):
         super().__init__(value=value)
     def to_source(self):
         return 'true' if self.value else 'false'
+
+    def __str__(self):
+        return str(self.value)
 
 class CharacterLiteral(Expression):
     def __init__(self, value):
@@ -197,6 +205,8 @@ class CharacterLiteral(Expression):
     def to_source(self):
         return f"{repr(self.value)}"
 
+    def __str__(self):
+        return self.value
 
 class UnaryOp(Expression):
     def __init__(self, op, operand):
@@ -216,6 +226,9 @@ class Identifier(Location):
 
     def to_source(self):
         return f"{self.name}"
+
+    def __str__(self):
+        return self.name
 
 
 class BinOp(Expression):
@@ -526,17 +539,6 @@ class MatchExpression(Expression):
     def to_source(self):
         return repr(self)
 
-# class StructInstantiate(Expression):
-#     def __init__(self, struct_name, arguments):
-#         assert isinstance(struct_name, str)
-#         assert arguments is None or isinstance(arguments, Iterable)
-#         arguments = tuple(arguments) if arguments else tuple()
-#         assert all(isinstance(arg, Expression) for arg in arguments)
-#         super().__init__(struct_name=struct_name, arguments=arguments)
-#
-#     def to_source(self):
-#         return f"{self.struct_name}({', '.join(str(arg) for arg in self.arguments)})"
-
 
 class BreakStatement(Statement):
     def to_source(self):
@@ -546,7 +548,6 @@ class BreakStatement(Statement):
 class ContinueStatement(Statement):
     def to_source(self):
         return 'continue;'
-# ------ Debugging function to convert a model into source code (for easier viewing)
 
 
 class NodeVisitor:
