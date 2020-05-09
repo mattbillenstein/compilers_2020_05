@@ -111,12 +111,10 @@ class Environment(Scope):
         self._in_function = 0  # how many nested call stacks we're in
         self._is_function_scope = False
         self.scope_level = 0
-        templates_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'cython_templates')
-        self.jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_path), autoescape=False, trim_blocks=True)
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
 
-        self.outfile.write('from __future__ import print_function\n')
+        self.outfile.write('from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint\n')
 
     def get_scoped_cython_name(self, key):
         return f'cython_scoped_var_{id(self)}_{key}'
@@ -378,6 +376,8 @@ def infer_type(obj):
     if isinstance(obj, str):
         if obj == 'bool':
             return 'bint'
+        if obj == 'int':
+            return 'int'
 
     logger.debug(f"Can't infer type of object {type(obj)} ({obj})")
     return
@@ -385,6 +385,7 @@ def infer_type(obj):
 @transpile.register(Assignment)
 def transpile_assignment_node(assignment_node: Assignment, env: Environment):
     name = assignment_node.location.name  # will have to adjust for nesting lookups
+    breakpoint()
     scope = env.get_lookup_scope(name)
     scoped_varname = scope.get_scoped_cython_name(name)
     transpile(assignment_node.location, env)
@@ -464,7 +465,7 @@ def transpile_print_statement(print_stmt_node, env):
     expr = print_stmt_node.expression
     #value = transpile(expr, env)
 
-    env.writeline('print(')
+    env.writeline('wabbitprint(')
     value = transpile(expr, env)
     if isinstance(expr, CharacterLiteral) or isinstance(value, CharacterLiteral):
         env.writeline(f', end="")\n')
@@ -602,27 +603,50 @@ def transpile_param_node(param_node, env):
 #     ...
 #
 #
-# @transpile.register(StructDefinition)
-# def transpile_struct_definition_node(struct_def_node, env):
-#     raise NotImplementedError(locals())
-#
+@transpile.register(StructDefinition)
+def transpile_struct_definition_node(struct_def_node, env):
+    name = struct_def_node.name
+    env.writeline(f'cdef struct {name}:\n')
+    env.scope_level += 1
+    for field in struct_def_node.fields:
+        transpile(field, env)
+    env.scope_level -= 1
+
+@transpile.register(StructField)
+def transpile_struct_field_node(struct_field_node, env):
+    name = struct_field_node.name
+    type_ = struct_field_node.type
+    ctype = infer_type(type_)
+    env.writeline(f'{ctype} {name}\n')
+
+
+
 #
 # @transpile.register(EnumDefinition)
 # def transpile_enum_definition_node(enum_def_node, env):
 #     raise NotImplementedError(locals())
 #
 #
-# @transpile.register(FunctionOrStructCall)
-# def transpile_function_call_node(function_or_struct_call_node, env):
-#     logger.debug("Handling struct/func call")
-#     raise NotImplementedError(locals())
+@transpile.register(FunctionOrStructCall)
+def transpile_function_call_node(function_or_struct_call_node, env):
+    logger.debug("Handling struct/func call")
+    name = function_or_struct_call_node.name
+    env.writeline(f'{name}(')
+    for arg in function_or_struct_call_node.arguments:
+        transpile(arg, env)
+    env.writeline(')')
+
+
 
 
 
 
 @transpile.register(FieldLookup)
 def transpile_struct_field_lookup_node(field_lookup_node, env):
-    raise NotImplementedError(locals())
+    location = field_lookup_node.location
+    transpile(location, env)
+    env.writeline('.')
+    env.writeline(field_lookup_node.fieldname)
 
 # @transpile.register(EnumChoice)
 # def transpile_enum_choice_node(enum_choice_node, env):
