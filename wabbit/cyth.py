@@ -2,47 +2,6 @@ import io
 import os
 from functools import singledispatch
 
-# interp.py
-#
-# In order to write a compiler for a programming language, it helps to
-# have some kind of specification of how programs written in the
-# programming language are actually supposed to work. A language is
-# more than just "syntax" or a data model.  There has to be some kind
-# of operational semantics that describe what happens when a program
-# runs.
-#
-# One way to specify the operational semantics is to write a so-called
-# "definitional interpreter" that directly executes the data
-# model. This might seem like cheating--after all, our final goal is
-# not to write an interpreter, but a compiler. However, if you can't
-# write an interpreter, chances are you can't write a compiler either.
-# So, the purpose of doing this is to pin down fine details as well as
-# our overall understanding of what needs to happen when programs run.
-#
-# We'll write our interpreter in Python.  The idea is relatively
-# straightforward.  For each class in the model.py file, you're
-# going to write a function similar to this:
-#
-#    def transpile_node_name(node, env):
-#        # Execute "node" in the environment "env"
-#        raise NotImplementedError(locals())
-#        return result
-#
-# The input to the function will be an object from model.py (node)
-# along with an object respresenting the execution environment (env).
-# The function will then execute the node in the environment and return
-# a result.  It might also modify the environment (for example,
-# when executing assignment statements, variable definitions, etc.).
-#
-# For the purposes of this projrect, assume that all programs provided
-# as input are "sound"--meaning that there are no programming errors
-# in the input.  Our purpose is not to create a "production grade"
-# interpreter.  We're just trying to understand how things actually
-# work when a program runs.
-#
-# For testing, try running your interpreter on the models you
-# created in the example_models.py file.
-#
 from functools import singledispatch
 from .model import *
 import operator
@@ -57,6 +16,7 @@ from typing import TypeVar
 import sys
 from recordclass import recordclass
 import jinja2
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -69,13 +29,14 @@ from tempfile import tempdir
 
 class Scope(UserDict):
     def __init__(self, *args, **kwargs):
-        if 'env' in kwargs:
-            self.env = kwargs.pop('env')
+        if "env" in kwargs:
+            self.env = kwargs.pop("env")
         else:
             self.env = self
         super().__init__(*args, **kwargs)
+
     def get_scoped_cython_name(self, key):
-        return f'cython_scoped_var_{id(self)}_{key}'
+        return f"cython_scoped_var_{id(self)}_{key}"
 
     def declare(self, key, value, type_, node=None):
         logger.debug(f"Declating {key} {value} {type_}")
@@ -85,24 +46,15 @@ class Scope(UserDict):
         elif value is not None and type_ is None:
             type_ = infer_type(value)
 
-        varname = self.get_scoped_cython_name(key)
-        #self.env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
-        # if value is not None:
-        #     self.env.writeline(f" = {value}\n")
-        # else:
-        #     self.env.writeline('\n')
         super().__setitem__(key, value)
 
     def __setitem__(self, key, value):
-        varname = self.get_scoped_cython_name(key)
-        # self.env.writeline(f'{varname} = {value}\n')
-
         super(Scope, self).__setitem__(key, value)
 
 
 class Environment(Scope):
     def __init__(self, *args, **kwargs):
-        self.outfilename = kwargs.pop('outfile')
+        self.outfilename = kwargs.pop("outfile")
         super().__init__(*args, **kwargs)
         self._scopes = deque()
         self._scopes.append(self)
@@ -114,15 +66,14 @@ class Environment(Scope):
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
 
-        self.outfile.write('from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint\n')
+        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint\n")
 
     def get_scoped_cython_name(self, key):
-        return f'cython_scoped_var_{id(self)}_{key}'
+        return f"cython_scoped_var_{id(self)}_{key}"
 
     def _outfile(self):
-        with open(self.outfilename, 'w') as f:
+        with open(self.outfilename, "w") as f:
             yield f
-
 
     @property
     def _closest_scope(self):
@@ -138,14 +89,16 @@ class Environment(Scope):
         logger.debug("Creating child env")
         new_env = Scope()
         if for_function:
-            logger.debug(f'Creating child env for function. Incrementing call stack from {self._in_function} to'
-                         f'{self._in_function + 1}')
+            logger.debug(
+                f"Creating child env for function. Incrementing call stack from {self._in_function} to"
+                f"{self._in_function + 1}"
+            )
             self._in_function += 1
         if for_function:  # Hack on "_is_function_scope" -- Used internally only
-            logger.debug('Tagging new env with _is_function_scope TRUE')
+            logger.debug("Tagging new env with _is_function_scope TRUE")
             new_env._is_function_scope = True
         else:
-            logger.debug('Tagging new env with _is_function_scope FALSE')
+            logger.debug("Tagging new env with _is_function_scope FALSE")
             new_env._is_function_scope = False
         self._scopes.appendleft(new_env)
         return self
@@ -166,20 +119,18 @@ class Environment(Scope):
         finally:
             self._teardown_env(for_function=for_function)
 
-
     def _teardown_env(self, for_function=False):
         logger.debug("Tearing down env...")
         assert len(self._scopes) > 1, "Attempted to teardown global scope"
         sc = self._scopes.popleft()
         if for_function:
-            logger.debug(f'Decrementing call stack count from {self._in_function} to {self._in_function - 1}')
+            logger.debug(f"Decrementing call stack count from {self._in_function} to {self._in_function - 1}")
             assert self._in_function > 0
             self._in_function -= 1
         logger.debug(f"Tore down env: {sc}")
 
-
     def __setitem__(self, key, value):
-        logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
+        logger.debug(f"Setting key {repr(key)} to value {repr(value)}")
         if isinstance(value, Node):
             logger.debug("!!! Node has been set in environment !!!")
         try:
@@ -209,7 +160,7 @@ class Environment(Scope):
         """
         Declarations (e.g. var foo | const foo) should always go to the closest scope
         """
-        logger.debug(f'Setting key {repr(key)} to value {repr(value)}')
+        logger.debug(f"Setting key {repr(key)} to value {repr(value)}")
         if self._closest_scope is not self:
             self._closest_scope.declare(key, value, type_, node)
         else:
@@ -239,46 +190,28 @@ class Environment(Scope):
         return locals_
 
     def __repr__(self):
-        return (
-            "".join(repr(scope) for scope in list(self._scopes)[:-1])
-            + super().__repr__()
-        )
-
-    # def write_template(self, template_name, **kwargs):
-    #     logger.debug(f'Processing template {template_name} with kwargs: {kwargs}')
-    #     template = self.jinja_env.get_template(template_name)
-    #     for k, v in kwargs.items():
-    #         if not isinstance(v, Node):
-    #             logger.warning(f"Template expected str got key {k}: {v}")
-    #     part = template.render(**kwargs)
-    #     indentation = ' ' * self.scope_level * 4
-    #     for line in part.split('\n'):
-    #         line = f'{indentation}{line}\n'
-    #         self.outfile.write(line)
-    #         print(line)
+        return "".join(repr(scope) for scope in list(self._scopes)[:-1]) + super().__repr__()
 
     def writeline(self, text):
         if text is None:
-            logger.warning('SKIPPING NONE')
+            logger.warning("SKIPPING NONE")
             return
-        logger.debug(f'Writing line text: {text}')
+        logger.debug(f"Writing line text: {text}")
         assert not isinstance(text, Node), f"Expected non-node. Got node {repr(text)}"
-        indentation = ' ' * self.scope_level * 4
-        self.outfile.write(f'{indentation}{text}')
-        print(f'{indentation}{text}')
+        indentation = " " * self.scope_level * 4
+        self.outfile.write(f"{indentation}{text}")
+        print(f"{indentation}{text}")
 
-    def write_out(self, outfile='out.pyx'):
+    def write_out(self, outfile="out.pyx"):
         self.outfile.seek(0)
-        with open(outfile, 'w') as f:
+        with open(outfile, "w") as f:
             f.write(self.outfile.read())
-
 
     def retrieve_scoped_name_from_node(self, node):
         if isinstance(node, Identifier):
             name = node.name
             scope = self.get_lookup_scope(name)
             return scope.get_scoped_cython_name(name)
-
 
 
 class BreakEncountered(RuntimeError):
@@ -296,10 +229,12 @@ class ContinueEncountered(RuntimeError):
 class ReturnEncountered(RuntimeError):
     pass
 
+
 def transpile_program(model):
-    env = Environment(outfile='out.pyx')
+    env = Environment(outfile="out.pyx")
     transpile(model, env)
     env.write_out()
+
 
 # Internal function to interpret a node in the environment
 @singledispatch
@@ -330,87 +265,78 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
     # if isinstance(right, Identifier):
     #     right = env.retrieve_scoped_name_from_node(right)
 
-    if op in      (       "+",
-            "-",
-            "*",
-            "/",
-            "<",
-            "<=",
-            ">=",
-            ">",
-            "==",
-            "!=",
-        ):
+    if op in ("+", "-", "*", "/", "<", "<=", ">=", ">", "==", "!=",):
         op = op
-    elif op in ('&&', '||'):
-        if op == '&&':
-            op = 'and'
-        elif op == '||':
-            op = 'or'
+    elif op in ("&&", "||"):
+        if op == "&&":
+            op = "and"
+        elif op == "||":
+            op = "or"
     else:
         raise ValueError(f"Unsupported op: {op}")
     transpile(left, env)
-    env.writeline(f' {op} ')
+    env.writeline(f" {op} ")
     transpile(right, env)
-    #env.writeline(f'{left} {op} {right}')
+    # env.writeline(f'{left} {op} {right}')
     return
+
 
 @transpile.register(Compare)
 def transpile_compare_node(compare_node: Compare, env: Environment) -> bool:
     raise NotImplementedError(locals())
 
+
 def transpose_type(wabbit_type):
-    if wabbit_type == 'int':
-        return 'int'
+    if wabbit_type == "int":
+        return "int"
+
 
 def infer_type(obj):
     if isinstance(obj, CharacterLiteral):
-        return 'str'
+        return "str"
     if isinstance(obj, Integer):
-        return 'int'
+        return "int"
     if isinstance(obj, Float):
-        return 'double'
+        return "double"
     if isinstance(obj, UnaryOp):
         return infer_type(obj.operand)
 
     if isinstance(obj, str):
-        if obj == 'bool':
-            return 'bint'
-        if obj == 'int':
-            return 'int'
+        if obj == "bool":
+            return "bint"
+        if obj == "int":
+            return "int"
         logger.debug(f"Can't infer type of str {obj} -- assuming it's a defined wabbit type")
         return obj
 
     logger.debug(f"Can't infer type of object {type(obj)} ({obj})")
     return
 
+
 @transpile.register(Assignment)
 def transpile_assignment_node(assignment_node: Assignment, env: Environment):
     location = assignment_node.location
-    while hasattr(location, 'nested') and location.nested:
+    while hasattr(location, "nested") and location.nested:
         transpile(location, env)
     if isinstance(location, FieldLookup):
         attr_name = location.fieldname
         transpile(location.location, env)
-        env.writeline(f'.{attr_name} = ')
+        env.writeline(f".{attr_name} = ")
         transpile(assignment_node.value, env)
-        env.writeline('\n')
+        env.writeline("\n")
         return
     name = assignment_node.location.name
     scope = env.get_lookup_scope(name)
     scoped_varname = scope.get_scoped_cython_name(name)
     transpile(assignment_node.location, env)
-    env.writeline(f' = ')
+    env.writeline(f" = ")
     rhs = transpile(assignment_node.value, env)
-    env.writeline('\n')
+    env.writeline("\n")
     env[name] = assignment_node.value
 
 
-
 @transpile.register(VariableDefinition)
-def transpile_variable_definition_node(
-        variable_def_node: VariableDefinition, env: Environment
-):
+def transpile_variable_definition_node(variable_def_node: VariableDefinition, env: Environment):
     name = variable_def_node.name
     type_ = variable_def_node.type
     value_expr = variable_def_node.value
@@ -423,9 +349,9 @@ def transpile_variable_definition_node(
         type_ = infer_type(value_expr)
     env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
     if value_expr is not None:
-        env.writeline(' = ')
+        env.writeline(" = ")
         value = transpile(value_expr, env)
-    env.writeline('\n')
+    env.writeline("\n")
 
 
 @transpile.register(Integer)
@@ -450,9 +376,9 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
         type_ = infer_type(value_expr)
     env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
     if value_expr is not None:
-        env.writeline(' = ')
+        env.writeline(" = ")
         transpile(value_expr, env)
-    env.writeline('\n')
+    env.writeline("\n")
 
     # type_ = const_def_node.type
     # name = const_def_node.name
@@ -467,17 +393,15 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
     # env.write_template('const_definition.jinja2', type=type_, name=name, value=value)
 
 
-
-
-
 @transpile.register(PrintStatement)
 def transpile_print_statement(print_stmt_node, env):
     expr = print_stmt_node.expression
-    #value = transpile(expr, env)
+    # value = transpile(expr, env)
 
-    env.writeline('wabbitprint(')
+    env.writeline("wabbitprint(")
     value = transpile(expr, env)
-    env.writeline(f')\n')
+    env.writeline(f")\n")
+
 
 @transpile.register(Identifier)
 def transpile_identifier_node(identifier_node: Identifier, env: Environment):
@@ -489,36 +413,35 @@ def transpile_identifier_node(identifier_node: Identifier, env: Environment):
     env.writeline(varname)
     return varname
 
+
 @transpile.register(IfStatement)
 def transpile_if_statement_node(if_statement_node: IfStatement, env: Environment):
     condition = if_statement_node.condition
     consequent = if_statement_node.consequent
     alternative = if_statement_node.alternative
-    env.writeline('if ')
+    env.writeline("if ")
     condition_result = transpile(condition, env)
-    env.writeline(':\n')
+    env.writeline(":\n")
 
-    # if not isinstance(condition_result, bool):
-    #     raise RuntimeError(
-    #         f"Expected bool from Condition result. Got {type(condition_result)}"
-    #     )
     env.scope_level += 1
-    logger.debug(f'Got condition: {condition_result}')
-    # if condition_result is True:
+    logger.debug(f"Got condition: {condition_result}")
     transpile(consequent, env)
     env.scope_level -= 1
     if alternative is not None:
-        env.writeline('else:\n')
+        env.writeline("else:\n")
         env.scope_level += 1
         transpile(alternative, env)
         env.scope_level -= 1
-        env.writeline('\n')
+        env.writeline("\n")
+
 
 @transpile.register(Clause)
 def transpile_clause_node(clause_node, env: Environment):
     logger.debug(f"Interpreting clause node: {repr(clause_node)}")
-    if hasattr(clause_node, 'is_function_clause'):
-        logger.debug("Closest scope was function scope (was already created) Skipping creating child env for this clause")
+    if hasattr(clause_node, "is_function_clause"):
+        logger.debug(
+            "Closest scope was function scope (was already created) Skipping creating child env for this clause"
+        )
         retval = None
         for statement in clause_node.statements:
             retval = transpile(statement, env)
@@ -535,73 +458,63 @@ def transpile_clause_node(clause_node, env: Environment):
     #     transpile(statement, env)
     # env.writeline('#end clause\n')
 
+
 @transpile.register(WhileLoop)
 def transpile_while_loop_node(while_loop_node: WhileLoop, env: Environment):
-    env.writeline('while ')
+    env.writeline("while ")
     cond_str = transpile(while_loop_node.condition, env)
-    env.writeline(':\n')
+    env.writeline(":\n")
     env.scope_level += 1
     transpile(while_loop_node.body, env)
     env.scope_level -= 1
-    env.writeline('\n')
-    env.writeline('#endwhile\n')
+    env.writeline("\n")
+    env.writeline("#endwhile\n")
+
 
 @transpile.register(ExpressionStatement)
 def transpile_expression_statement_node(expression_statement_node, env):
     return transpile(expression_statement_node.expression, env)
 
+
 @transpile.register(UnaryOp)
 def transpile_unary_op_node(unary_op_node, env):
-    logger.debug(f'Transpiling unary opt node: {repr(unary_op_node)}')
+    logger.debug(f"Transpiling unary opt node: {repr(unary_op_node)}")
 
     op = unary_op_node.op
     expr = unary_op_node.operand
-    if op == '!':
-        op = ' not '
+    if op == "!":
+        op = " not "
 
-    env.writeline(f'{op}')
-    value = transpile(expr, env)
-    # if op == '+':
-    #     return value
-    # elif op == '-':
-    #     return f'-{value}'
-    # elif op == '!':
-    #     return f' not {value}'
-
+    env.writeline(f"{op}")
+    transpile(expr, env)
 
 
 @transpile.register(CharacterLiteral)
 def transpile_character_literal(character_literal_node, env):
     env.writeline(character_literal_node.value)
 
+
 @transpile.register(BreakStatement)
 def transpile_break_statement(_, env):
-    env.writeline('break\n')
+    env.writeline("break\n")
+
 
 @transpile.register(ContinueStatement)
 def transpile_continue_statement(_, env):
-    env.writeline('continue\n')
+    env.writeline("continue\n")
+
 
 @transpile.register(ReturnStatement)
 def transpile_return_statement(return_statement_node, env):
     return_expr = return_statement_node.expression
-    retval = transpile(return_expr, env)
-    env.writeline(f'return {retval}')
-    return #??
-    # Hack to make sure illegal usage of return is not used
-    # We attach the return value to the exception, so the catcher can receive the value
-    logger.debug(f'raising return encountered with piggybacked value: {repr(retval)}')
-    raise ReturnEncountered(
-        "return statement encountered. If this bubbles up to you, it's an error due to illegal usage. "
-        "Did you use continue outside a while loop?",
-        retval
-    )
+    env.writeline(f"return ")
+    transpile(return_expr, env)
 
 
 @transpile.register(Parameter)
 def transpile_param_node(param_node, env):
     type_ = infer_type(param_node.type)
-    env.writeline(f'{type_} {param_node.name}')
+    env.writeline(f"{type_} {param_node.name}")
 
 
 @transpile.register(FunctionDefinition)
@@ -609,47 +522,39 @@ def transpile_function_definition_node(func_def_node: FunctionDefinition, env):
     name = func_def_node.name
     rtype = func_def_node.rtype
     type_ = infer_type(rtype)
-    env.writeline(f'cdef {type_} {name}(')
+    env.writeline(f"cdef {type_} {name}(")
     num_params = len(func_def_node.parameters)
     for index, param in enumerate(func_def_node.parameters, start=1):
         transpile(param, env)
         if index < num_params:
-            env.writeline(', ')
-    env.writeline('):\n')
+            env.writeline(", ")
+    env.writeline("):\n")
     env.scope_level += 1
     transpile(func_def_node.body, env)
     env.scope_level -= 1
-    env.writeline('\n')
+    env.writeline("\n")
     env[func_def_node.name] = func_def_node  # need this for func calls
 
 
-#
-#
 @transpile.register(StructDefinition)
 def transpile_struct_definition_node(struct_def_node, env):
     name = struct_def_node.name
-    env.writeline(f'cdef struct {name}:\n')
+    env.writeline(f"cdef struct {name}:\n")
     env.scope_level += 1
     for field in struct_def_node.fields:
         transpile(field, env)
     env.scope_level -= 1
-    env.writeline('\n')
+    env.writeline("\n")
+
 
 @transpile.register(StructField)
 def transpile_struct_field_node(struct_field_node, env):
     name = struct_field_node.name
     type_ = struct_field_node.type
     ctype = infer_type(type_)
-    env.writeline(f'{ctype} {name}\n')
+    env.writeline(f"{ctype} {name}\n")
 
 
-
-#
-# @transpile.register(EnumDefinition)
-# def transpile_enum_definition_node(enum_def_node, env):
-#     raise NotImplementedError(locals())
-#
-#
 @transpile.register(FunctionOrStructCall)
 def transpile_function_call_node(function_or_struct_call_node, env):
     logger.debug("Handling struct/func call")
@@ -661,48 +566,42 @@ def transpile_function_call_node(function_or_struct_call_node, env):
         is_func = False
     with env.child_env(for_function=True):
 
-        env.writeline(f'{name}(')
+        env.writeline(f"{name}(")
         num_args = len(function_or_struct_call_node.arguments)
         for index, arg in enumerate(function_or_struct_call_node.arguments, start=0):
-            if hasattr(arg, 'name'):
+            if hasattr(arg, "name"):
                 env.declare(arg.name, None, None, arg)
             transpile(arg, env)
             if index < num_args - 1:
-                env.writeline(', ')
-        env.writeline(')')
-
-
-
-
+                env.writeline(", ")
+        env.writeline(")")
 
 
 @transpile.register(FieldLookup)
 def transpile_struct_field_lookup_node(field_lookup_node, env):
     location = field_lookup_node.location
     transpile(location, env)
-    env.writeline('.')
+    env.writeline(".")
     env.writeline(field_lookup_node.fieldname)
 
-# @transpile.register(EnumChoice)
-# def transpile_enum_choice_node(enum_choice_node, env):
-#     raise NotImplementedError(locals())
 
 @transpile.register(EnumLookup)
 def transpile_enum_lookup_node(enum_lookup_node, env):
     raise NotImplementedError(locals())
 
 
-
 @transpile.register(CompoundExpr)
 def transpile_compound_expr(compound_expr_node, env):
     transpile(compound_expr_node.clause, env)
 
+
 @transpile.register(Grouping)
 def transpile_grouping_node(group_node, env):
-    logger.debug(f'Interpreting grouping {repr(group_node)}')
+    logger.debug(f"Interpreting grouping {repr(group_node)}")
     grouping_value = transpile(group_node.expression, env)
-    logger.debug(f'Group value: {grouping_value}')
+    logger.debug(f"Group value: {grouping_value}")
     return grouping_value
+
 
 @transpile.register(Unit)
 def transpile_unit_node(unit_node, env):
@@ -713,6 +612,7 @@ def transpile_unit_node(unit_node, env):
 def transpile_bool_node(bool_node, env):
     env.writeline(str(bool_node.value))
 
+
 @transpile.register(MatchExpression)
 def transpile_match_expression_node(match_expr_node, env):
     raise NotImplementedError(locals())
@@ -720,7 +620,7 @@ def transpile_match_expression_node(match_expr_node, env):
 
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.DEBUG)
-    print('-' * 80)
+    print("-" * 80)
     import sys
     from .parse import parse_file
 
@@ -730,5 +630,4 @@ if __name__ == "__main__":
     print(repr(model))
     print(model)
     transpile_program(model)
-    print('-' * 80)
-
+    print("-" * 80)
