@@ -1,5 +1,7 @@
 import io
 import os
+import time
+
 import pytest
 from wabbit.parse import parse_file
 from wabbit.cyth import transpile_program
@@ -43,6 +45,7 @@ def test_wabbits(fp):
     model = parse_file(fp)
     transpile_program(model)
     subprocess.run('python setup.py build_ext --inplace', check=True)
+    time.sleep(1)
     res = subprocess.run(['python', '-c', 'import out'], check=True, capture_output=True)
     output = res.stdout.decode('utf-8')
     assert expected_out == output.replace('\r\n', '\n')
