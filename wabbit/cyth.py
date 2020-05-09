@@ -378,13 +378,25 @@ def infer_type(obj):
             return 'bint'
         if obj == 'int':
             return 'int'
+        logger.debug(f"Can't infer type of str {obj} -- assuming it's a defined wabbit type")
+        return obj
 
     logger.debug(f"Can't infer type of object {type(obj)} ({obj})")
     return
 
 @transpile.register(Assignment)
 def transpile_assignment_node(assignment_node: Assignment, env: Environment):
-    name = assignment_node.location.name  # will have to adjust for nesting lookups
+    location = assignment_node.location
+    while hasattr(location, 'nested') and location.nested:
+        transpile(location, env)
+    if isinstance(location, FieldLookup):
+        attr_name = location.fieldname
+        transpile(location.location, env)
+        env.writeline(f'.{attr_name} = ')
+        transpile(assignment_node.value, env)
+        env.writeline('\n')
+        return
+    name = assignment_node.location.name
     scope = env.get_lookup_scope(name)
     scoped_varname = scope.get_scoped_cython_name(name)
     transpile(assignment_node.location, env)
@@ -441,7 +453,6 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
         env.writeline(' = ')
         transpile(value_expr, env)
     env.writeline('\n')
-
 
     # type_ = const_def_node.type
     # name = const_def_node.name
@@ -589,12 +600,29 @@ def transpile_return_statement(return_statement_node, env):
 
 @transpile.register(Parameter)
 def transpile_param_node(param_node, env):
-    return param_node  # Maybe we can just oust this altogether
+    type_ = infer_type(param_node.type)
+    env.writeline(f'{type_} {param_node.name}')
 
 
-# @transpile.register(FunctionDefinition)
-# def transpile_function_definition_node(func_def_node: FunctionDefinition, env):
-#     ...
+@transpile.register(FunctionDefinition)
+def transpile_function_definition_node(func_def_node: FunctionDefinition, env):
+    name = func_def_node.name
+    rtype = func_def_node.rtype
+    type_ = infer_type(rtype)
+    env.writeline(f'cdef {type_} {name}(')
+    num_params = len(func_def_node.parameters)
+    for index, param in enumerate(func_def_node.parameters, start=1):
+        transpile(param, env)
+        if index < num_params:
+            env.writeline(', ')
+    env.writeline('):\n')
+    env.scope_level += 1
+    transpile(func_def_node.body, env)
+    env.scope_level -= 1
+    env.writeline('\n')
+    env[func_def_node.name] = func_def_node  # need this for func calls
+
+
 #
 #
 @transpile.register(StructDefinition)
@@ -605,6 +633,7 @@ def transpile_struct_definition_node(struct_def_node, env):
     for field in struct_def_node.fields:
         transpile(field, env)
     env.scope_level -= 1
+    env.writeline('\n')
 
 @transpile.register(StructField)
 def transpile_struct_field_node(struct_field_node, env):
@@ -625,10 +654,22 @@ def transpile_struct_field_node(struct_field_node, env):
 def transpile_function_call_node(function_or_struct_call_node, env):
     logger.debug("Handling struct/func call")
     name = function_or_struct_call_node.name
-    env.writeline(f'{name}(')
-    for arg in function_or_struct_call_node.arguments:
-        transpile(arg, env)
-    env.writeline(')')
+    struct_or_func = env.get(name)
+    if isinstance(struct_or_func, FunctionDefinition):
+        is_func = True
+    else:
+        is_func = False
+    with env.child_env(for_function=True):
+
+        env.writeline(f'{name}(')
+        num_args = len(function_or_struct_call_node.arguments)
+        for index, arg in enumerate(function_or_struct_call_node.arguments, start=0):
+            if hasattr(arg, 'name'):
+                env.declare(arg.name, None, None, arg)
+            transpile(arg, env)
+            if index < num_args - 1:
+                env.writeline(', ')
+        env.writeline(')')
 
 
 
