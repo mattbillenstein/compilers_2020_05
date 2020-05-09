@@ -86,11 +86,11 @@ class Scope(UserDict):
             type_ = infer_type(value)
 
         varname = self.get_scoped_cython_name(key)
-        self.env.writeline(f'cdef {type_} {varname}')
-        if value is not None:
-            self.env.writeline(f" = {value}\n")
-        else:
-            self.env.writeline('\n')
+        #self.env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
+        # if value is not None:
+        #     self.env.writeline(f" = {value}\n")
+        # else:
+        #     self.env.writeline('\n')
         super().__setitem__(key, value)
 
     def __setitem__(self, key, value):
@@ -115,7 +115,8 @@ class Environment(Scope):
         self.jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_path), autoescape=False, trim_blocks=True)
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
-        self.boiler = io.StringIO()
+
+        self.outfile.write('from __future__ import print_function\n')
 
     def get_scoped_cython_name(self, key):
         return f'cython_scoped_var_{id(self)}_{key}'
@@ -319,17 +320,17 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
     op = binop_node.op
     left = binop_node.left
     right = binop_node.right
-    if type(left) not in (Identifier, CharacterLiteral, Float, Integer):
-        logger.debug(f"Left BinOp arg was not a known literal was {type(left)}")
-        left = transpile(left, env)
-    if type(right) not in (Identifier, CharacterLiteral, Float, Integer):
-        logger.debug(f"Right BinOp arg was not a known literal was {type(right)}")
-        right = transpile(left, env)
+    # if type(left) not in (Identifier, CharacterLiteral, Float, Integer):
+    #     logger.debug(f"Left BinOp arg was not a known literal was {type(left)}")
+    #     left = transpile(left, env)
+    # if type(right) not in (Identifier, CharacterLiteral, Float, Integer):
+    #     logger.debug(f"Right BinOp arg was not a known literal was {type(right)}")
+    #     right = transpile(left, env)
 
-    if isinstance(left, Identifier):
-        left = env.retrieve_scoped_name_from_node(left)
-    if isinstance(right, Identifier):
-        right = env.retrieve_scoped_name_from_node(right)
+    # if isinstance(left, Identifier):
+    #     left = env.retrieve_scoped_name_from_node(left)
+    # if isinstance(right, Identifier):
+    #     right = env.retrieve_scoped_name_from_node(right)
 
     if op in      (       "+",
             "-",
@@ -350,7 +351,10 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
             op = 'or'
     else:
         raise ValueError(f"Unsupported op: {op}")
-    env.writeline(f'{left} {op} {right}')
+    transpile(left, env)
+    env.writeline(f' {op} ')
+    transpile(right, env)
+    #env.writeline(f'{left} {op} {right}')
     return
 
 @transpile.register(Compare)
@@ -363,7 +367,18 @@ def transpose_type(wabbit_type):
 
 def infer_type(obj):
     if isinstance(obj, CharacterLiteral):
-        return 'char'
+        return 'str'
+    if isinstance(obj, Integer):
+        return 'int'
+    if isinstance(obj, Float):
+        return 'double'
+    if isinstance(obj, UnaryOp):
+        return infer_type(obj.operand)
+
+    if isinstance(obj, str):
+        if obj == 'bool':
+            return 'bint'
+
     logger.debug(f"Can't infer type of object {type(obj)} ({obj})")
     return
 
@@ -372,10 +387,11 @@ def transpile_assignment_node(assignment_node: Assignment, env: Environment):
     name = assignment_node.location.name  # will have to adjust for nesting lookups
     scope = env.get_lookup_scope(name)
     scoped_varname = scope.get_scoped_cython_name(name)
-    env.writeline(f'{scoped_varname} = ')
+    transpile(assignment_node.location, env)
+    env.writeline(f' = ')
     rhs = transpile(assignment_node.value, env)
     env.writeline('\n')
-    env[name] = rhs
+    env[name] = assignment_node.value
 
 
 
@@ -386,22 +402,28 @@ def transpile_variable_definition_node(
     name = variable_def_node.name
     type_ = variable_def_node.type
     value_expr = variable_def_node.value
-    if value_expr is None:
-        value = None
-    else:
+    env.declare(name, None, type_, value_expr)
+    scope = env.get_lookup_scope(name)
+    varname = scope.get_scoped_cython_name(name)
+    if type_:
+        type_ = infer_type(type_)
+    if not type_:
+        type_ = infer_type(value_expr)
+    env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
+    if value_expr is not None:
+        env.writeline(' = ')
         value = transpile(value_expr, env)
-    env.declare(name, value, type_, value_expr)
-
+    env.writeline('\n')
 
 
 @transpile.register(Integer)
 def transpile_integer_node(integer_node: Integer, env: Environment):
-    return integer_node.value
+    env.writeline(integer_node.value)
 
 
 @transpile.register(Float)
 def transpile_float_node(float_node: Float, env: Environment):
-    return float_node.value
+    env.writeline(float_node.value)
 
 
 @transpile.register(ConstDefinition)
@@ -409,8 +431,17 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
     name = const_def_node.name
     type_ = const_def_node.type
     value_expr = const_def_node.value
-    value = transpile(value_expr, env)
-    env.declare(name, value, type_, value_expr)
+    env.declare(name, None, type_, value_expr)
+    scope = env.get_lookup_scope(name)
+    varname = scope.get_scoped_cython_name(name)
+    if not type_:
+        type_ = infer_type(value_expr)
+    env.writeline(f'cdef {type_ if type_ is not None else ""} {varname}')
+    if value_expr is not None:
+        env.writeline(' = ')
+        transpile(value_expr, env)
+    env.writeline('\n')
+
 
     # type_ = const_def_node.type
     # name = const_def_node.name
@@ -431,17 +462,16 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
 @transpile.register(PrintStatement)
 def transpile_print_statement(print_stmt_node, env):
     expr = print_stmt_node.expression
-    value = transpile(expr, env)
-    if isinstance(value, str):
-        print(value, end='')
-    elif isinstance(value, float):
-        print(WabbitFloat(value))
-    elif isinstance(value, bool):
-        print(str(value).lower())
-    else:
-        print(value)
+    #value = transpile(expr, env)
 
-    env.writeline(f'print({value})\n')
+    env.writeline('print(')
+    value = transpile(expr, env)
+    if isinstance(expr, CharacterLiteral) or isinstance(value, CharacterLiteral):
+        env.writeline(f', end="")\n')
+    elif False:
+        ...  # Still need to be able to get type from identifiers/lookups
+    else:
+        env.writeline(f')\n')
 
 @transpile.register(Identifier)
 def transpile_identifier_node(identifier_node: Identifier, env: Environment):
@@ -449,6 +479,7 @@ def transpile_identifier_node(identifier_node: Identifier, env: Environment):
     name = identifier_node.name
     scope = env.get_lookup_scope(name)
     varname = scope.get_scoped_cython_name(name)
+    env.writeline(varname)
     return varname
 
 @transpile.register(IfStatement)
@@ -464,7 +495,6 @@ def transpile_if_statement_node(if_statement_node: IfStatement, env: Environment
     #     raise RuntimeError(
     #         f"Expected bool from Condition result. Got {type(condition_result)}"
     #     )
-    breakpoint()
     env.scope_level += 1
     logger.debug(f'Got condition: {condition_result}')
     # if condition_result is True:
@@ -500,8 +530,9 @@ def transpile_clause_node(clause_node, env: Environment):
 
 @transpile.register(WhileLoop)
 def transpile_while_loop_node(while_loop_node: WhileLoop, env: Environment):
+    env.writeline('while ')
     cond_str = transpile(while_loop_node.condition, env)
-    env.writeline(f'while {cond_str}:\n')
+    env.writeline(':\n')
     env.scope_level += 1
     transpile(while_loop_node.body, env)
     env.scope_level -= 1
@@ -518,19 +549,23 @@ def transpile_unary_op_node(unary_op_node, env):
 
     op = unary_op_node.op
     expr = unary_op_node.operand
+    if op == '!':
+        op = ' not '
+
+    env.writeline(f'{op}')
     value = transpile(expr, env)
-    if op == '+':
-        return value
-    elif op == '-':
-        return f'-{value}'
-    elif op == '!':
-        return f' not {value}'
+    # if op == '+':
+    #     return value
+    # elif op == '-':
+    #     return f'-{value}'
+    # elif op == '!':
+    #     return f' not {value}'
 
 
 
 @transpile.register(CharacterLiteral)
 def transpile_character_literal(character_literal_node, env):
-    return character_literal_node.value
+    env.writeline(character_literal_node.value)
 
 @transpile.register(BreakStatement)
 def transpile_break_statement(_, env):
@@ -616,7 +651,7 @@ def transpile_unit_node(unit_node, env):
 
 @transpile.register(Bool)
 def transpile_bool_node(bool_node, env):
-    return str(bool_node.value)
+    env.writeline(str(bool_node.value))
 
 @transpile.register(MatchExpression)
 def transpile_match_expression_node(match_expr_node, env):
