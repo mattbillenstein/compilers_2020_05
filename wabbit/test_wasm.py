@@ -28,14 +28,14 @@ from wabbit.model import *
 
 def test_wasm_basic():
 
-    model = Statements([Integer(8)])
+    model = Statements([Return(Integer(8))])
 
     mod = generate_program(model)
 
     wasm_bytes = encode_module(mod.module)
     instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
+    result = instance.exports._init()
     assert result == 8
 
     #

@@ -32,11 +32,88 @@
 # Wasm module in various ways.
 #
 
+from .model import *
+from .typecheck import check_program
 from collections import ChainMap
 from functools import singledispatch
-from wabbit.model import *
-from wabbit.wasm_helpers import *
-from wabbit.typecheck import check_program
+
+# ---- Wasm Encoding code --- from the tutorial
+
+
+def encode_unsigned(value):
+    """
+    Produce an LEB128 encoded unsigned integer.
+    """
+    parts = []
+    while value:
+        parts.append((value & 0x7F) | 0x80)
+        value >>= 7
+    if not parts:
+        parts.append(0)
+    parts[-1] &= 0x7F
+    return bytes(parts)
+
+
+def encode_signed(value):
+    """
+    Produce a LEB128 encoded signed integer.
+    """
+    parts = []
+    if value < 0:
+        # Sign extend the value up to a multiple of 7 bits
+        value = (1 << (value.bit_length() + (7 - value.bit_length() % 7))) + value
+        negative = True
+    else:
+        negative = False
+    while value:
+        parts.append((value & 0x7F) | 0x80)
+        value >>= 7
+    if not parts or (not negative and parts[-1] & 0x40):
+        parts.append(0)
+    parts[-1] &= 0x7F
+    return bytes(parts)
+
+
+assert encode_unsigned(624485) == bytes([0xE5, 0x8E, 0x26])
+assert encode_unsigned(127) == bytes([0x7F])
+assert encode_signed(-624485) == bytes([0x9B, 0xF1, 0x59])
+assert encode_signed(127) == bytes([0xFF, 0x00])
+
+import struct
+
+
+def encode_f64(value):
+    """
+    Encode a 64-bit float point as little endian
+    """
+    return struct.pack("<d", value)
+
+
+def encode_vector(items):
+    """
+    A size-prefixed collection of objects.  If items is already
+    bytes, it is prepended by a length and returned.  If items
+    is a list of byte-strings, the length of the list is prepended
+    to byte-string formed by concatenating all of the items.
+    """
+    if isinstance(items, bytes):
+        return encode_unsigned(len(items)) + items
+    else:
+        return encode_unsigned(len(items)) + b"".join(items)
+
+
+def encode_string(text):
+    """
+    Encode a text string as a UTF-8 vector
+    """
+    return encode_vector(text.encode("utf-8"))
+
+
+# Wasm Type names
+i32 = b"\x7f"  # (32-bit int)
+i64 = b"\x7e"  # (64-bit int)
+f32 = b"\x7d"  # (32-bit float)
+f64 = b"\x7c"  # (64-bit float)
 
 
 class WasmModule:
@@ -78,7 +155,7 @@ class WasmFunction:
         # Code generation
         self.code = b""
 
-        # Types of local variables
+        # Local variable types
         self.local_types = []
 
     # Webassembly "op codes" (machine code)
@@ -215,204 +292,181 @@ class WasmGlobalVariable:
         module.global_variables.append(self)
 
 
+def encode_section(sectnum, contents):
+    return bytes([sectnum]) + encode_unsigned(len(contents)) + contents
+
+
+def encode_signature(func):
+    return b"\x60" + encode_vector(func.argtypes) + encode_vector(func.rettypes)
+
+
+def encode_import_function(func):
+    return (
+        encode_string(func.envname)
+        + encode_string(func.name)
+        + b"\x00"
+        + encode_unsigned(func.idx)
+    )
+
+
+def encode_global(gvar):
+    if gvar.type == i32:
+        return i32 + b"\x01\x41" + encode_signed(gvar.initializer) + b"\x0b"
+    elif gvar.type == f64:
+        return f64 + b"\x01\x44" + encode_f64(gvar.initializer) + b"\x0b"
+
+
+def encode_export_function(func):
+    return encode_string(func.name) + b"\x00" + encode_unsigned(func.idx)
+
+
+def encode_function_code(func):
+    localtypes = [b"\x01" + ltype for ltype in func.local_types]
+    if not func.code[-1:] == b"\x0b":
+        func.code += b"\x0b"
+    code = encode_vector(localtypes) + func.code
+    return encode_unsigned(len(code)) + code
+
+
+def encode_module(module):
+    # section 1 - signatures
+    all_funcs = module.imported_functions + module.functions
+    signatures = [encode_signature(func) for func in all_funcs]
+    section1 = encode_section(1, encode_vector(signatures))
+
+    # section 2 - Imports
+    all_imports = [encode_import_function(func) for func in module.imported_functions]
+    section2 = encode_section(2, encode_vector(all_imports))
+
+    # section 3 - Functions
+    section3 = encode_section(
+        3, encode_vector([encode_unsigned(f.idx) for f in module.functions])
+    )
+
+    # section 7 - Exports
+    all_exports = [encode_export_function(func) for func in module.functions]
+    section7 = encode_section(7, encode_vector(all_exports))
+
+    # section 6 - Globals
+    all_globals = [encode_global(gvar) for gvar in module.global_variables]
+    section6 = encode_section(6, encode_vector(all_globals))
+
+    # section 10 - Code
+    all_code = [encode_function_code(func) for func in module.functions]
+    section10 = encode_section(10, encode_vector(all_code))
+
+    return b"".join(
+        [
+            b"\x00asm\x01\x00\x00\x00",
+            section1,
+            section2,
+            section3,
+            section6,
+            section7,
+            section10,
+        ]
+    )
+
+
+# ----------------- END Tutorial code
+
 # Class representing the world of Wasm
 class WabbitWasmModule:
-    def __init__(self, return_type):
+    def __init__(self):
+        # You need to set up the Wasm code generation parts here.
+        # Similar to the tutorial
         self.module = WasmModule("wabbit")
-        # Current function (temporary hack. Set to main)
-        self.function = WasmFunction(self.module, "main", [], [return_type])
+
+        # Declare runtime functions (from javascript)
+        # self._printi = WasmImportedFunction(
+        #     self.module, "runtime", "_printi", [i32], []
+        # )
+        # self._printf = WasmImportedFunction(
+        #     self.module, "runtime", "_printf", [f64], []
+        # )
+        # self._printb = WasmImportedFunction(
+        #     self.module, "runtime", "_printb", [i32], []
+        # )
+        # self._printc = WasmImportedFunction(
+        #     self.module, "runtime", "_printc", [i32], []
+        # )
+
+        # Current function (temporary hack. Set to _init)
+        self.function = self._init_function = WasmFunction(self.module, "_init", [], [i32])
 
         # Environment for tracking symbols
         self.env = ChainMap()
-        self.prev = None
 
-    def new_scope(self):
-        self.prev = self.env
+    # Functions for creating, popping environments
+    def new_env(self):
         self.env = self.env.new_child()
-        return
+        return self
 
-    def previous_scope(self):
-        self.env = self.prev
-        return
+    def pop_env(self):
+        self.env = self.env.parents
 
+
+# Mapping of Wabbit types to Wasm types
+_typemap = {"int": i32, "float": f64, "bool": i32, "char": i32}
 
 # Top-level function for generating code from the model
 def generate_program(model):
-    # Typecheck. Annotates nodes with types.
+    mod = WabbitWasmModule()
     check_program(model)
+    generate(model, mod)
 
-    module = WabbitWasmModule(_type_type_map.get(model.type))
+    # If there's no main function... generate an empty one just to get the
+    # global init code to run (see hack in generate_function_definition below)
+    if "main" not in mod.env:
+        generate(
+            FunctionDefinition("main", [], "int", Statements([Return(Integer(0))])),
+            mod,
+        )
+    mod.function.end_block()
 
-    generate(model, module)
-    module.function.ret()
-    return module
+    return mod
 
 
 # Internal function for generating code on each node
+
+
 @singledispatch
-def generate(node, func):
+def generate(node, mod):
     raise RuntimeError(f"Can't generate {node}")
 
 
 rule = generate.register
 
-_bin_op_methods = {
-    # Integer operations
-    ("+", "int", "int"): "iadd",
-    ("-", "int", "int"): "int",
-    ("*", "int", "int"): "int",
-    ("/", "int", "int"): "int",
-    ("<", "int", "int"): "ibool",
-    ("<=", "int", "int"): "ibool",
-    (">", "int", "int"): "ibool",
-    (">=", "int", "int"): "ibool",
-    ("==", "int", "int"): "ibool",
-    ("!=", "int", "int"): "ibool",
-    # Float operations
-    ("+", "float", "float"): "float",
-    ("-", "float", "float"): "float",
-    ("*", "float", "float"): "float",
-    ("/", "float", "float"): "float",
-    ("<", "float", "float"): "fbool",
-    ("<=", "float", "float"): "fbool",
-    (">", "float", "float"): "fbool",
-    (">=", "float", "float"): "fbool",
-    ("==", "float", "float"): "fbool",
-    ("!=", "float", "float"): "fbool",
-    # Char operations
-    ("<", "char", "char"): "ibool",
-    ("<=", "char", "char"): "ibool",
-    (">", "char", "char"): "ibool",
-    (">=", "char", "char"): "ibool",
-    ("==", "char", "char"): "ibool",
-    ("!=", "char", "char"): "ibool",
-    # Bool operations
-    ("==", "ibool", "ibool"): "ibool",
-    ("!=", "ibool", "ibool"): "ibool",
-    ("&&", "ibool", "ibool"): "ibool",
-    ("||", "ibool", "ibool"): "ibool",
-}
-
-_type_methname_map = {"int": "iconst", "float": "fconst"}
-
-_type_type_map = {"int": INT32, "float": FLOAT64, "ibool": INT32, "fbool": FLOAT64}
-
-_op_methname_map = {
-    ("+", "int"): "iadd",
-    ("*", "int"): "imul",
-    ("/", "int"): "idiv",
-    ("-", "int"): "isub",
-    (">", "int"): "igt",
-    ("<", "int"): "ilt",
-    (">", "float"): "fgt",
-    ("<", "float"): "flt",
-}
-
 
 @rule(Statements)
-def generate_Statements(node, mod):
-    for s in node.statements:
-        generate(s, mod)
+def generate_statements(node, mod):
+    for stmt in node.statements:
+        generate(stmt, mod)
 
 
 @rule(Integer)
-def generate_Integer(node, mod):
-    mod.function.iconst(int(node.value))
+def generate_integer(node, mod: WabbitWasmModule):
+    mod.function.iconst(node.value)
 
 
 @rule(Float)
-def generate_Float(node, mod):
+def generate_float(node, mod):
     mod.function.fconst(float(node.value))
 
 
+@rule(Truthy)
+def generate_Truthy(node, mod):
+    mod.function.iconst(1)
+
+
+@rule(Falsey)
+def generate_Falsey(node, mod):
+    mod.function.iconst(0)
+
+
 @rule(Char)
-def generate_Char(node, mod):
-    mod.function.fconst(ord(node.char))
-
-
-@rule(Var)
-def generate_Var(node, mod):
-    v_idx = mod.function.alloca(_type_type_map.get(node.type))
-    # e.g. put float on stack
-    generate(node.value, mod)
-
-    mod.function.local_set(v_idx)
-    mod.env[node.name] = v_idx
-
-
-@rule(Variable)
-def generate_Variable(node, mod):
-    idx = mod.env.get(node.name)
-    print("idx", node.name, idx)
-    if idx is None:
-        raise SyntaxError(f"Cannot find variable {node.name} in scope")
-
-    mod.function.local_get(idx)
-
-
-@rule(FunctionDefinition)
-def generate_FunctionDefinition(node, mod):
-    arg_types = [_type_type_map.get(a.type) for a in node.args.args]
-    return_types = [_type_type_map.get(node.type)]
-
-    main = mod.function
-    f_def = WasmFunction(mod.module, node.name, arg_types, return_types)
-    mod.function = f_def
-
-    mod.new_scope()
-    for i, param in enumerate(node.args.args):
-        mod.env[param.name] = i
-
-    for statement in node.body:
-        generate(statement, mod)
-    mod.previous_scope()
-
-    mod.function = main
-
-    # set function as a local variable
-    mod.env[node.name] = f_def
-
-
-@rule(FunctionCall)
-def generate_FunctionCall(node, mod):
-    func = mod.env[node.name]
-
-    # put args onto stack
-    for argument in node.args:
-        generate(argument, mod)
-
-    mod.function.call(func)
-
-
-@rule(Return)
-def generate_Return(node, mod):
-    generate(node.value, mod)
-    mod.function.ret()
-
-
-# if test {
-#    when_true
-# } else {
-#    when_false
-# }
-@rule(If)
-def generate_If(node, mod):
-    generate(node.test, mod)
-
-    mod.function.if_()
-
-    mod.new_scope()
-    generate(node.when_true, mod)
-    mod.previous_scope()
-
-    mod.function.else_()
-
-    if node.when_false:
-        mod.new_scope()
-        generate(node.when_false, mod)
-        mod.previous_scope()
-
-    mod.function.end_block()
+def generate_float(node, mod):
+    mod.function.iconst(ord(node.value))
 
 
 # Instruction table for binops
@@ -431,16 +485,201 @@ _ops = {
 
 
 @rule(BinOp)
-def generate_BinOp(node, mod):
+def generate_binop(node, mod):
     generate(node.left, mod)
     generate(node.right, mod)
     # Emit the appropriate opcode
-    if node.left.type == "int":
-        prefix = "i"
-    else:
+    if node.left.type == "float":
         prefix = "f"
+    else:
+        prefix = "i"
     inst = f"{prefix}{_ops[node.op]}"
     getattr(mod.function, inst)()
+
+
+@rule(UnaryOp)
+def generate_unaryop(node, mod):
+    # - op.   Could I recast as 0 - op?
+    if node.op == "-":
+        if node.target.type == "int":
+            left = Integer(0)
+        elif node.target.type == "float":
+            left = Float("0.0")
+        generate_binop(BinOp("-", left, node.target), mod)
+        return
+    # + op    -- Does nothing
+    generate(node.target, mod)
+    if node.op == "+":
+        return
+    if node.op == "!":
+        mod.function.lnot()
+
+
+@rule(Grouping)
+def generate_grouping(node, mod):
+    generate(node.expression, mod)
+
+
+@rule(Var)
+@rule(Const)
+def generate_var_definition(node, mod):
+    # Need to declare as a Wasm global variable
+    # (or local variable if in function)
+    wtype = _typemap[node.type]
+
+    if len(mod.env.maps) == 1:
+        vardecl = WasmGlobalVariable(mod.module, node.name, wtype, 0)
+    else:
+        vardecl = mod.function.alloca(wtype)
+
+    mod.env[node.name] = vardecl
+    if node.value:
+        generate(node.value, mod)
+        if isinstance(vardecl, WasmGlobalVariable):
+            mod.function.global_set(vardecl)
+        else:
+            mod.function.local_set(vardecl)
+
+
+@rule(Variable)
+def generate_variable(node, mod):
+    wdecl = mod.env[node.name]
+
+    if isinstance(wdecl, WasmGlobalVariable):
+        mod.function.global_get(wdecl)
+    else:
+        mod.function.local_get(wdecl)
+
+
+@rule(Assignment)
+def generate_assignment(node, mod):
+    generate(node.location, mod)
+    wdecl = mod.env[node.location.name]
+
+    generate(node.expression, mod)
+    if isinstance(wdecl, WasmGlobalVariable):
+        mod.function.global_set(wdecl)
+    else:
+        mod.function.local_set(wdecl)
+
+
+@rule(Print)
+def generate_print_statement(node, mod):
+    generate(node.value, mod)
+    # ty = node.expression.type
+    # if ty == "int":
+    #     mod.function.call(
+    #         mod._printi
+    #     )  # These functions are imported from Javascript environment
+    # elif ty == "float":
+    #     mod.function.call(mod._printf)
+    # elif ty == "bool":
+    #     mod.function.call(mod._printb)
+    # elif ty == "char":
+    #     mod.function.call(mod._printc)
+    # else:
+    #     assert False
+
+
+# if test {
+#    consequence;
+# } else {
+#    altenrative.
+# }
+
+
+@rule(If)
+def generate_if_statement(node, mod):
+    generate(node.test, mod)
+    mod.function.if_()
+    generate(node.consequence, mod.new_env())
+    mod.pop_env()
+    mod.function.else_()
+    generate(node.alternative, mod.new_env())
+    mod.pop_env()
+    mod.function.end_block()
+
+
+# while test {
+#    body
+# }
+#
+# In Wasm, while loops are encoded in a very strange way...
+#
+# block {
+#    loop {
+#        not test
+#        br_if 1   # 1 refers to "block"
+#        body
+#        br 0      # 0 refers to "loop"
+#    }
+# }
+
+
+@rule(While)
+def generate_while_statement(node, mod):
+    mod.function.block()  # block
+    mod.function.loop()
+    generate(node.test, mod)
+    mod.function.lnot()
+    mod.function.br_if(1)
+    generate(node.body, mod.new_env())
+    mod.pop_env()
+    mod.function.br(0)
+    mod.function.end_block()  # loop
+    mod.function.end_block()  # block
+
+
+# ---------------- Functions
+
+
+@rule(FunctionDefinition)
+def generate_function_definition(node, mod):
+    # Discussion.... There is an implicit "outer" function being created that's
+    # used to initialize the global variables and run scripting-level statements.
+    # When a function definition is encountered, we have to temporarily suspend
+    # what we're doing with that and start creating a new function.
+
+    # Save the current function
+    current_function = mod.function
+
+    # Map the function parameters to web assembly types
+    argtypes = [_typemap[parm.type] for parm in node.args]
+
+    # Map the function return type to a web assembly type
+    rettype = [_typemap[node.return_type]]
+
+    # Create the new Wasm function
+    mod.function = WasmFunction(mod.module, node.name, argtypes, rettype)
+    mod.env[node.name] = mod.function
+
+    # Now have create a new environment and set it up for visit the function body
+    mod.new_env()
+    # Bind function arguments
+    for n, parm in enumerate(node.args):
+        mod.env[parm.name] = n  # Local variables are referenced by numeric index
+
+    # Hack alert.  If main(), we inject a call to _init() to set up the globals
+    if node.name == "main":
+        mod.function.call(mod._init_function)
+    generate(node.body, mod)
+    mod.pop_env()
+
+    # Restore the previous function
+    mod.function = current_function
+
+
+@rule(FunctionCall)
+def generate_function_application(node, mod):
+    for arg in node.arguments:
+        generate(arg, mod)
+    mod.function.call(mod.env[node.name])
+
+
+@rule(Return)
+def generate_return_statement(node, mod):
+    generate(node.value, mod)
+    mod.function.return_()
 
 
 def main(filename):

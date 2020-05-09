@@ -305,6 +305,9 @@ class Arguments(Expression):
             return False
         return self.args == other.args
 
+    def __iter__(self):
+        yield from self.args
+
 
 class FunctionCall(Expression):
     """
