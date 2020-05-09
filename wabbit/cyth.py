@@ -75,7 +75,7 @@ class Scope(UserDict):
             self.env = self
         super().__init__(*args, **kwargs)
     def get_scoped_cython_name(self, key):
-        return Identifier(f'cython_scoped_var_{id(self)}_{key}')
+        return f'cython_scoped_var_{id(self)}_{key}'
 
     def declare(self, key, value, type_, node=None):
         logger.debug(f"Declating {key} {value} {type_}")
@@ -264,7 +264,7 @@ class Environment(Scope):
             logger.warning('SKIPPING NONE')
             return
         logger.debug(f'Writing line text: {text}')
-        assert not isinstance(text, Node)
+        assert not isinstance(text, Node), f"Expected non-node. Got node {repr(text)}"
         indentation = ' ' * self.scope_level * 4
         self.outfile.write(f'{indentation}{text}')
         print(f'{indentation}{text}')
@@ -479,6 +479,7 @@ def transpile_identifier_node(identifier_node: Identifier, env: Environment):
     name = identifier_node.name
     scope = env.get_lookup_scope(name)
     varname = scope.get_scoped_cython_name(name)
+    print(varname)
     env.writeline(varname)
     return varname
 
@@ -635,7 +636,7 @@ def transpile_enum_lookup_node(enum_lookup_node, env):
 
 @transpile.register(CompoundExpr)
 def transpile_compound_expr(compound_expr_node, env):
-    raise NotImplementedError(locals())
+    transpile(compound_expr_node.clause, env)
 
 @transpile.register(Grouping)
 def transpile_grouping_node(group_node, env):
