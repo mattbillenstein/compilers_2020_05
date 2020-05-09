@@ -130,3 +130,10 @@ Video recordings of live sessions will be posted here.
 * [Stacks and code generation](https://vimeo.com/416162660/5d7cf08715) (13 min)
 * [WebAssembly discussion](https://vimeo.com/416159967/5550b1fb27) (56 min)
 
+**Day 5**
+
+* [Code generation, LLVM, functions](https://vimeo.com/416473824/a57d139059) (42 min)
+* [Functions, JITs, discussion](https://vimeo.com/416473824/a57d139059) (56 min)
+* [Near the end, discussion](https://vimeo.com/416531903/b8049251fe) (40 min)
+* [End. Resource. Discussion](https://vimeo.com/416530895/e900197a10) (35 min)
+
