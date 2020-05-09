@@ -133,7 +133,7 @@ Video recordings of live sessions will be posted here.
 **Day 5**
 
 * [Code generation, LLVM, functions](https://vimeo.com/416473824/a57d139059) (42 min)
-* [Functions, JITs, discussion](https://vimeo.com/416473824/a57d139059) (56 min)
+* [Functions, JITs, discussion](https://vimeo.com/416471332/99cea1b353) (56 min)
 * [Near the end, discussion](https://vimeo.com/416531903/b8049251fe) (40 min)
 * [End. Resource. Discussion](https://vimeo.com/416530895/e900197a10) (35 min)
 
