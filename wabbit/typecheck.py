@@ -110,10 +110,38 @@ def check_Float(node, env):
 
 @rule(Return)
 def check_Return(node, env):
-    value_type = check(node.value, env)
+    if node.value is not None:
+        value_type = check(node.value, env)
+    else:
+        value_type = "unit"
 
     node.type = value_type
     return value_type
+
+
+@rule(Break)
+def check_Break(node, env):
+    node.type = "unit"
+    return "unit"
+
+
+@rule(UnaryOp)
+def check_UnaryOp(node, env):
+    check(node.target, env)
+
+    # + op does nothing
+    if node.op == "+":
+        node.type = node.target.type
+        return node.type
+
+    # perform integer divison on integers so we never get floats
+    if node.op in ["-", "*", "/"]:
+        node.type = node.target.type
+        return node.type
+
+    # creates a bool
+    if node.op == "!":
+        return "bool"
 
 
 @rule(Integer)
@@ -124,10 +152,10 @@ def check_Integer(node, env):
 
 @rule(BinOp)
 def check_BinOp(node, env):
-    left_type = check(node.left, env)
-    right_type = check(node.right, env)
+    check(node.left, env)
+    check(node.right, env)
 
-    result_type = _bin_ops.get((node.op, left_type, right_type))
+    result_type = _bin_ops.get((node.op, node.left.type, node.right.type))
     if not result_type:
         raise SyntaxError(
             f"Unknown operator {node.op} for {left_type} and {right_type}"
@@ -160,16 +188,10 @@ def check_Var(node, env):
     return value_type
 
 
-@rule(Return)
-def check_Return(node, env):
-    check(node.value, env)
-
-    node.type = "empty"
-    return "empty"
-
-
 @rule(FunctionCall)
 def check_FunctionCall(node, env):
+    for argument in node.args:
+        check(argument, env)
     func_return_type = env[node.name]
     node.type = func_return_type
 
@@ -178,7 +200,9 @@ def check_FunctionCall(node, env):
 
 @rule(FunctionDefinition)
 def check_FunctionDefinition(node, env):
-    check(node.args, env)
+    if node.args:
+        check(node.args, env)
+
     check(node.body, env)
 
     env[node.name] = node.return_type
@@ -193,12 +217,31 @@ def check_Arguments(node, env):
         check(arg, env)
 
 
+@rule(While)
+def check_While(node, env):
+    check(node.test, env)
+    check(node.consequence, env)
+
+
+@rule(Assignment)
+def check_Assignment(node, env):
+    check(node.location, env)
+    check(node.expression, env)
+    node.type = node.expression.type
+
+
+@rule(Truthy)
+@rule(Falsey)
+def check_Boolean(node, env):
+    return node.type
+
+
 @rule(If)
 def check_If(node, env):
     check(node.test, env)
-    check(node.when_true, env.new_child())
-    if node.when_false:
-        check(node.when_false, env.new_child())
+    check(node.consequence, env.new_child())
+    if node.alternative:
+        check(node.alternative, env.new_child())
     node.type = "int"
 
 

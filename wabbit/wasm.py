@@ -392,7 +392,7 @@ class WabbitWasmModule:
         # )
 
         # Current function (temporary hack. Set to _init)
-        self.function = self._init_function = WasmFunction(self.module, "_init", [], [i32])
+        self.function = self._init_function = WasmFunction(self.module, "_init", [], [])
 
         # Environment for tracking symbols
         self.env = ChainMap()
@@ -488,7 +488,6 @@ _ops = {
 def generate_binop(node, mod):
     generate(node.left, mod)
     generate(node.right, mod)
-    # Emit the appropriate opcode
     if node.left.type == "float":
         prefix = "f"
     else:
@@ -594,9 +593,10 @@ def generate_if_statement(node, mod):
     mod.function.if_()
     generate(node.consequence, mod.new_env())
     mod.pop_env()
-    mod.function.else_()
-    generate(node.alternative, mod.new_env())
-    mod.pop_env()
+    if node.alternative:
+        mod.function.else_()
+        generate(node.alternative, mod.new_env())
+        mod.pop_env()
     mod.function.end_block()
 
 
@@ -623,11 +623,16 @@ def generate_while_statement(node, mod):
     generate(node.test, mod)
     mod.function.lnot()
     mod.function.br_if(1)
-    generate(node.body, mod.new_env())
+    generate(node.consequence, mod.new_env())
     mod.pop_env()
     mod.function.br(0)
     mod.function.end_block()  # loop
     mod.function.end_block()  # block
+
+
+@rule(Break)
+def generate_Break(node, mod):
+    mod.function.br(2)
 
 
 # ---------------- Functions
@@ -662,6 +667,7 @@ def generate_function_definition(node, mod):
     # Hack alert.  If main(), we inject a call to _init() to set up the globals
     if node.name == "main":
         mod.function.call(mod._init_function)
+
     generate(node.body, mod)
     mod.pop_env()
 
@@ -671,14 +677,15 @@ def generate_function_definition(node, mod):
 
 @rule(FunctionCall)
 def generate_function_application(node, mod):
-    for arg in node.arguments:
+    for arg in node.args:
         generate(arg, mod)
     mod.function.call(mod.env[node.name])
 
 
 @rule(Return)
 def generate_return_statement(node, mod):
-    generate(node.value, mod)
+    if node.value:
+        generate(node.value, mod)
     mod.function.return_()
 
 

@@ -99,6 +99,7 @@ class DottedLocation(Location):
 
 
 class Truthy(Expression):
+    type = "bool"
     pass
 
 
@@ -125,6 +126,7 @@ class ExpressionList(Expression):
 
 
 class Falsey(Expression):
+    type = "bool"
     pass
 
 
@@ -406,16 +408,16 @@ class If(Statement):
     Example if x < y
     """
 
-    def __init__(self, test, when_true, when_false=None):
+    def __init__(self, test, consequence, alternative=None):
         assert isinstance(test, Expression) or isinstance(test, Definition)
-        assert isinstance(when_true, Statement)
-        assert when_false is None or isinstance(when_false, Statement)
+        assert isinstance(consequence, Statement)
+        assert alternative is None or isinstance(alternative, Statement)
         self.test = test
-        self.when_true = when_true
-        self.when_false = when_false
+        self.consequence = consequence
+        self.alternative = alternative
 
     def __repr__(self):
-        return f"If({self.test}, {self.when_true}, {self.when_false})"
+        return f"If({self.test}, {self.consequence}, {self.alternative})"
 
     def __eq__(self, other):
         if other is None:
@@ -424,8 +426,8 @@ class If(Statement):
             return False
         return (
             self.test == other.test
-            and self.when_true == other.when_true
-            and self.when_false == other.when_false
+            and self.consequence == other.consequence
+            and self.alternative == other.alternative
         )
 
 
@@ -434,14 +436,29 @@ class While(Statement):
     Example while x < y
     """
 
-    def __init__(self, test, when_true):
+    def __init__(self, test, consequence):
         assert isinstance(test, Expression) or isinstance(test, Definition)
-        assert isinstance(when_true, Statement)
+        assert isinstance(consequence, Statements)
         self.test = test
-        self.when_true = when_true
+        self.consequence = consequence
+        self.type = "unit"
 
     def __repr__(self):
-        return f"While({self.test}, {self.when_true})"
+        return f"While({self.test}, {self.consequence})"
+
+
+class Break(Statement):
+    """
+    Example: while test {
+        if x < 0 {
+            break;
+        }
+    }
+    """
+
+    type = "unit"
+
+    pass
 
 
 class Assignment(Statement):
@@ -487,8 +504,7 @@ class Return(Statement):
     Example: return 3
     """
 
-    def __init__(self, value):
-        assert isinstance(value, Expression)
+    def __init__(self, value=None):
         self.value = value
 
     def __repr__(self):

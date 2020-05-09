@@ -5,74 +5,52 @@ from wasmer import Instance
 from wabbit.wasm import *
 from wabbit.model import *
 
-# def test_wasm():
-# mod = WasmModule("example")
-# _print = WasmImportedFunction(mod, "runtime", "_print", [INT32], [])
-# main = WasmFunction(mod, "main", [], [])
-# main.iconst(42)
-# main.call(_print)
-# main.iconst(2)
-# main.iconst(3)
-# main.imul()
-# main.iconst(4)
-# main.iconst(5)
-# main.imul()
-# main.iadd()
-# main.call(_print)
-# main.ret()
 
-# # Write to a file
-# with open("out_runtime.wasm", "wb") as file:
-#     file.write(encode_module(mod))
+def call_statements(return_type: str, body: Statements):
+    assert isinstance(body, list)
+    if isinstance(body[-1], Return):
+        statements = body
+    else:
+        statements = body + [Return()]
+
+    model = Statements(
+        [FunctionDefinition("main", [], return_type, Statements(statements))]
+    )
+    print(model)
+
+    mod = generate_program(model)
+    wasm_bytes = encode_module(mod.module)
+    instance = Instance(wasm_bytes)
+
+    return instance.exports.main()
 
 
 def test_wasm_basic():
-
-    model = Statements([Return(Integer(8))])
-
-    mod = generate_program(model)
-
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports._init()
+    result = call_statements("int", [Integer(8)])
     assert result == 8
-
     #
-    model = Statements([Float("3.2")])
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
+    result = call_statements("float", [Float("3.2")])
     assert result == 3.2
-
     #
-    model = Statements(
-        [Var("age", None, Integer(30)), BinOp("*", Variable("age"), Integer(2))]
+    result = call_statements(
+        "int", [Var("age", None, Integer(30)), BinOp("*", Variable("age"), Integer(2))]
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
     assert result == 60
 
     #
-    model = Statements(
-        [Var("age", None, Float(30.0)), BinOp("*", Variable("age"), Float(2.5))]
+    result = call_statements(
+        "float",
+        [Var("age", None, Float(30.0)), BinOp("*", Variable("age"), Float(2.5))],
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
     assert result == 75.0
 
+
+def test_functions():
     # func square(x int) int {
     #     return x*x;
     # }
-    model = Statements(
+    result = call_statements(
+        "int",
         [
             FunctionDefinition(
                 "square",
@@ -81,19 +59,15 @@ def test_wasm_basic():
                 Statements([Return(BinOp("*", Variable("x"), Variable("x")))]),
             ),
             FunctionCall("square", Integer(17)),
-        ]
+        ],
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
     assert result == 17 * 17
 
     # func mul(x int, y int) int {
     #     return y*x;
     # }
-    model = Statements(
+    result = call_statements(
+        "int",
         [
             FunctionDefinition(
                 "mul",
@@ -102,19 +76,15 @@ def test_wasm_basic():
                 Statements([Return(BinOp("*", Variable("y"), Variable("x")))]),
             ),
             FunctionCall("mul", Integer(17), Integer(2)),
-        ]
+        ],
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
     assert result == 17 * 2
 
     # func fmul(x int, y int) int {
     #     return y*x;
     # }
-    model = Statements(
+    result = call_statements(
+        "float",
         [
             FunctionDefinition(
                 "fmul",
@@ -123,47 +93,58 @@ def test_wasm_basic():
                 Statements([Return(BinOp("*", Variable("y"), Variable("x")))]),
             ),
             FunctionCall("fmul", Float("3.3"), Float("9.9")),
-        ]
+        ],
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
-
-    result = instance.exports.main()
     assert result == 3.3 * 9.9
 
-    model = Statements([Var("a", "int", Integer(3)), Variable("a"),])
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
+def test_var_assignment():
+
+    result = call_statements("int", [Var("a", "int", Integer(3)), Variable("a")])
     assert result == 3
 
-    #     if 2 > 4 {
-    #         return 1;
+    #     if a > 4 {
+    #         return 5;
     #     } else {
-    #         return 2;
+    #         return 9;
     #     }
     # }
-    model = Statements(
+    result = call_statements(
+        "int",
         [
             Var("a", "int", Integer(3)),
             If(
                 BinOp(">", Variable("a"), Integer(4)),
-                Statements([Var("b", "int", Integer(5))]),
-                Statements([Var("c", "int", Integer(9))]),
+                Statements([Return(Integer(5))]),
+                Statements([Return(Integer(9))]),
             ),
-            Integer(2),
-        ]
+            Return(Integer(0)),
+        ],
     )
-    mod = generate_program(model)
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
+    assert result == 9
 
-    result = instance.exports.main()
-    assert result == 2
+    #     if a > 4 {
+    #         return 5;
+    #     } else {
+    #         return 9;
+    #     }
+    # }
+    result = call_statements(
+        "int",
+        [
+            Var("a", "int", Integer(6)),
+            If(
+                BinOp(">", Variable("a"), Integer(4)),
+                Statements([Return(Integer(5))]),
+                Statements([Return(Integer(9))]),
+            ),
+            Return(Integer(0)),
+        ],
+    )
+    assert result == 5
 
+
+def test_if_inside_func():
     # func fabs(x float) float {
     #     if x < 0.0 {
     #         return -x;
@@ -172,7 +153,8 @@ def test_wasm_basic():
     #     }
     # }
 
-    model = Statements(
+    result = call_statements(
+        "float",
         [
             FunctionDefinition(
                 "fabs",
@@ -182,61 +164,188 @@ def test_wasm_basic():
                     [
                         If(
                             BinOp("<", Variable("x"), Float("0.0")),
-                            Statements([Return(Float("2.3"))]),
-                            Statements([Return(Float("2.3"))]),
+                            Statements([Return(Float("-1.0"))]),
+                            Statements([Return(Float("1.0"))]),
                         ),
+                        Return(Float("7.7")),
+                    ]
+                ),
+            ),
+            FunctionCall("fabs", Float("-3.2")),
+        ],
+    )
+    assert result == -1.0
+    #
+    result = call_statements(
+        "float",
+        [
+            FunctionDefinition(
+                "fabs",
+                Arguments(Argument("x", "float")),
+                "float",
+                Statements(
+                    [
+                        If(
+                            BinOp("<", Variable("x"), Float("0.0")),
+                            Statements([Return(Float("-1.0"))]),
+                            Statements([Return(Float("1.0"))]),
+                        ),
+                        Return(Float("7.7")),
                     ]
                 ),
             ),
             FunctionCall("fabs", Float("3.2")),
-        ]
+        ],
     )
+    assert result == 1.0
 
-    mod = generate_program(model)
+    # var x = 0
+    # while true {
+    #     if x > 10 {
+    #        break
+    #     }
+    #     x = x + 1
+    # }
 
-    wasm_bytes = encode_module(mod.module)
-    instance = Instance(wasm_bytes)
 
-    result = instance.exports.main()
-    assert result == 17 * 2
+def test_while():
+    result = call_statements(
+        "int",
+        [
+            Var("x", None, Integer(0)),
+            While(
+                Truthy(),
+                Statements(
+                    [
+                        If(BinOp(">", Variable("x"), Integer(10)), Break()),
+                        Assignment(
+                            Variable("x"), BinOp("+", Variable("x"), Integer(1))
+                        ),
+                    ]
+                ),
+            ),
+            Return(Variable("x")),
+        ],
+    )
+    assert result == 11
 
 
-#     # func sqrt(x float) float {
-#     #     var guess = 1.0;
-#     #     var nextguess = 0.0;
-#     #     if x == 0.0 {
-#     #         return 0.0;
-#     #     }
-#     #     while true {
-#     #         nextguess = (guess + (x / guess)) / 2.0;
-#     # 	if (fabs(nextguess-guess)/guess) < 0.00000001 {
-#     # 	    break;
-#     #         }
-#     # 	guess = nextguess;
-#     #     }
-#     #     return guess;
-#     # }
-#     model = Statements(
-#         [
-#             If(
-#                 BinOp(">", Integer(2), Integer(4)),
-#                 Statements([Integer(1)]),
-#                 Statements([Integer(2)]),
-#             )
-#         ]
-#     )
+# def test_complex_func():
 
-#     mod = generate_program(model)
+#    # func fabs(x float) float {
+#    #     if x < 0.0 {
+#    #         return -x;
+#    #     } else {
+#    #         return x;
+#    #     }
+#    # }
 
-#     wasm_bytes = encode_module(mod.module)
-#     instance = Instance(wasm_bytes)
+#    result = call_statements(
+#        "float",
+#        [
+#            FunctionDefinition(
+#                "fabs",
+#                Arguments(Argument("x", "float")),
+#                "float",
+#                Statements(
+#                    [
+#                        If(
+#                            BinOp("<", Variable("x"), Float("0.0")),
+#                            Statements([Return(UnaryOp("-", Variable("x")))]),
+#                            Statements([Return(Variable("x"))]),
+#                        ),
+#                        Return(Float("7.7")),
+#                    ]
+#                ),
+#            ),
+#            # func sqrt(x float) float {
+#            #     var guess = 1.0;
+#            #     var nextguess = 0.0;
+#            #     if x == 0.0 {
+#            #           return 0.0;
+#            #     }
+#            #
+#            #     while true {
+#            #           nextguess = (guess + (x / guess)) / 2.0;
+#            # 	        if (fabs(nextguess-guess)/guess) < 0.00000001 {
+#            # 	                break;
+#            #           }
+#            # 	   guess = nextguess;
+#            #     }
+#            #
+#            #     return guess;
+#            # }
+#            FunctionDefinition(
+#                "sqrt",
+#                Arguments(Argument("x", "float")),
+#                "float",
+#                Statements(
+#                    [
+#                        Var("guess", None, Float("1.0")),
+#                        Var("nextguess", None, Float("0.0")),
+#                        If(
+#                            BinOp("==", Variable("x"), Float("0.0")),
+#                            Statements([Return(Float("0.0"))]),
+#                        ),
+#                        While(
+#                            Truthy(),
+#                            Statements(
+#                                [
+#                                    Assignment(
+#                                        Variable("nextguess"),
+#                                        BinOp(
+#                                            "/",
+#                                            BinOp(
+#                                                "+",
+#                                                Variable("guess"),
+#                                                BinOp(
+#                                                    "/",
+#                                                    Variable("x"),
+#                                                    Variable("guess"),
+#                                                ),
+#                                            ),
+#                                            Float("2.0"),
+#                                        ),
+#                                    ),
+#                                    If(
+#                                        BinOp(
+#                                            "<",
+#                                            BinOp(
+#                                                "/",
+#                                                FunctionCall(
+#                                                    "fabs",
+#                                                    BinOp(
+#                                                        "-",
+#                                                        Variable("nextguess"),
+#                                                        Variable("guess"),
+#                                                    ),
+#                                                ),
+#                                                Variable("guess"),
+#                                            ),
+#                                            Float("0.001"),
+#                                        ),
+#                                        Break(),
+#                                    ),
+#                                    Assignment(
+#                                        Variable("guess"), Variable("nextguess")
+#                                    ),
+#                                ]
+#                            ),
+#                        ),
+#                        Return(Variable("guess")),
+#                    ]
+#                ),
+#            ),
+#            FunctionCall("fabs", Float("9.0")),
+#        ],
+#    )
 
-#     result = instance.exports.main()
-#     assert result == 17 * 2
+#    assert result == 17 * 2
 
-# mod = generate_program(model)
-# # Write to a file
-# with open("out_runtime.wasm", "wb") as file:
-#     file.write(encode_module(mod))
-# assert encode_module(mod) == ""
+
+## mod = generate_program(model)
+## # Write to a file
+## with open("out_runtime.wasm", "wb") as file:
+##     file.write(encode_module(mod))
+## assert encode_module(mod) == ""
 
