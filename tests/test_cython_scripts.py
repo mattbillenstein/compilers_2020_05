@@ -37,8 +37,6 @@ class MockPrint:
 
 @pytest.mark.parametrize('fp', wabbit_files)
 def test_wabbits(fp):
-    if fp.endswith('mandel_loop.wb'):
-        pytest.skip('SKipping mandel loop because it takes a long time!')
     expected_file = fp.replace('.wb', '.out')
     with open(expected_file) as f:
         expected_out = f.read()
