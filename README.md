@@ -9,18 +9,28 @@ To build pyx for a file run the following:
 ```
 python -m wabbit.cyth path/to/wabbitfile.wb
 ```
+This will produce the `out.pyx` file containing the Cython code transpiled from the wabbit script.
+
 To compile the pyx, build the python extension by running the command
 
 ```
 python setup.py build_ext --inplace
 ```
-This will create an `out.pyx` (and `out.c`) file that will execute the wabbit script on import.
+This will build `out.c` and `out.pyd` files.
 
-A shortcut to running the compiled cython extension, just import it.
+A shortcut to running the compiled cython extension is to just import it from Python.
+The wabbit script will run. (if not, check if the wabbit script needs to call `main`)
 
 ```
 python -c "import out"
 ```
+
+You can run tests by running
+```
+python -m pytest tests\test_cython_scripts.py
+```
+This will transpile, build, and run all the script and, where applicable, compare the output to expected '.out' files.
+
 
 Note: Most underlying functions/classes are built using cython `cdef` declarations, 
 meaning they can only be used from Cython. However, if this was adjusted to use `cpdef` 
