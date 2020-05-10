@@ -50,7 +50,7 @@ class Environment(Scope):
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
 
-        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch\n")
+        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n")
 
     def get_scoped_cython_name(self, key):
         return f"cython_scoped_var_{id(self)}_{key}"
@@ -248,9 +248,16 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
             op = "or"
     else:
         raise ValueError(f"Unsupported op: {op}")
-    transpile(left, env)
-    env.writeline(f" {op} ")
-    transpile(right, env)
+    if op == '/':
+        env.writeline('wabbit_divide(')
+        transpile(left, env)
+        env.writeline(',')
+        transpile(right, env)
+        env.writeline(')')
+    else:
+        transpile(left, env)
+        env.writeline(f" {op} ")
+        transpile(right, env)
     return
 
 
@@ -628,7 +635,7 @@ def transpile_match_expression_node(match_expr_node, env):
     env.writeline('{')
     for case in match_expr_node.cases:
         env.writeline(f'{case.pattern.name}: lambda')
-        if case.pattern.type:
+        if case.pattern.type and case.pattern.type != '_':
             transpile(Identifier(name=case.pattern.type), env)
         else:
             env.writeline('_')

@@ -43,3 +43,13 @@ cdef inline wabbitprint(s):
 
 cdef inline wabbitmatch(enum, patterns):
     return patterns.get(enum.choice)(enum.value)
+
+cdef inline wabbit_divide(a, b):
+    if isinstance(a, int) and isinstance(b, int):
+        return <int>(a / b)
+
+    elif isinstance(a, float) or isinstance(b, float):
+        return a / b
+    else:
+        raise RuntimeError(f'Cannot divide objects of type "{type(a)}" and "{type(b)}"')
+
