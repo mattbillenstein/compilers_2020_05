@@ -335,7 +335,7 @@ class Clause(Node):
     """
 
     def __init__(self, *statements):
-        super().__init__(statements=tuple(statements))
+        super().__init__(statements=list(statements))
         for stmt in self.statements:
             assert isinstance(stmt, Statement), f"{stmt} is not a statement"
 
