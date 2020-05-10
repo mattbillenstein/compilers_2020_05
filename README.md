@@ -1,5 +1,32 @@
 # Write a Compiler : May 4-8, 2020
 
+# Cython notes
+
+I ended up writing my transpiler to target Cython rather than C or WASM.
+
+To build pyx for a file run the following:
+
+```
+python -m wabbit.cyth path/to/wabbitfile.wb
+```
+To compile the pyx, build the python extension by running the command
+
+```
+python setup.py build_ext --inplace
+```
+This will create an `out.pyx` (and `out.c`) file that will execute the wabbit script on import.
+
+A shortcut to running the compiled cython extension, just import it.
+
+```
+python -c "import out"
+```
+
+Note: Most underlying functions/classes are built using cython `cdef` declarations, 
+meaning they can only be used from Cython. However, if this was adjusted to use `cpdef` 
+you could, in theory, leverage wabbit-defined functions from Python via the Cython extension 
+with some performance implications.
+
 Hello! This is the course project repo for the "Write a Compiler"
 course.  This project will serve as the central point of discussion, code
 sharing, debugging, and other matters related to the compiler project.
