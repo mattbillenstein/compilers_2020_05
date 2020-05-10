@@ -1,31 +1,15 @@
 import io
-import os
-from functools import singledispatch
-
+import sys
 from functools import singledispatch
 from .model import *
-import operator
-import logging
-import ast
 from collections import UserDict
 from collections import deque
 from contextlib import contextmanager
-from typing import NamedTuple
-from collections import namedtuple
-from typing import TypeVar
-import sys
-from recordclass import recordclass
-import jinja2
+import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
-from tempfile import tempdir
-
-# Top level function that interprets an entire program. It creates the
-# initial environment that's used for storing variables.
-# logging.basicConfig(level=logging.DEBUG)
-
 
 class Scope(UserDict):
     def __init__(self, *args, **kwargs):
@@ -86,8 +70,8 @@ class Environment(Scope):
                 return scope
 
     def _child_env(self, for_function=False):
-        logger.debug("Creating child env")
         new_env = Scope()
+        logger.debug(f"Creating child env with id {id(new_env)}")
         if for_function:
             logger.debug(
                 f"Creating child env for function. Incrementing call stack from {self._in_function} to"
@@ -253,17 +237,7 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
     op = binop_node.op
     left = binop_node.left
     right = binop_node.right
-    # if type(left) not in (Identifier, CharacterLiteral, Float, Integer):
-    #     logger.debug(f"Left BinOp arg was not a known literal was {type(left)}")
-    #     left = transpile(left, env)
-    # if type(right) not in (Identifier, CharacterLiteral, Float, Integer):
-    #     logger.debug(f"Right BinOp arg was not a known literal was {type(right)}")
-    #     right = transpile(left, env)
 
-    # if isinstance(left, Identifier):
-    #     left = env.retrieve_scoped_name_from_node(left)
-    # if isinstance(right, Identifier):
-    #     right = env.retrieve_scoped_name_from_node(right)
 
     if op in ("+", "-", "*", "/", "<", "<=", ">=", ">", "==", "!=",):
         op = op
@@ -277,7 +251,6 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
     transpile(left, env)
     env.writeline(f" {op} ")
     transpile(right, env)
-    # env.writeline(f'{left} {op} {right}')
     return
 
 
@@ -306,6 +279,8 @@ def infer_type(obj):
             return "bint"
         if obj == "int":
             return "int"
+        if obj == 'float':
+            return 'double'
         logger.debug(f"Can't infer type of str {obj} -- assuming it's a defined wabbit type")
         return obj
 
@@ -509,12 +484,15 @@ def transpile_return_statement(return_statement_node, env):
     return_expr = return_statement_node.expression
     env.writeline(f"return ")
     transpile(return_expr, env)
+    env.writeline('\n')
 
 
 @transpile.register(Parameter)
 def transpile_param_node(param_node, env):
     type_ = infer_type(param_node.type)
-    env.writeline(f"{type_} {param_node.name}")
+    scope = env.get_lookup_scope(param_node.name)
+    varname = scope.get_scoped_cython_name(param_node.name)
+    env.writeline(f"{type_} {varname}")
 
 
 @transpile.register(FunctionDefinition)
@@ -525,6 +503,7 @@ def transpile_function_definition_node(func_def_node: FunctionDefinition, env):
     env.writeline(f"cdef {type_} {name}(")
     num_params = len(func_def_node.parameters)
     for index, param in enumerate(func_def_node.parameters, start=1):
+        env.declare(param.name, None, None, param)
         transpile(param, env)
         if index < num_params:
             env.writeline(", ")
@@ -539,10 +518,18 @@ def transpile_function_definition_node(func_def_node: FunctionDefinition, env):
 @transpile.register(StructDefinition)
 def transpile_struct_definition_node(struct_def_node, env):
     name = struct_def_node.name
-    env.writeline(f"cdef struct {name}:\n")
+    env.writeline(f"cdef class {name}:\n")
     env.scope_level += 1
     for field in struct_def_node.fields:
         transpile(field, env)
+    env.writeline('def __init__(self')
+    for field in struct_def_node.fields:
+        env.writeline(f', {field.name}')
+    env.writeline('):\n')
+    env.scope_level += 1
+    for field in struct_def_node.fields:
+        env.writeline(f'self.{field.name} = {field.name}\n')
+    env.scope_level -= 1
     env.scope_level -= 1
     env.writeline("\n")
 
@@ -552,7 +539,7 @@ def transpile_struct_field_node(struct_field_node, env):
     name = struct_field_node.name
     type_ = struct_field_node.type
     ctype = infer_type(type_)
-    env.writeline(f"{ctype} {name}\n")
+    env.writeline(f"cdef public {ctype} {name}\n")
 
 
 @transpile.register(FunctionOrStructCall)
@@ -564,13 +551,11 @@ def transpile_function_call_node(function_or_struct_call_node, env):
         is_func = True
     else:
         is_func = False
-    with env.child_env(for_function=True):
+    with env.child_env(for_function=is_func):
 
         env.writeline(f"{name}(")
         num_args = len(function_or_struct_call_node.arguments)
         for index, arg in enumerate(function_or_struct_call_node.arguments, start=0):
-            if hasattr(arg, "name"):
-                env.declare(arg.name, None, None, arg)
             transpile(arg, env)
             if index < num_args - 1:
                 env.writeline(", ")
