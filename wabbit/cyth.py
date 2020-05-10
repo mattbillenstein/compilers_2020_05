@@ -39,7 +39,7 @@ class Scope(UserDict):
         super().__init__(*args, **kwargs)
 
     def get_scoped_cython_name(self, key):
-        return f"cython_scoped_var_{id(self)}_{key}"
+        return f"wabbit_scoped_var_{id(self)}_{key}"
 
     def declare(self, key, value, type_, node=None):
         logger.debug(f"Declating {key} {value} {type_}")
@@ -61,8 +61,6 @@ class Environment(Scope):
         super().__init__(*args, **kwargs)
         self._scopes = deque()
         self._scopes.append(self)
-        self._const_registry = {}
-        self._enum_registry = {}
         self._in_function = 0  # how many nested call stacks we're in
         self._is_function_scope = False
         self.scope_level = 0
@@ -71,10 +69,12 @@ class Environment(Scope):
         self.defered = deque()
         self.executing_deferred = False
 
-        self.outfile.write(f"from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n{UNIT_CYTHON_DEF}")
+        self.outfile.write(
+            f"from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n{UNIT_CYTHON_DEF}"
+        )
 
     def get_scoped_cython_name(self, key):
-        return f"cython_scoped_var_{id(self)}_{key}"
+        return f"wabbit_scoped_var_{id(self)}_{key}"
 
     def _outfile(self):
         with open(self.outfilename, "w") as f:
@@ -182,7 +182,7 @@ class Environment(Scope):
         raise KeyError(item)
 
     def globals(self):
-        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key,value in self.items()}
+        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key, value in self.items()}
 
     def locals(self):
         locals_ = Scope()
@@ -192,7 +192,7 @@ class Environment(Scope):
             if scope._is_function_scope and not scope is self._closest_function_scope:
                 break
             locals_.update(scope)
-        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key,value in  locals_.items()}
+        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key, value in locals_.items()}
 
     def __repr__(self):
         return "".join(repr(scope) for scope in list(self._scopes)[:-1]) + super().__repr__()
@@ -261,12 +261,12 @@ def transpile_program_node(program_node: Program, env: Environment):
         transpile(node, env)
         env.executing_deferred = False
 
+
 @transpile.register(BinOp)
 def transpile_binop_node(binop_node: BinOp, env: Environment):
     op = binop_node.op
     left = binop_node.left
     right = binop_node.right
-
 
     if op in ("+", "-", "*", "/", "<", "<=", ">=", ">", "==", "!=",):
         op = op
@@ -277,12 +277,12 @@ def transpile_binop_node(binop_node: BinOp, env: Environment):
             op = "or"
     else:
         raise ValueError(f"Unsupported op: {op}")
-    if op == '/':
-        env.writeline('wabbit_divide(')
+    if op == "/":
+        env.writeline("wabbit_divide(")
         transpile(left, env)
-        env.writeline(',')
+        env.writeline(",")
         transpile(right, env)
-        env.writeline(')')
+        env.writeline(")")
     else:
         transpile(left, env)
         env.writeline(f" {op} ")
@@ -315,10 +315,10 @@ def infer_type(obj):
             return "bint"
         if obj == "int":
             return "int"
-        if obj == 'float':
-            return 'double'
-        if obj == 'unit':
-            return 'WabbitUnit'
+        if obj == "float":
+            return "double"
+        if obj == "unit":
+            return "WabbitUnit"
         logger.debug(f"Can't infer type of str {obj} -- assuming it's a defined wabbit type")
         return obj
 
@@ -392,18 +392,6 @@ def transpile_const_definition(const_def_node: ConstDefinition, env: Environment
         env.writeline(" = ")
         transpile(value_expr, env)
     env.writeline("\n")
-
-    # type_ = const_def_node.type
-    # name = const_def_node.name
-    # value = const_def_node.value
-    # if value is not None:
-    #     value = transpile(value, env)  # I think
-    #
-    # if type_ is None and value is not None:
-    #     type_ = infer_type(const_def_node.value)
-    # if type_  and len(value) == 1:
-    #     value = repr(value)
-    # env.write_template('const_definition.jinja2', type=type_, name=name, value=value)
 
 
 @transpile.register(PrintStatement)
@@ -484,7 +472,7 @@ def transpile_clause_node(clause_node, env: Environment):
 @transpile.register(WhileLoop)
 def transpile_while_loop_node(while_loop_node: WhileLoop, env: Environment):
     env.writeline("while ")
-    cond_str = transpile(while_loop_node.condition, env)
+    transpile(while_loop_node.condition, env)
     env.writeline(":\n")
     env.scope_level += 1
     transpile(while_loop_node.body, env)
@@ -496,7 +484,7 @@ def transpile_while_loop_node(while_loop_node: WhileLoop, env: Environment):
 @transpile.register(ExpressionStatement)
 def transpile_expression_statement_node(expression_statement_node, env):
     transpile(expression_statement_node.expression, env)
-    env.writeline('\n')
+    env.writeline("\n")
 
 
 @transpile.register(UnaryOp)
@@ -532,7 +520,7 @@ def transpile_return_statement(return_statement_node, env):
     return_expr = return_statement_node.expression
     env.writeline(f"return ")
     transpile(return_expr, env)
-    env.writeline('\n')
+    env.writeline("\n")
 
 
 @transpile.register(Parameter)
@@ -570,13 +558,13 @@ def transpile_struct_definition_node(struct_def_node, env):
     env.scope_level += 1
     for field in struct_def_node.fields:
         transpile(field, env)
-    env.writeline('def __init__(self')
+    env.writeline("def __init__(self")
     for field in struct_def_node.fields:
-        env.writeline(f', {field.name}')
-    env.writeline('):\n')
+        env.writeline(f", {field.name}")
+    env.writeline("):\n")
     env.scope_level += 1
     for field in struct_def_node.fields:
-        env.writeline(f'self.{field.name} = {field.name}\n')
+        env.writeline(f"self.{field.name} = {field.name}\n")
     env.scope_level -= 1
     env.scope_level -= 1
     env.writeline("\n")
@@ -622,89 +610,84 @@ def transpile_struct_field_lookup_node(field_lookup_node, env):
 def transprile_enum_definition_node(enum_def_node, env):
     name = enum_def_node.name
     choice_enum_name = f"{name}_Wabbit_Choice"
-    env.writeline(f'cdef enum {choice_enum_name}:\n')
+    env.writeline(f"cdef enum {choice_enum_name}:\n")
     env.scope_level += 1
-    env.writeline(','.join(choice.name for choice in enum_def_node.enum_choices))
-    env.writeline('\n')
+    env.writeline(",".join(choice.name for choice in enum_def_node.enum_choices))
+    env.writeline("\n")
     env.scope_level -= 1
 
-    env.writeline(f'cdef class {name}:\n')
+    env.writeline(f"cdef class {name}:\n")
     env.scope_level += 1
-    env.writeline(f'cdef public {choice_enum_name} choice\n')
-    env.writeline('cdef public object value\n')
-    env.writeline(f'def __init__(self, {choice_enum_name} choice, value=None):\n')
+    env.writeline(f"cdef public {choice_enum_name} choice\n")
+    env.writeline("cdef public object value\n")
+    env.writeline(f"def __init__(self, {choice_enum_name} choice, value=None):\n")
     env.scope_level += 1
-    env.writeline('self.choice = choice\n')
-    env.writeline('self.value = value\n')
+    env.writeline("self.choice = choice\n")
+    env.writeline("self.value = value\n")
     env.scope_level -= 2
-    env.writeline('\n')
+    env.writeline("\n")
 
-# @transpile.register(EnumChoice)
-# def transpile_enum_choice_node(enum_choice_node, env):
-#     name = enum_choice_node.name
-#     type_ = enum_choice_node.type
-#     if type_:
-#         type_ = infer_type(type_)
-#     env.writeline(name)
-#     if type_:
-#         env.writeline('cdef public ')
 
 @transpile.register(EnumLookup)
 def transpile_enum_lookup_node(enum_lookup_node, env):
-    #transpile(enum_lookup_node.enum_location, env)
     env.writeline(enum_lookup_node.enum_location.name)  # < -- feelsbadman
-    env.writeline(f'({enum_lookup_node.choice_name}')
+    env.writeline(f"({enum_lookup_node.choice_name}")
     if enum_lookup_node.value_expression:
-        env.writeline(',')
+        env.writeline(",")
         transpile(enum_lookup_node.value_expression, env)
-    env.writeline(')')
+    env.writeline(")")
 
 
 @transpile.register(MatchExpression)
 def transpile_match_expression_node(match_expr_node, env):
 
     default = None
-    # # env['IN_MATCH_EXPR'] = match_expr_node.expression
-    # for case in match_expr_node.cases:
-    #     if case.pattern.type:
-    #         #  hack to make match case names available in dict setup
-    #         env.writeline(f'{case.pattern.type} = ')
-    # transpile(VariableDefinition(name='WABBIT_MATCH_EXPR_HOLDER', type=None, value=FieldLookup(match_expr_node.expression, fieldname='value')), env)
-    env.writeline('wabbitmatch(')
+    env.writeline("wabbitmatch(")
     transpile(match_expr_node.expression, env)
-    env.writeline(',')
-    env.writeline('{')
+    env.writeline(",")
+    env.writeline("{")
     for case in match_expr_node.cases:
-        env.writeline(f'{case.pattern.name}: lambda')
-        if case.pattern.type and case.pattern.type != '_':
+        env.writeline(f"{case.pattern.name}: lambda")
+        if case.pattern.type and case.pattern.type != "_":
             transpile(Identifier(name=case.pattern.type), env)
         else:
-            env.writeline('_')
-        env.writeline(':')
+            env.writeline("_")
+        env.writeline(":")
         transpile(case.consequent, env)
-        env.writeline(',\n')
-        if case.pattern.name == '_':
+        env.writeline(",\n")
+        if case.pattern.name == "_":
             default = case.expression
-    env.writeline('})')
+    env.writeline("})")
+
 
 class GlobalStatement(Statement):
+    """
+    While not part of the wabbit model,
+    this statement is "injected" into the
+    program to help with compound statements
+    """
+
     def __init__(self, name):
         self.name = name
 
+
 @transpile.register(GlobalStatement)
 def transpile_global_statement(global_statement_node, env):
-    env.writeline(f'global {global_statement_node.name}\n')
+    env.writeline(f"global {global_statement_node.name}\n")
+
 
 @transpile.register(CompoundExpr)
 def transpile_compound_expr(compound_expr_node, env):
     node_id = id(compound_expr_node)
-    env.writeline(f'wabbit_compound_{node_id}()')
+    env.writeline(f"wabbit_compound_{node_id}()")
     globalstatements = [GlobalStatement(name) for name in list(env.locals()) + list(env.globals())]
     compound_expr_node.clause.statements = globalstatements + compound_expr_node.clause.statements
     rtrn_statement = compound_expr_node.clause.statements.pop()
     rtrn_statement = ReturnStatement(expression=rtrn_statement)
     compound_expr_node.clause.statements.append(rtrn_statement)
-    expr_func = FunctionDefinition(name=f'wabbit_compound_{node_id}', parameters=None, rtype='object', body=compound_expr_node.clause)
+    expr_func = FunctionDefinition(
+        name=f"wabbit_compound_{node_id}", parameters=None, rtype="object", body=compound_expr_node.clause
+    )
     compound_expr_node.clause.is_function_clause = True  # avoid creation of scope
     expr_func.is_deferred = True
     env.defer_to_end_of_scope(expr_func)
@@ -720,7 +703,7 @@ def transpile_grouping_node(group_node, env):
 
 @transpile.register(Unit)
 def transpile_unit_node(unit_node, env):
-    env.writeline('WabbitUnit()')
+    env.writeline("WabbitUnit()")
 
 
 @transpile.register(Bool)
@@ -728,10 +711,7 @@ def transpile_bool_node(bool_node, env):
     env.writeline(str(bool_node.value))
 
 
-
-
 if __name__ == "__main__":
-    # logging.basicConfig(level=logging.DEBUG)
     print("-" * 80)
     import sys
     from .parse import parse_file
