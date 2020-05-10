@@ -24,8 +24,10 @@ cdef inline wabbitprint(s):
         printbool(s)
     elif isinstance(s, int):
         printint(s)
-    else:
+    elif isinstance(s, str):
         printchar(s)
+    else:
+        print(s)
 
 #
 # cdef extern from *:

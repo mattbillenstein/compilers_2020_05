@@ -11,6 +11,25 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+UNIT_CYTHON_DEF = """
+cdef class WabbitUnit:
+    def __bool__(self):
+        return False
+
+    def __hash__(self):
+        return hash(None)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __repr__(self):
+        return 'WabbitUnit()'
+
+    def __str__(self):
+        return '()'
+"""
+
+
 class Scope(UserDict):
     def __init__(self, *args, **kwargs):
         if "env" in kwargs:
@@ -52,7 +71,7 @@ class Environment(Scope):
         self.defered = deque()
         self.executing_deferred = False
 
-        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n")
+        self.outfile.write(f"from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n{UNIT_CYTHON_DEF}")
 
     def get_scoped_cython_name(self, key):
         return f"cython_scoped_var_{id(self)}_{key}"
@@ -298,6 +317,8 @@ def infer_type(obj):
             return "int"
         if obj == 'float':
             return 'double'
+        if obj == 'unit':
+            return 'WabbitUnit'
         logger.debug(f"Can't infer type of str {obj} -- assuming it's a defined wabbit type")
         return obj
 
@@ -699,7 +720,7 @@ def transpile_grouping_node(group_node, env):
 
 @transpile.register(Unit)
 def transpile_unit_node(unit_node, env):
-    raise NotImplementedError(locals())
+    env.writeline('WabbitUnit()')
 
 
 @transpile.register(Bool)
