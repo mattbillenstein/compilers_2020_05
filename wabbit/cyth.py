@@ -49,6 +49,8 @@ class Environment(Scope):
         self.scope_level = 0
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
+        self.defered = deque()
+        self.executing_deferred = False
 
         self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch, wabbit_divide\n")
 
@@ -161,7 +163,7 @@ class Environment(Scope):
         raise KeyError(item)
 
     def globals(self):
-        return Scope(self.items())
+        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key,value in self.items()}
 
     def locals(self):
         locals_ = Scope()
@@ -171,7 +173,7 @@ class Environment(Scope):
             if scope._is_function_scope and not scope is self._closest_function_scope:
                 break
             locals_.update(scope)
-        return locals_
+        return {self.get_lookup_scope(key).get_scoped_cython_name(key): value for key,value in  locals_.items()}
 
     def __repr__(self):
         return "".join(repr(scope) for scope in list(self._scopes)[:-1]) + super().__repr__()
@@ -196,6 +198,9 @@ class Environment(Scope):
             name = node.name
             scope = self.get_lookup_scope(name)
             return scope.get_scoped_cython_name(name)
+
+    def defer_to_end_of_scope(self, node):
+        self.defered.append(node)
 
 
 class BreakEncountered(RuntimeError):
@@ -230,7 +235,12 @@ def transpile(node, env):
 def transpile_program_node(program_node: Program, env: Environment):
     for statement in program_node.statements:
         transpile(statement, env)
-
+    while env.defered:
+        env.executing_deferred = True
+        node = env.defered.popleft()
+        logger.debug(f"Evaluating deferred node: {repr(node)}")
+        transpile(node, env)
+        env.executing_deferred = False
 
 @transpile.register(BinOp)
 def transpile_binop_node(binop_node: BinOp, env: Environment):
@@ -427,18 +437,27 @@ def transpile_clause_node(clause_node, env: Environment):
         retval = None
         for statement in clause_node.statements:
             retval = transpile(statement, env)
+        if not env.executing_deferred:
+            while env.defered:
+                env.executing_deferred = True
+                node = env.defered.popleft()
+                logger.debug(f"Evaluating deferred node: {repr(node)}")
+                transpile(node, env)
+                env.executing_deferred = False
         return retval  # Most callers won't need this, but Compound Expressions do need the last thing
     logger.debug("Closest scope was not function scope, creating new one!")
     with env.child_env():
         retval = None
         for statement in clause_node.statements:
             retval = transpile(statement, env)
+        if not env.executing_deferred:
+            while env.defered:
+                env.executing_deferred = True
+                node = env.defered.popleft()
+                logger.debug(f"Evaluating deferred node: {repr(node)}")
+                transpile(node, env)
+                env.executing_deferred = False
         return retval  # Most callers won't need this, but Compound Expressions do need the last thing
-    # env.writeline('#start clause\n')
-    # for statement in clause_node.statements:
-    #     logger.debug(f"Writing clause statement: {repr(statement)}")
-    #     transpile(statement, env)
-    # env.writeline('#end clause\n')
 
 
 @transpile.register(WhileLoop)
@@ -455,7 +474,8 @@ def transpile_while_loop_node(while_loop_node: WhileLoop, env: Environment):
 
 @transpile.register(ExpressionStatement)
 def transpile_expression_statement_node(expression_statement_node, env):
-    return transpile(expression_statement_node.expression, env)
+    transpile(expression_statement_node.expression, env)
+    env.writeline('\n')
 
 
 @transpile.register(UnaryOp)
@@ -646,11 +666,27 @@ def transpile_match_expression_node(match_expr_node, env):
             default = case.expression
     env.writeline('})')
 
+class GlobalStatement(Statement):
+    def __init__(self, name):
+        self.name = name
 
+@transpile.register(GlobalStatement)
+def transpile_global_statement(global_statement_node, env):
+    env.writeline(f'global {global_statement_node.name}\n')
 
 @transpile.register(CompoundExpr)
 def transpile_compound_expr(compound_expr_node, env):
-    transpile(compound_expr_node.clause, env)
+    node_id = id(compound_expr_node)
+    env.writeline(f'wabbit_compound_{node_id}()')
+    globalstatements = [GlobalStatement(name) for name in list(env.locals()) + list(env.globals())]
+    compound_expr_node.clause.statements = globalstatements + compound_expr_node.clause.statements
+    rtrn_statement = compound_expr_node.clause.statements.pop()
+    rtrn_statement = ReturnStatement(expression=rtrn_statement)
+    compound_expr_node.clause.statements.append(rtrn_statement)
+    expr_func = FunctionDefinition(name=f'wabbit_compound_{node_id}', parameters=None, rtype='object', body=compound_expr_node.clause)
+    compound_expr_node.clause.is_function_clause = True  # avoid creation of scope
+    expr_func.is_deferred = True
+    env.defer_to_end_of_scope(expr_func)
 
 
 @transpile.register(Grouping)
