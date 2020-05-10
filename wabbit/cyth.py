@@ -50,7 +50,7 @@ class Environment(Scope):
         self.__outfilegen = self._outfile()  # avoid closing the file when init ends
         self.outfile = io.StringIO()
 
-        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint\n")
+        self.outfile.write("from __future__ import print_function\nfrom cyth_boilerplate cimport wabbitprint, wabbitmatch\n")
 
     def get_scoped_cython_name(self, key):
         return f"cython_scoped_var_{id(self)}_{key}"
@@ -570,9 +570,75 @@ def transpile_struct_field_lookup_node(field_lookup_node, env):
     env.writeline(field_lookup_node.fieldname)
 
 
+@transpile.register(EnumDefinition)
+def transprile_enum_definition_node(enum_def_node, env):
+    name = enum_def_node.name
+    choice_enum_name = f"{name}_Wabbit_Choice"
+    env.writeline(f'cdef enum {choice_enum_name}:\n')
+    env.scope_level += 1
+    env.writeline(','.join(choice.name for choice in enum_def_node.enum_choices))
+    env.writeline('\n')
+    env.scope_level -= 1
+
+    env.writeline(f'cdef class {name}:\n')
+    env.scope_level += 1
+    env.writeline(f'cdef public {choice_enum_name} choice\n')
+    env.writeline('cdef public object value\n')
+    env.writeline(f'def __init__(self, {choice_enum_name} choice, value=None):\n')
+    env.scope_level += 1
+    env.writeline('self.choice = choice\n')
+    env.writeline('self.value = value\n')
+    env.scope_level -= 2
+    env.writeline('\n')
+
+# @transpile.register(EnumChoice)
+# def transpile_enum_choice_node(enum_choice_node, env):
+#     name = enum_choice_node.name
+#     type_ = enum_choice_node.type
+#     if type_:
+#         type_ = infer_type(type_)
+#     env.writeline(name)
+#     if type_:
+#         env.writeline('cdef public ')
+
 @transpile.register(EnumLookup)
 def transpile_enum_lookup_node(enum_lookup_node, env):
-    raise NotImplementedError(locals())
+    #transpile(enum_lookup_node.enum_location, env)
+    env.writeline(enum_lookup_node.enum_location.name)  # < -- feelsbadman
+    env.writeline(f'({enum_lookup_node.choice_name}')
+    if enum_lookup_node.value_expression:
+        env.writeline(',')
+        transpile(enum_lookup_node.value_expression, env)
+    env.writeline(')')
+
+
+@transpile.register(MatchExpression)
+def transpile_match_expression_node(match_expr_node, env):
+
+    default = None
+    # # env['IN_MATCH_EXPR'] = match_expr_node.expression
+    # for case in match_expr_node.cases:
+    #     if case.pattern.type:
+    #         #  hack to make match case names available in dict setup
+    #         env.writeline(f'{case.pattern.type} = ')
+    # transpile(VariableDefinition(name='WABBIT_MATCH_EXPR_HOLDER', type=None, value=FieldLookup(match_expr_node.expression, fieldname='value')), env)
+    env.writeline('wabbitmatch(')
+    transpile(match_expr_node.expression, env)
+    env.writeline(',')
+    env.writeline('{')
+    for case in match_expr_node.cases:
+        env.writeline(f'{case.pattern.name}: lambda')
+        if case.pattern.type:
+            transpile(Identifier(name=case.pattern.type), env)
+        else:
+            env.writeline('_')
+        env.writeline(':')
+        transpile(case.consequent, env)
+        env.writeline(',\n')
+        if case.pattern.name == '_':
+            default = case.expression
+    env.writeline('})')
+
 
 
 @transpile.register(CompoundExpr)
@@ -598,9 +664,6 @@ def transpile_bool_node(bool_node, env):
     env.writeline(str(bool_node.value))
 
 
-@transpile.register(MatchExpression)
-def transpile_match_expression_node(match_expr_node, env):
-    raise NotImplementedError(locals())
 
 
 if __name__ == "__main__":

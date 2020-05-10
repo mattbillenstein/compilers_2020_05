@@ -16,6 +16,17 @@ cdef inline int printbool(bint b):
     else:
         print("false")
 
+
+cdef inline wabbitprint(s):
+    if isinstance(s, float):
+        printdouble(s)
+    elif isinstance(s, bool):
+        printbool(s)
+    elif isinstance(s, int):
+        printint(s)
+    else:
+        printchar(s)
+
 #
 # cdef extern from *:
 #     """
@@ -30,13 +41,5 @@ cdef inline int printbool(bint b):
 #                            )(X)                  \\
 #     """
 
-
-cdef inline wabbitprint(s):
-    if isinstance(s, float):
-        printdouble(s)
-    elif isinstance(s, bool):
-        printbool(s)
-    elif isinstance(s, int):
-        printint(s)
-    else:
-        printchar(s)
+cdef inline wabbitmatch(enum, patterns):
+    return patterns.get(enum.choice)(enum.value)
