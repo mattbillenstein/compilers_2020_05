@@ -59,7 +59,7 @@ IO_OUT = 65535
 MASK = 0xffffffff
 
 class Metal:
-    def run(self, instructions):
+    def run(self, instructions, debug=False):
         '''
         Run a program. memory is a Python list containing the program
         instructions and other data.  Upon startup, all registers
@@ -74,11 +74,18 @@ class Metal:
         self.running = True
         while self.running:
             op, *args = self.instructions[self.registers['PC']]
-            # Uncomment to debug what's happening
-            # print(self.registers['PC'], op, args)
+            old_pc = self.registers['PC']
             self.registers['PC'] += 1
             getattr(self, op)(*args)
             self.registers['R0'] = 0    # R0 is always 0 (even if you change it)
+
+            if debug:
+                print(old_pc, op, args)
+                s = 'PC:%s ' + ' '.join(f'R{_}:%s' for _ in range(8))
+                args = tuple([self.registers['PC']] + [self.registers[f'R{_}'] for _ in range(8)])
+                print(s % args)
+                print('STACK:', self.memory[self.registers['R7']:len(self.memory)-1])
+                input()
         return
 
     def ADD(self, ra, rb, rd):
@@ -135,6 +142,25 @@ class Metal:
 
 # =============================================================================
 
+def unlabel(prog):
+    labels = {}
+    pc = 0
+    for instr in prog:
+        if instr[0] == 'LABEL':
+            labels[instr[1]] = pc
+        else:
+            pc += 1
+
+    prog = [_ for _ in prog if _[0] != 'LABEL']
+    for i, instr in enumerate(prog):
+        if instr[0] == 'BZ' and instr[2] in labels:
+            # use relative offset
+            prog[i] = ('BZ', instr[1], labels[instr[2]] - i - 1)
+        else:
+            prog[i] = tuple(labels.get(_, _) for _ in instr)
+
+    return prog
+
 if __name__ == '__main__':        
     machine = Metal()
 
@@ -146,15 +172,17 @@ if __name__ == '__main__':
     # and print out the result.
     # 
 
-    prog1 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 4, 'R2'),
-              # More instructions here
-              # ...
-              # Print the result.  Change R1 to location of result.
-              ('STORE', 'R1', 'R0', IO_OUT),    
-              ('HALT',),
-              ]
+    prog1 = [
+        ('CONST', 3, 'R1'),
+        ('CONST', 4, 'R2'),
+        ('CONST', 5, 'R3'),
+        ('ADD', 'R1', 'R2', 'R4'),
+        ('SUB', 'R4', 'R3', 'R1'),
+
+        # Print the result.  Change R1 to location of result.
+        ('STORE', 'R1', 'R0', IO_OUT),
+        ('HALT',),
+    ]
 
     print("PROGRAM 1::: Expected Output: 2")
     machine.run(prog1)
@@ -169,14 +197,20 @@ if __name__ == '__main__':
     # to figure out how to do it.  Hint:  You can use one of the values
     # as a counter. 
 
-    prog2 = [ # Instructions here
-              ('CONST', 3, 'R1'),
-              ('CONST', 7, 'R2'),
-              # ...
-              # Print result. Change R1 to location of result
-              ('STORE', 'R1', 'R0', IO_OUT),
-              ('HALT',),
-            ]
+    prog2 = [
+        ('CONST', 3, 'R1'),
+        ('CONST', 7, 'R2'),
+
+        ('CONST', 0, 'R3'),           # our accumulator
+        ('ADD', 'R2', 'R3', 'R3'),    # add 7
+        ('DEC', 'R1'),                # decrement count
+        ('BZ', 'R1', 1),              # jump over the next jump if count is zero
+        ('JMP', 'R0', 3),             # jump to 3
+
+        # Print result. Change R1 to location of result
+        ('STORE', 'R3', 'R0', IO_OUT),
+        ('HALT',),
+    ]
 
     print("PROGRAM 2::: Expected Output: 21")
     machine.run(prog2)
@@ -208,19 +242,25 @@ if __name__ == '__main__':
     # would the branching/jump statements work?  
 
     prog3 = [
-        ('CONST', 5, 'R1'),       # n = 5
+        # n = 5
         # result = 1
         # while n > 0:
         #     result = mul(result,  n)
         #     n -= 1
 
-        #
-        # ... instructions here
-        # 
-
-        # print(result)
-        ('STORE', 'R2', 'R0', IO_OUT),   # R2 Holds the Result
-        ('HALT',),
+        ('CONST', 5, 'R4'),                         # n = 5
+        ('CONST', 1, 'R5'),                         # result = 1
+        ('LABEL', 'main_loop'),
+        ('BZ', 'R4', 'print'),                      # jump to print
+        ('CONST', 'main_loop_end', 'R6'),           # return address
+        ('STORE', 'R6', 'R7', 0), ('DEC', 'R7'),    # push return address
+        ('STORE', 'R5', 'R7', 0), ('DEC', 'R7'),    # push result
+        ('STORE', 'R4', 'R7', 0), ('DEC', 'R7'),    # push n
+        ('JMP', 'R0', 'mul'),                       # call multiply
+        ('LABEL', 'main_loop_end'),
+        ('DEC', 'R4'),                              # n--
+        ('INC', 'R7'), ('LOAD', 'R7', 'R5', 0),     # pop result from stack
+        ('JMP', 'R0', 'main_loop'),                 # repeat
 
         # ----------------------------------
         # ; mul(x, y) -> x * y
@@ -231,12 +271,31 @@ if __name__ == '__main__':
         #            result += y
         #            x -= 1
         #        return result
-        #
-        # ... instructions here
+
+        # acc in R3, args in R1, R2
+        ('LABEL', 'mul'),
+        ('CONST', 0, 'R3'),                         # clear accumulator
+        ('INC', 'R7'), ('LOAD', 'R7', 'R1', 0),     # pop first arg
+        ('INC', 'R7'), ('LOAD', 'R7', 'R2', 0),     # pop second arg
+        ('LABEL', 'mul_loop'),
+        ('BZ', 'R1', 'mul_loop_end'),               # break
+        ('ADD', 'R2', 'R3', 'R3'),                  # add
+        ('DEC', 'R1'),                              # decrement count
+        ('JMP', 'R0', 'mul_loop'),                  # repeat
+        ('LABEL', 'mul_loop_end'),
+        ('INC', 'R7'), ('LOAD', 'R7', 'R1', 0),     # pop return address
+        ('STORE', 'R3', 'R7', 0), ('DEC', 'R7'),    # push result
+        ('JMP', 'R1', 0),                           # return
+
+        # print(result)
+        ('LABEL', 'print'),
+        ('STORE', 'R5', 'R0', IO_OUT),              # print result
+        ('HALT',),
     ]
+    prog3 = unlabel(prog3)
 
     print("PROGRAM 3::: Expected Output: 120")
-    machine.run(prog3)
+    machine.run(prog3) #, debug=True)
     print(":::PROGRAM 3 DONE")
     
     # ----------------------------------------------------------------------

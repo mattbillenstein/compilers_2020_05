@@ -11,7 +11,7 @@ func fib(n int) int {
     return 0;
 }
 
-const LAST = 30;
+const LAST = 10;
 
 func main() int {
     var n = 0;

@@ -11,7 +11,7 @@ const initial_height = 100.0;
 const rebound = 0.6;
 const total_bounces = 10;
 
-func main() int {
+func bounces() {
    var bounce int = 0;
    var height float = initial_height;
    while bounce < total_bounces {
@@ -19,7 +19,31 @@ func main() int {
        height = height * rebound;
        print(height);
    }
-   return 0;
+}
+
+func teeth() {
+    var total_teeth int = 20;
+    var total_ten_dollars float = 0.0;
+    var total_one_cent float = 0.0;
+    var amt_one_cent float = 0.01;
+
+    while total_teeth > 0 {
+        total_ten_dollars = total_ten_dollars + 10.0;
+        total_one_cent = total_one_cent + amt_one_cent;
+        amt_one_cent = amt_one_cent * 2.0;
+        print(total_teeth);
+        print(total_ten_dollars);
+        print(total_one_cent);
+        print('\n');
+        total_teeth = total_teeth - 1;
+    }
+}
+
+func main() int {
+    bounces();
+    print('\n');
+    teeth();
+    return 0;
 }
 
 /* Run the above program using python wabbit.py prog2.wb.  Make sure
@@ -31,8 +55,3 @@ func main() int {
    are willing to accept a single penny for the first tooth, the
    tooth fairy will double the amount given for each subsequent tooth.
    Which is a better deal?  A child typically has 20 baby teeth.  */
-
-
-
-
-

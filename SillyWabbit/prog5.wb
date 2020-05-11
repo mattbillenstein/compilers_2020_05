@@ -62,7 +62,27 @@ print(match y {
    Since there might not be a solution, have it also return a MaybeFloat.
 */
 
+func quad(a float, b float, c float) MaybeFloat {
+    var s = sqrt(b*b - 4.0*a*c);
+    return match s {
+        No => s;
+        Yes(val) => MaybeFloat::Yes((-b + val)/(2.0*a));
+    };
+}
 
-   
+/*
+>>> a=3.0;b=10.0;c=5.0;(-b + math.sqrt(b*b - 4*a*c))/(2*a)
+-0.6125741132772068
+*/
+var z = quad(3.0, 10.0, 5.0);
+print(match z {
+          No => 0.0;
+          Yes(val) => val;
+      });
 
-
+/* prints 0.0 */
+z = quad(3.0, 4.0, 5.0);
+print(match z {
+          No => 0.0;
+          Yes(val) => val;
+      });

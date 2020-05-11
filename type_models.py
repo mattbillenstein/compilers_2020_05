@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # type_models.py
 #
 # The WabbitType language extends WabbitScript with support for
@@ -10,7 +12,10 @@
 # DO NOT WORK ON THIS UNLESS YOU HAVE EVERYTHING ELSE WORKING!
 #
 
+from wabbit.interp import interpret
 from wabbit.model import *
+from wabbit.parse import parse
+from wabbit.source import compare_source
 
 # -----------------------------------------------------------------------------
 # Program 7: Structures.  The following program defines and uses a structure.
@@ -20,8 +25,12 @@ from wabbit.model import *
 
 source7 = '''
 struct Fraction {
-   numerator int;
-   denominator int;
+    numerator int;
+    denominator int;
+}
+
+struct Foo {
+    frac Fraction;
 }
 
 func frac_mul(a Fraction, b Fraction) Fraction {
@@ -37,9 +46,59 @@ c.numerator = c.numerator / 4;
 c.denominator = c.denominator / 4;
 print c.numerator;
 print c.denominator;
+var d = Foo(Fraction(7, 8));
+print d.frac.numerator;
+print d.frac.denominator;
+d.frac.numerator = 1;
+d.frac.denominator = 2;
+print d.frac.numerator;
+print d.frac.denominator;
 '''
 
-model7 = None
+model7 = Block([
+    Struct(Name('Fraction'), [
+        Field(Name('numerator'), Type('int')),
+        Field(Name('denominator'), Type('int')),
+    ]),
+    Struct(Name('Foo'), [
+        Field(Name('frac'), Type('Fraction')),
+    ]),
+    Func(Name('frac_mul'),
+        Block([
+            Return(
+                Call(Name('Fraction'), [
+                    BinOp('*', Attribute(Name('a'), 'numerator'), Attribute(Name('b'), 'numerator')),
+                    BinOp('*', Attribute(Name('a'), 'denominator'), Attribute(Name('b'), 'denominator')),
+                ]),
+            ),
+        ], indent=' '*4),
+        [ArgDef(Name('a'), Type('Fraction')), ArgDef(Name('b'), Type('Fraction'))],
+        ret_type=Type('Fraction'),
+    ),
+    Var(Name('x'), Call(Name('Fraction'), [Integer(1), Integer(4)])),
+    Var(Name('y'), Call(Name('Fraction'), [Integer(3), Integer(8)])),
+    Var(Name('c'), Call(Name('frac_mul'), [Name('x'), Name('y')])),
+    Print(Attribute(Name('c'), 'numerator')),
+    Print(Attribute(Name('c'), 'denominator')),
+    Assign(Attribute(Name('c'), 'numerator'), BinOp('/', Attribute(Name('c'), 'numerator'), Integer(4))),
+    Assign(Attribute(Name('c'), 'denominator'), BinOp('/', Attribute(Name('c'), 'denominator'), Integer(4))),
+    Print(Attribute(Name('c'), 'numerator')),
+    Print(Attribute(Name('c'), 'denominator')),
+
+    # nested structs...
+    Var(Name('d'), Call(Name('Foo'), [Call(Name('Fraction'), [Integer(7), Integer(8)])])),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'numerator')),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'denominator')),
+    Assign(Attribute(Attribute(Name('d'), 'frac'), 'numerator'), Integer(1)),
+    Assign(Attribute(Attribute(Name('d'), 'frac'), 'denominator'), Integer(2)),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'numerator')),
+    Print(Attribute(Attribute(Name('d'), 'frac'), 'denominator')),
+])
+
+compare_source(model7, source7)
+x, env, stdout = interpret(model7)
+assert stdout == [3, 32, 0, 8, 7, 8, 1, 2], (x, env, stdout)
+compare_model(parse(source7), model7)
 
 # -----------------------------------------------------------------------------
 # Program 8: Enums.  The following program defines and uses an enum.
@@ -49,7 +108,7 @@ model7 = None
 # while let.
 
 source8 = '''
-enum MaybeNumber {
+enum Number {
     No;
     Integer(int);
     Float(float);
@@ -89,4 +148,24 @@ while let Integer(x) = a {
 }
 '''
 
-model8 = None
+model8 = Block([
+    Enum(Name('Number'), [
+        Member(Name('No')),
+        Member(Name('Integer'), Type('int')),
+        Member(Name('Float'), Type('float')),
+    ]),
+    Func(Name('add'),
+        Block([
+#            Return(
+#                Match(Name('a'), [
+#                ]),
+#            ),
+        ]),
+        [ArgDef(Name('a'), Type('Number')), ArgDef(Name('b'), Type('Number'))],
+        ret_type=Type('Number'),
+    ),
+])
+
+#compare_source(model8, source8)
+#x, env, stdout = interpret(model8)
+#assert stdout == [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880], (x, env, stdout)
