@@ -37,6 +37,9 @@ class SourceVisitor:
     def visit_Break(self, node):
         return 'break'
 
+    def visit_Continue(self, node):
+        return 'continue'
+
     def visit_Char(self, node):
         return f"'{node.value}'"
 
