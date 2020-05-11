@@ -1,0 +1,20 @@
+# install stuff - brew on macos, apt on Ubuntu, install python3 and clang (gcc
+# works too) otherwise...
+$ scripts/setup.sh
+
+# activate virtualenv
+$ source venv/bin/activate
+
+# tokenize a program
+$ python3 -m wabbit.tokenize tests/Func/mandel.wb
+
+# parse it
+$ python3 -m wabbit.parse tests/Func/mandel.wb
+
+# interpret it (~30s to run this...)
+$ python3 -m wabbit.interp tests/Func/mandel.wb
+
+# test the C backend
+$ python3 -m wabbit.c tests/Func/mandel.wb
+$ clang tests/Func/mandel.wb.c -o mandel
+$ ./mandel

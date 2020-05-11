@@ -272,7 +272,8 @@ class TypeVisitor:
         self.visit(node.cond)
         node._type = node.cond._type
         self.visit(node.block)
-        self.visit(node.eblock)
+        if node.eblock:
+            self.visit(node.eblock)
 
     def visit_While(self, node):
         self.visit(node.cond)
@@ -392,7 +393,7 @@ return 0;
         return f'''{node._var} = '{node.value}';\n''';
 
     def visit_Bool(self, node):
-        return f'{node._var} = {node.value};\n';
+        return f'{node._var} = {"true" if node.value else "false"};\n';
 
     def visit_Var(self, node):
         if node.arg is None:
@@ -414,7 +415,11 @@ return 0;
             'bool': '%d',
         }[node.arg._type]
 
-        s += f'printf("{format}\\n", {node.arg._var});\n'
+        nl = ''
+        if node.arg._type in ('int', 'float', 'bool'):
+            nl = '\\n'
+
+        s += f'printf("{format}{nl}", {node.arg._var});\n'
 
         return s
 
@@ -432,12 +437,16 @@ return 0;
     def visit_If(self, node):
         s =  self.visit(node.cond)
         s += f'if ({node.cond._var}) goto {node._var}_block;\n'
-        s += f'goto {node._var}_eblock;\n'
+        if node.eblock:
+            s += f'goto {node._var}_eblock;\n'
+        else:
+            s += f'goto {node._var}_End;\n'
         s += f'{node._var}_block:\n'
         s += self.visit(node.block)
         s += f'goto {node._var}_End;\n'
-        s += f'{node._var}_eblock:\n'
-        s += self.visit(node.eblock)
+        if node.eblock:
+            s += f'{node._var}_eblock:\n'
+            s += self.visit(node.eblock)
         s += f'{node._var}_End:\n'
         s += NOOP
         return s
@@ -547,7 +556,8 @@ return 0;
     def define_If(self, node):
         s = self.define(node.cond)
         s += self.define(node.block)
-        s += self.define(node.eblock)
+        if node.eblock:
+            s += self.define(node.eblock)
         return s
 
     def define_While(self, node):
