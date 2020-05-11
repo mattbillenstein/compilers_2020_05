@@ -117,6 +117,9 @@ class SourceVisitor:
         type = f'({self.visit(node.type)})' if node.type else ''
         return f'{self.visit(node.name)}{type}'
 
+    def visit_Unit(self, node):
+        return '()'
+
 
 def to_source(node):
     return SourceVisitor().visit(node)

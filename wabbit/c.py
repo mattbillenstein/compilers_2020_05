@@ -385,8 +385,22 @@ return 0;
         return s + f'{node._var} = {node.op}{node.arg._var};\n'
 
     def visit_BinOp(self, node):
-        s = self.visit(node.left) + self.visit(node.right)
-        return s + f'{node._var} = {node.left._var} {node.op} {node.right._var};\n'
+        s = self.visit(node.left)
+
+        # shortcircuit ops
+        if node.op in ('&&', '||'):
+            invert = '!' if node.op == '&&' else ''
+            s += f'{node._var} = {node.left._var};\n'
+            s += f'if ({invert}{node._var}) goto {node._var}_End;\n'
+            s += self.visit(node.right)
+            s += f'{node._var} = {node.right._var};\n'
+            s += f'{node._var}_End:\n'
+            s += NOOP
+        else:
+            s += self.visit(node.right)
+            s += f'{node._var} = {node.left._var} {node.op} {node.right._var};\n'
+
+        return s
 
     def visit_Integer(self, node):
         return f'{node._var} = {node.value};\n';
@@ -413,15 +427,18 @@ return 0;
     def visit_Print(self, node):
         s = self.visit(node.arg)
 
+        if node.arg._type == 'bool':
+            s += f'printf({node.arg._var} ? "true\\n": "false\\n");\n'
+            return s
+
         format = {
             'int': '%d',
-            'float': '%f',  # we emit double
+            'float': '%.6f',  # we emit double
             'char': '%c',
-            'bool': '%d',
         }[node.arg._type]
 
         nl = ''
-        if node.arg._type in ('int', 'float', 'bool'):
+        if node.arg._type in ('int', 'float'):
             nl = '\\n'
 
         s += f'printf("{format}{nl}", {node.arg._var});\n'
