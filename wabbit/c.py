@@ -197,7 +197,7 @@ class TypeVisitor:
         assert node.left._type == node.right._type, (node, node.left._type, node.right._type)
 
         node._type = node.left._type
-        if node.op in ('||', '&&'):
+        if node.op not in ('+', '-', '*', '/'):
             node._type = 'bool'
 
     def visit_Integer(self, node):
@@ -309,6 +309,11 @@ class TypeVisitor:
             self.visit(arg)
             assert farg.type.type == arg._type
 
+    def visit_Break(self, node):
+        pass
+
+    def visit_Continue(self, node):
+        pass
 
 class CCompilerVisitor:
     # wabbit -> C types
@@ -452,6 +457,7 @@ return 0;
         return s
 
     def visit_While(self, node):
+        self.current_while = node
         s = f'{node._var}:\n'
         s +=  self.visit(node.cond)
         s += f'if ({node.cond._var}) goto {node._var}_Start;\n'
@@ -461,6 +467,7 @@ return 0;
         s += f'goto {node._var};\n'
         s += f'{node._var}_End:\n'
         s += NOOP
+        self.current_while = None
         return s
 
     def visit_Return(self, node):
@@ -479,6 +486,14 @@ return 0;
         s += f'{node._var} = '
 
         return s + f'{node.name.value}({args});\n'
+
+    def visit_Break(self, node):
+        assert self.current_while
+        return f'goto {self.current_while._var}_End;\n'
+
+    def visit_Continue(self, node):
+        assert self.current_while
+        return f'goto {self.current_while._var};\n'
 
     #### definitions
 
@@ -570,7 +585,14 @@ return 0;
         for arg in node.args:
             s += self.define(arg)
         return s
-            
+
+    def define_Break(self, node):
+        return ''
+
+    def define_Continue(self, node):
+        return ''
+
+
 def compile_c(text_or_node):
     node = text_or_node
     if not isinstance(text_or_node, Node):
