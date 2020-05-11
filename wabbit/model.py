@@ -264,7 +264,9 @@ class Func(Node):
         args = args or []
         assert isinstance(args, list)
         assert all(isinstance(_, ArgDef) for _ in args)
-        assert isinstance(ret_type, (Type, NoneType))
+        if ret_type is None:
+            ret_type = Type('unit')
+        assert isinstance(ret_type, Type)
         self.name = name
         self.args = args
         self.ret_type = ret_type

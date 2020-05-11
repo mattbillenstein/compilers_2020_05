@@ -23,7 +23,7 @@ class SourceVisitor:
         return f'{self.visit(node.name)}.{node.attr}'
 
     def visit_Type(self, node):
-        return node.type
+        return node.type if node.type != 'unit' else ''
 
     def visit_Integer(self, node):
         return f'{node.value}'
@@ -87,7 +87,9 @@ class SourceVisitor:
 
     def visit_Func(self, node):
         args = ', '.join(self.visit(_) for _ in node.args)
-        type = self.visit(node.ret_type, ' %s')
+        type = self.visit(node.ret_type)
+        if type:
+            type = ' ' + type
         return f'func {self.visit(node.name)}({args}){type} {{\n{self.visit(node.block)}}}\n'
 
     def visit_ArgDef(self, node):
