@@ -141,7 +141,6 @@ NOOP = '(void)0;\n'
 class TypeVisitor:
     def __init__(self, node):
         self.env = Scopes()
-#        self.nodes = []
         self.var_ids = {}
 
         self.visit(node)
@@ -164,8 +163,6 @@ class TypeVisitor:
 
     def visit(self, node):
         node._var = self.var(node)
-#        if not isinstance(node, (Name, Type)):
-#            self.nodes.append(node)
         m = getattr(self, f'visit_{node.__class__.__name__}')
         m(node)
 #        print('VISIT', node, node._var, node._type, file=sys.stderr)
@@ -215,6 +212,7 @@ class TypeVisitor:
     def visit_Print(self, node):
 #        print(node, node.arg, file=sys.stderr)
         self.visit(node.arg)
+        node._type = 'unit'
 
     def set_Name(self, node, type):
         node._var = self.var(node)
@@ -282,6 +280,8 @@ class TypeVisitor:
 
     @new_scope(CallScope)
     def visit_Func(self, node):
+        node._type = node.ret_type.type
+
         # put the function in the global scope
         self.env.global_scope[node.name.value] = node
 
@@ -299,8 +299,7 @@ class TypeVisitor:
         if isinstance(func, Struct):
             duh
 
-        if func.ret_type:
-            node._type = func.ret_type.type
+        node._type = func.ret_type.type
 
         # visit args and check types
         assert len(func.args) == len(node.args)
@@ -315,6 +314,9 @@ class TypeVisitor:
     def visit_Continue(self, node):
         pass
 
+    def visit_Unit(self, node):
+        node._type = 'unit'
+
 class CCompilerVisitor:
     # wabbit -> C types
     typemap = {
@@ -322,13 +324,21 @@ class CCompilerVisitor:
         'float': 'double',
         'bool': 'bool',
         'char': 'char',
-        None: 'void*',
+        'unit': 'int*',
     }
 
     def compile_c(self, node):
         types = TypeVisitor(node)
 
-        s = '#include <stdio.h>\n#include <stdbool.h>\n\n'
+        s = '''
+#include <stdio.h>
+#include <stdbool.h>
+
+int *Unit() {
+    static int instance = 42;
+    return &instance;
+}
+'''
 
         # global vars / functions
         s += '// global variables\n'
@@ -385,8 +395,22 @@ return 0;
         return s + f'{node._var} = {node.op}{node.arg._var};\n'
 
     def visit_BinOp(self, node):
-        s = self.visit(node.left) + self.visit(node.right)
-        return s + f'{node._var} = {node.left._var} {node.op} {node.right._var};\n'
+        s = self.visit(node.left)
+
+        # shortcircuit ops
+        if node.op in ('&&', '||'):
+            invert = '!' if node.op == '&&' else ''
+            s += f'{node._var} = {node.left._var};\n'
+            s += f'if ({invert}{node._var}) goto {node._var}_End;\n'
+            s += self.visit(node.right)
+            s += f'{node._var} = {node.right._var};\n'
+            s += f'{node._var}_End:\n'
+            s += NOOP
+        else:
+            s += self.visit(node.right)
+            s += f'{node._var} = {node.left._var} {node.op} {node.right._var};\n'
+
+        return s
 
     def visit_Integer(self, node):
         return f'{node._var} = {node.value};\n';
@@ -413,15 +437,22 @@ return 0;
     def visit_Print(self, node):
         s = self.visit(node.arg)
 
+        if node.arg._type == 'bool':
+            s += f'printf({node.arg._var} ? "true\\n": "false\\n");\n'
+            return s
+
+        if node.arg._type == 'unit':
+            s += f'printf("()\\n");\n'
+            return s
+
         format = {
             'int': '%d',
-            'float': '%f',  # we emit double
+            'float': '%.6f',  # we emit double
             'char': '%c',
-            'bool': '%d',
         }[node.arg._type]
 
         nl = ''
-        if node.arg._type in ('int', 'float', 'bool'):
+        if node.arg._type in ('int', 'float'):
             nl = '\\n'
 
         s += f'printf("{format}{nl}", {node.arg._var});\n'
@@ -495,6 +526,9 @@ return 0;
         assert self.current_while
         return f'goto {self.current_while._var};\n'
 
+    def visit_Unit(self, node):
+        return f'Unit();\n'
+
     #### definitions
 
     def define(self, node):
@@ -555,10 +589,11 @@ return 0;
 
     def define_Func(self, node):
         args = ', '.join(f'{self.typemap[n.type.type]} {n.name._var}' for n in node.args)
-        ret_type = self.typemap[node.ret_type.type] if node.ret_type else 'void*'
-        s = f'\n{ret_type} {node.name.value}({args}) {{\n'
+        s = f'\n{self.typemap[node.ret_type.type]} {node.name.value}({args}) {{\n'
         s += self.define(node.block)
         s += self.visit(node.block)
+        if node.ret_type.type == 'unit':
+            s += 'return Unit();\n'
         s += '}\n\n'
         return s
 
@@ -591,6 +626,9 @@ return 0;
 
     def define_Continue(self, node):
         return ''
+
+    def define_Unit(self, node):
+        return self.define_Node(node)
 
 
 def compile_c(text_or_node):

@@ -42,7 +42,7 @@ for f in $(ls tests/Script/*.wb tests/Func/*.wb | grep -v mandel) $(grep -L '::'
     test_file $f
 done
 
-test_file tests/Script/mandel.wb
-test_file tests/Func/mandel_loop.wb
+test_file tests/Script/mandel_loop.wb
+test_file tests/Func/mandel.wb
 
 echo 'PASSED'
