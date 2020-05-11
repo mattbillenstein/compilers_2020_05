@@ -136,7 +136,7 @@ from .model import *
 from .parse import parse
 from .scope import *
 
-NOOP = 'while(0){};\n'
+NOOP = '(void)0;\n'
 
 class TypeVisitor:
     def __init__(self, node):
@@ -279,11 +279,35 @@ class TypeVisitor:
         node._type = node.cond._type
         self.visit(node.block)
 
+    @new_scope(CallScope)
     def visit_Func(self, node):
+        # put the function in the global scope
+        self.env.global_scope[node.name.value] = node
+
+        # put the args in the local scope
+        for arg in node.args:
+            self.set_Name(arg.name, arg.type.type)
+
+        # visit the block
         self.visit(node.block)
 
     def visit_Call(self, node):
-        pass
+        func = self.env.global_scope[node.name.value]
+
+        assert isinstance(func, Func)
+        if isinstance(func, Struct):
+            duh
+
+        if func.ret_type:
+            node._type = func.ret_type.type
+
+        # visit args and check types
+        assert len(func.args) == len(node.args)
+        args = {}
+        for farg, arg in zip(func.args, node.args):
+            self.visit(arg)
+            assert farg.type.type == arg._type
+
 
 class CCompilerVisitor:
     # wabbit -> C types
@@ -292,7 +316,7 @@ class CCompilerVisitor:
         'float': 'double',
         'bool': 'bool',
         'char': 'char',
-        None: 'void',
+        None: 'void*',
     }
 
     def compile_c(self, node):
@@ -334,22 +358,21 @@ return 0;
         return m(node)
 
     def visit_Block(self, node):
-        s = f'{node._var}:\n'
-
+        s = ''
         for n in node.statements:
             s += self.visit(n)
-
-        # assign the last statement in the block if it returns something...
-        # Used by compound really...
-        if n._type:
-            s += f'{node._var} = {n._var};\n'
-
-        s += f'{node._var}_End:\n'
-        s += NOOP
         return s
 
     def visit_Compound(self, node):
-        return self.visit_Block(node)
+        s = ''
+        for n in node.statements:
+            s += self.visit(n)
+
+        # assign the last statement as the return value
+        if n._type:
+            s += f'{node._var} = {n._var};\n'
+
+        return s
 
     def visit_UnaOp(self, node):
         s = self.visit(node.arg)
@@ -408,18 +431,23 @@ return 0;
 
     def visit_If(self, node):
         s =  self.visit(node.cond)
-        s += f'if ({node.cond._var}) goto {node.block._var};\n'
-        s += f'goto {node.eblock._var};\n'
+        s += f'if ({node.cond._var}) goto {node._var}_block;\n'
+        s += f'goto {node._var}_eblock;\n'
+        s += f'{node._var}_block:\n'
         s += self.visit(node.block)
-        s += f'goto {node.eblock._var}_End;\n'
+        s += f'goto {node._var}_End;\n'
+        s += f'{node._var}_eblock:\n'
         s += self.visit(node.eblock)
+        s += f'{node._var}_End:\n'
+        s += NOOP
         return s
 
     def visit_While(self, node):
         s = f'{node._var}:\n'
         s +=  self.visit(node.cond)
-        s += f'if ({node.cond._var}) goto {node.block._var};\n'
+        s += f'if ({node.cond._var}) goto {node._var}_Start;\n'
         s += f'goto {node._var}_End;\n'
+        s += f'{node._var}_Start:\n'
         s += self.visit(node.block)
         s += f'goto {node._var};\n'
         s += f'{node._var}_End:\n'
@@ -431,8 +459,17 @@ return 0;
         return s + f'return {node.value._var};\n'
 
     def visit_Call(self, node):
-        args = ', '.join(self.visit(n) for n in node.args)
-        return f'{node.name.value}({args});'
+        s = ''
+        for n in node.args:
+            s += self.visit(n)
+
+        args = ', '.join(n._var for n in node.args)
+
+    
+        # if node._type:  - some code assigns from functions which return unit...
+        s += f'{node._var} = '
+
+        return s + f'{node.name.value}({args});\n'
 
     #### definitions
 
@@ -456,16 +493,17 @@ return 0;
         return self.define_Node(node)
     
     def define_Name(self, node):
-        return self.define_Node(node)
+        return ''
+#        return self.define_Node(node)
 
     def define_Var(self, node):
-        s = self.define(node.name)
+        s = self.define_Node(node.name)
         if node.arg:
             s += self.define(node.arg)
         return s
 
     def define_Const(self, node):
-        s = self.define(node.name)
+        s = self.define_Node(node.name)
         return s + self.define(node.arg)
 
     def define_Assign(self, node):
@@ -477,8 +515,9 @@ return 0;
         return s + self.define(node.arg)
 
     def define_BinOp(self, node):
-        s = self.define_Node(node)
-        return s + self.define(node.left) + self.define(node.right)
+        s = self.define(node.left)
+        s += self.define(node.right)
+        return s + self.define_Node(node)
 
     def define_Block(self, node):
         s = ''
@@ -491,8 +530,9 @@ return 0;
         return s + self.define_Block(node)
 
     def define_Func(self, node):
-        args = ', '.join(f'{self.typemap[n.type.type]} {n.name.value}' for n in node.args)
-        s = f'\n{self.typemap[node.ret_type.type]} {node.name.value}({args}) {{\n'
+        args = ', '.join(f'{self.typemap[n.type.type]} {n.name._var}' for n in node.args)
+        ret_type = self.typemap[node.ret_type.type] if node.ret_type else 'void*'
+        s = f'\n{ret_type} {node.name.value}({args}) {{\n'
         s += self.define(node.block)
         s += self.visit(node.block)
         s += '}\n\n'
@@ -515,6 +555,12 @@ return 0;
         s += self.define(node.block)
         return s
 
+    def define_Call(self, node):
+        s = f'{self.typemap[node._type]} {node._var};\n'
+        for arg in node.args:
+            s += self.define(arg)
+        return s
+            
 def compile_c(text_or_node):
     node = text_or_node
     if not isinstance(text_or_node, Node):
